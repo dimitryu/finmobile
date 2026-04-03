@@ -56,8 +56,9 @@ select.month-sel { background: var(--card2); color: var(--white); border: 1px so
 .main { max-width: 900px; margin: 0 auto; padding: 12px 12px; }
 
 /* Stats */
-.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 10px; }
-@media(max-width:580px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
+.stats-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 10px; }
+@media(max-width:700px){ .stats-grid { grid-template-columns: repeat(3,1fr); } }
+@media(max-width:420px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
 .stat { background: var(--card); border-radius: 12px; padding: 11px 12px; border-left: 3px solid; }
 .stat-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
 .stat-value { font-size: 17px; font-weight: 700; font-family: 'Courier New', monospace; }
@@ -76,15 +77,20 @@ select.month-sel { background: var(--card2); color: var(--white); border: 1px so
 
 /* Section cards */
 .sec-card { background: var(--card); border-radius: 14px; padding: 12px; border-top: 3px solid; }
-.sec-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
-.sec-title { font-size: 12px; font-weight: 700; color: var(--white); }
-.sec-total { font-size: 13px; font-weight: 700; font-family: monospace; }
-.items { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
-.item { display: flex; align-items: center; justify-content: space-between; padding: 4px 5px; border-radius: 7px; }
+.sec-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; cursor: pointer; user-select: none; }
+.sec-head-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+.sec-title { font-size: 13px; font-weight: 700; color: var(--white); }
+.sec-total { font-size: 14px; font-weight: 700; font-family: monospace; }
+.collapse-btn { font-size: 13px; color: var(--muted); transition: transform .25s; display: inline-block; line-height: 1; }
+.collapsed .collapse-btn { transform: rotate(-90deg); }
+.items { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; transition: max-height .25s; }
+.collapsed .items { max-height: 0; overflow: hidden; }
+.collapsed .add-trig, .collapsed .add-row { display: none; }
+.item { display: flex; align-items: center; justify-content: space-between; padding: 5px 6px; border-radius: 7px; }
 .item:hover { background: var(--card2); }
-.item-name { font-size: 11px; color: #94a3b8; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; }
+.item-name { font-size: 14px; color: #cbd5e1; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; }
 .item-right { display: flex; align-items: center; gap: 3px; }
-.item-amt { font-size: 11px; font-family: monospace; cursor: pointer; padding: 2px 5px; border-radius: 5px; transition: background .1s; white-space: nowrap; }
+.item-amt { font-size: 14px; font-family: monospace; cursor: pointer; padding: 2px 5px; border-radius: 5px; transition: background .1s; white-space: nowrap; }
 .item-amt:hover { background: #374151; color: white; }
 .del { color: #f87171; font-size: 10px; cursor: pointer; background: none; border: none; opacity: 0; padding: 0 2px; transition: opacity .15s; }
 .item:hover .del { opacity: 1; }
@@ -146,7 +152,7 @@ select.month-sel { background: var(--card2); color: var(--white); border: 1px so
   <div class="header-inner">
     <div class="logo">₪</div>
     <div class="app-name">
-      <h1>Семейный Бюджет <span class="ver" id="verBadge">v1.1.0</span></h1>
+      <h1>Семейный Бюджет <span class="ver" id="verBadge">v1.2.0</span></h1>
       <span id="monthCount">загрузка...</span>
     </div>
     <div class="month-nav">
@@ -176,7 +182,7 @@ select.month-sel { background: var(--card2); color: var(--white); border: 1px so
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const C = { income:'#4ade80', fixed:'#f87171', variable:'#fb923c', balance:'#60a5fa', debt:'#a78bfa' };
 
@@ -284,6 +290,7 @@ let curView = 'month';
 let editing = null;
 let addSec = null;
 let addDebtMode = false;
+let collapsedSections = new Set(); // track collapsed section cards
 
 // ─── Storage ─────────────────────────────────────────────────────────────────
 async function loadData() {
@@ -335,10 +342,15 @@ function buildSelector() {
 // ─── Render Stats ─────────────────────────────────────────────────────────────
 function renderStats() {
   const md = getMD();
-  const tI=S(md.income), tF=S(md.fixed), tV=S(md.variable), bal=tI-tF-tV;
+  const tI=S(md.income), tF=S(md.fixed), tV=S(md.variable);
+  const tDebt = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
+  const bal = tI - tF - tV - tDebt;
   document.getElementById('statsGrid').innerHTML = [
-    ['Доходы',tI,C.income,'↑'],['Постоянные',tF,C.fixed,'🏠'],['Переменные',tV,C.variable,'🛒'],
-    ['Остаток',bal,bal>=0?C.balance:'#ef4444',bal>=0?'✓':'⚠']
+    ['Доходы',    tI,    C.income,  '↑'],
+    ['Постоянные',tF,    C.fixed,   '🏠'],
+    ['Переменные',tV,    C.variable,'🛒'],
+    ['Долги/мес', tDebt, C.debt,    '💳'],
+    ['Остаток',   bal,   bal>=0?C.balance:'#ef4444', bal>=0?'✓':'⚠']
   ].map(([l,v,c,i])=>`<div class="stat" style="border-left-color:${c}">
     <div class="stat-label">${i} ${l}</div>
     <div class="stat-value" style="color:${c}">${fmtN(v)}</div>
@@ -347,7 +359,11 @@ function renderStats() {
 
 // ─── Render Section ───────────────────────────────────────────────────────────
 function secHTML(sec, title, color, items, total) {
-  const rows = Object.entries(items).map(([k,v]) => {
+  // Sort items alphabetically (Cyrillic + Latin)
+  const sortedEntries = Object.entries(items).sort((a,b) => a[0].localeCompare(b[0], ['ru','en'], {sensitivity:'base'}));
+  const isCollapsed = collapsedSections.has(sec);
+
+  const rows = sortedEntries.map(([k,v]) => {
     const isEdit = editing && editing.sec===sec && editing.key===k;
     const safeKey = encodeURIComponent(k);
     return `<div class="item">
@@ -371,9 +387,12 @@ function secHTML(sec, title, color, items, total) {
        </div>`
     : `<button class="add-trig" data-asec="${sec}">+ Добавить</button>`;
 
-  return `<div class="sec-card" style="border-top-color:${color}">
-    <div class="sec-head">
-      <div class="sec-title">${title}</div>
+  return `<div class="sec-card${isCollapsed?' collapsed':''}" style="border-top-color:${color}">
+    <div class="sec-head" data-toggle="${sec}">
+      <div class="sec-head-left">
+        <span class="collapse-btn">${isCollapsed?'▸':'▾'}</span>
+        <div class="sec-title">${title}</div>
+      </div>
       <div class="sec-total" style="color:${color}">${fmtN(total)}</div>
     </div>
     <div class="items">${rows}</div>
@@ -384,32 +403,78 @@ function secHTML(sec, title, color, items, total) {
 // ─── Render Month ─────────────────────────────────────────────────────────────
 function renderMonth() {
   const md=getMD(), tI=S(md.income), tF=S(md.fixed), tV=S(md.variable);
+  const tDebt=(md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
+  const bal=tI-tF-tV-tDebt;
   const pct=(v,t)=>t>0?Math.min((v/t)*100,100):0;
+
+  const debtList=(md.debts||[]).length===0
+    ? '<span style="color:var(--muted);font-size:13px">Нет долгов в этом месяце</span>'
+    : (md.debts||[]).map(d=>`<div style="display:flex;justify-content:space-between;padding:5px 6px;border-radius:7px;transition:background .1s" onmouseover="this.style.background=\'#1a2236\'" onmouseout="this.style.background=\'\'">
+        <span style="font-size:13px;color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">${d.name}</span>
+        <span style="font-size:13px;font-family:monospace;color:${C.debt};white-space:nowrap">${fmtN(d.monthly)}/мес · всего ${fmtN(d.total)}</span>
+      </div>`).join('');
+
   document.getElementById('mainContent').innerHTML = `
     <div class="progress-card">
-      <div class="prog-title"><span>Распределение расходов — ${fmtKey(selMonth)}</span><span>${tI>0?Math.round(((tF+tV)/tI)*100):0}% от дохода</span></div>
+      <div class="prog-title"><span>Распределение — ${fmtKey(selMonth)}</span><span>${tI>0?Math.round(((tF+tV+tDebt)/tI)*100):0}% от дохода</span></div>
       <div class="prog-bar">
         <div class="prog-seg" style="width:${pct(tF,tI)}%;background:${C.fixed}"></div>
         <div class="prog-seg" style="width:${pct(tV,tI)}%;background:${C.variable}"></div>
+        <div class="prog-seg" style="width:${pct(tDebt,tI)}%;background:${C.debt}"></div>
       </div>
       <div class="prog-legend">
         <span><span class="dot" style="background:${C.fixed}"></span>Пост.: ${fmtN(tF)}</span>
         <span><span class="dot" style="background:${C.variable}"></span>Перем.: ${fmtN(tV)}</span>
+        <span><span class="dot" style="background:${C.debt}"></span>Долги: ${fmtN(tDebt)}</span>
         <span><span class="dot" style="background:${C.income}"></span>Доход: ${fmtN(tI)}</span>
       </div>
     </div>
-    <div class="col3">
+    <div class="col3" style="margin-bottom:8px">
       ${secHTML('income','💰 Доходы',C.income,md.income,tI)}
       ${secHTML('fixed','🏠 Постоянные',C.fixed,md.fixed,tF)}
       ${secHTML('variable','🛒 Переменные',C.variable,md.variable,tV)}
+    </div>
+    <div class="sec-card" style="border-top-color:${C.debt}">
+      <div class="sec-head" id="debtCardHead">
+        <div class="sec-head-left">
+          <span class="collapse-btn" id="debtCBtn">▾</span>
+          <span class="sec-title">💳 Долги в этом месяце</span>
+        </div>
+        <span class="sec-total" style="color:${C.debt}">${fmtN(tDebt)}/мес</span>
+      </div>
+      <div id="debtCardBody" style="padding-top:2px">${debtList}</div>
     </div>`;
   bindMonthEvents();
+
+  // Debt card collapse toggle
+  const dHead=document.getElementById('debtCardHead'), dBody=document.getElementById('debtCardBody'), dBtn=document.getElementById('debtCBtn');
+  if(dHead && dBody){
+    if(collapsedSections.has('_debt')){ dBody.style.display='none'; dBtn.style.transform='rotate(-90deg)'; }
+    dHead.addEventListener('click',()=>{
+      const isNowHidden=dBody.style.display==='none';
+      dBody.style.display=isNowHidden?'':'none';
+      dBtn.style.transform=isNowHidden?'':'rotate(-90deg)';
+      isNowHidden?collapsedSections.delete('_debt'):collapsedSections.add('_debt');
+    });
+  }
 }
 
 function bindMonthEvents() {
+  // Collapse/expand section cards
+  document.querySelectorAll('[data-toggle]').forEach(head => {
+    head.addEventListener('click', (e) => {
+      // Don't collapse when clicking on amount or delete
+      if (e.target.closest('.item-amt, .del, .add-trig, .add-row, [data-asec]')) return;
+      const sec = head.dataset.toggle;
+      if (collapsedSections.has(sec)) collapsedSections.delete(sec);
+      else collapsedSections.add(sec);
+      renderMonth(); renderStats();
+    });
+  });
   // Edit amount
   document.querySelectorAll('.item-amt').forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
       editing = {sec:el.dataset.sec, key:decodeURIComponent(el.dataset.key)};
       renderMonth(); renderStats();
       setTimeout(()=>{ const i=document.getElementById('editIn'); if(i){i.focus();i.select();} },50);
@@ -429,7 +494,8 @@ function bindMonthEvents() {
   }
   // Delete item
   document.querySelectorAll('[data-dsec]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const sec=btn.dataset.dsec, key=decodeURIComponent(btn.dataset.dkey);
       const md=getMD(), ns={...md[sec]};
       delete ns[key];
@@ -440,7 +506,7 @@ function bindMonthEvents() {
   });
   // Add section trigger
   document.querySelectorAll('[data-asec]').forEach(btn => {
-    btn.addEventListener('click', () => { addSec=btn.dataset.asec; renderMonth(); setTimeout(()=>document.getElementById('aiName')?.focus(),50); });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); addSec=btn.dataset.asec; renderMonth(); setTimeout(()=>document.getElementById('aiName')?.focus(),50); });
   });
   document.getElementById('aiCancel')?.addEventListener('click', ()=>{ addSec=null; renderMonth(); });
   document.querySelectorAll('[data-aok]').forEach(btn => {
