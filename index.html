@@ -1,1 +1,429 @@
 
+import { useState, useEffect, useMemo, useRef } from "react";
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis,
+  CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from "recharts";
+
+const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+const INITIAL_DATA = {
+  "02_25": {"income":{"Зарплата":29850,"Детские деньги":270,"Возврат за тиюль":250},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Сигареты":2000,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5033,"Рестораны":1000,"Концерты":320,"Леон Турнир":1200,"Дети":65,"Дни рождения":880,"Стоянка":64,"Учитель":560,"Temu":135,"Уборщица":0,"Проезд":0,"Хоз. товары":0,"Врач":0,"Одежда":0,"Путешествия":0},"debts":[],"edp_target":15000},
+  "03_25": {"income":{"Зарплата":29850,"Детские деньги":270,"Налоговая":6137},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Сигареты":2000,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":4052,"Рестораны":1008,"Концерты":1142,"Леон Турнир":550,"Дети":954,"Дни рождения":795,"Стоянка":32,"Учитель":1328,"Temu":0,"Уборщица":350,"Проезд":400,"Хоз. товары":540,"Врач":0,"Одежда":655,"Путешествия":4142,"Маникюр":330},"debts":[{"name":"Леон Кадур Яд Лига","total":3450,"payments_left":3,"monthly":310},{"name":"Холодильник","total":4365,"payments_left":11,"monthly":181},{"name":"Сумка","total":1290,"payments_left":2,"monthly":322},{"name":"Школа","total":1955,"payments_left":1,"monthly":391}],"edp_target":15000},
+  "04_25": {"income":{"Зарплата Дима":19970,"Зарплата Оксана":9850,"Детские деньги":270,"Доп. доход":500},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":5057,"Рестораны":1220,"Концерты":0,"Маникюр":380,"Дети":862,"Дни рождения":374,"Стоянка":223,"Учитель":927,"Temu":121,"Уборщица":860,"Проезд":201,"Хоз. товары":279,"Врач":923,"Одежда":798,"Путешествия":0},"debts":[{"name":"Леон Кадур Яд Лига","total":3450,"payments_left":2,"monthly":310},{"name":"Холодильник","total":4365,"payments_left":10,"monthly":181},{"name":"Сумка","total":1290,"payments_left":1,"monthly":322}],"edp_target":15000},
+  "05_25": {"income":{"Зарплата Дима":19970,"Зарплата Оксана":9850,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":5006,"Рестораны":1630,"Концерты":0,"Маникюр":915,"Дети":1131,"Дни рождения":730,"Стоянка":24,"Учитель":907,"Temu":140,"Уборщица":0,"Проезд":365,"Хоз. товары":843,"Врач":0,"Одежда":2740,"Путешествия":2570,"Сигареты":3028},"debts":[{"name":"Леон Кадур Яд Лига","total":3450,"payments_left":1,"monthly":310},{"name":"Холодильник","total":4365,"payments_left":9,"monthly":181},{"name":"Греция","total":12400,"payments_left":2,"monthly":6200}],"edp_target":15000},
+  "06_25": {"income":{"Зарплата Дима":19970,"Зарплата Оксана":9935,"Детские деньги":270,"Доп. доход":3150},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":7520,"Рестораны":1000,"Концерты":0,"Маникюр":170,"Дети":1015,"Дни рождения":2650,"Стоянка":227,"Учитель":620,"Temu":0,"Уборщица":0,"Проезд":315,"Хоз. товары":1245,"Врач":0,"Одежда":597,"Путешествия":0,"Сигареты":3368},"debts":[{"name":"Холодильник","total":4365,"payments_left":8,"monthly":181},{"name":"Греция","total":12400,"payments_left":1,"monthly":6200}],"edp_target":15000},
+  "07_25": {"income":{"Зарплата Дима":19970,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":3215,"Рестораны":0,"Концерты":0,"Маникюр":450,"Дети":151,"Дни рождения":997,"Стоянка":0,"Учитель":0,"Temu":72,"Уборщица":0,"Проезд":140,"Хоз. товары":1635,"Врач":75,"Одежда":520,"Путешествия":2559,"Сигареты":710},"debts":[{"name":"Холодильник","total":4365,"payments_left":7,"monthly":181},{"name":"Tashkent","total":11263,"payments_left":3,"monthly":3754}],"edp_target":15000},
+  "08_25": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":12140,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":5909,"Рестораны":1595,"Концерты":0,"Маникюр":330,"Дети":280,"Дни рождения":2511,"Стоянка":0,"Учитель":0,"Temu":308,"Уборщица":550,"Проезд":314,"Хоз. товары":403,"Врач":639,"Одежда":1353,"Путешествия":0,"Сигареты":3050},"debts":[{"name":"Холодильник","total":4365,"payments_left":6,"monthly":181},{"name":"Tashkent","total":11263,"payments_left":2,"monthly":3754}],"edp_target":15000},
+  "09_25": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":3761,"Рестораны":123,"Концерты":0,"Маникюр":165,"Дети":350,"Дни рождения":100,"Стоянка":22,"Учитель":280,"Temu":0,"Уборщица":0,"Проезд":415,"Хоз. товары":0,"Врач":952,"Одежда":400,"Путешествия":2800,"Сигареты":1911},"debts":[{"name":"Холодильник","total":4365,"payments_left":5,"monthly":181},{"name":"Tashkent","total":11263,"payments_left":1,"monthly":3754}],"edp_target":15000},
+  "10_25": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify + Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":6865,"Рестораны":1106,"Концерты":140,"Маникюр":170,"Дети":911,"Дни рождения":800,"Стоянка":0,"Учитель":880,"Temu":730,"Уборщица":0,"Проезд":50,"Хоз. товары":296,"Врач":54,"Одежда":0,"Путешествия":155,"Сигареты":3275},"debts":[{"name":"Холодильник","total":4365,"payments_left":4,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":7,"monthly":375}],"edp_target":15000},
+  "11_25": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":560,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify":22,"Chat GPT":65,"Макаби страховка":175,"Страховки Дима":917,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":5300,"Рестораны":1236,"Концерты":0,"Маникюр":820,"Дети":0,"Дни рождения":1725,"Стоянка":45,"Учитель":420,"Temu":0,"Уборщица":0,"Проезд":507,"Хоз. товары":550,"Врач":23,"Одежда":620,"Путешествия":200,"Сигареты":3355},"debts":[{"name":"Холодильник","total":4365,"payments_left":3,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":6,"monthly":375},{"name":"Школа","total":2521,"payments_left":6,"monthly":420}],"edp_target":15000},
+  "12_25": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4237,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":220,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Chat GPT":65,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129},"variable":{"Супермаркет":6085,"Рестораны":325,"Концерты":560,"Маникюр":0,"Дети разное":145,"Дни рождения":50,"Стоянка":320,"Учеба Дети":610,"Temu":162,"Уборщица":0,"Проезд":315,"Хоз. товары":1105,"Врач":995,"Одежда":1500,"Путешествия":1740,"Сигареты":1985,"Развлечения":80,"Косметика":70,"Учеба Родители":1500},"debts":[{"name":"Холодильник","total":4365,"payments_left":2,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":5,"monthly":375},{"name":"Школа","total":2521,"payments_left":5,"monthly":420}],"edp_target":15000},
+  "01_26": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч группа":495},"variable":{"Супермаркет":5175,"Рестораны":227,"Концерты":885,"Маникюр":410,"Дети разное":515,"Дни рождения":1200,"Стоянка":30,"Учеба Дети":560,"Temu":320,"Уборщица":0,"Проезд":520,"Хоз. товары":525,"Врач":0,"Одежда":650,"Путешествия":0,"Сигареты":3245,"Развлечения":500,"Косметика":305,"Тами4":0,"Учеба Родители":0},"debts":[{"name":"Холодильник","total":4365,"payments_left":1,"monthly":181},{"name":"Очки Леон","total":750,"payments_left":2,"monthly":375},{"name":"Грузия тур","total":6075,"payments_left":3,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":4,"monthly":375},{"name":"Школа","total":2521,"payments_left":4,"monthly":420}],"edp_target":15000},
+  "02_26": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч группа":495},"variable":{"Супермаркет":5090,"Рестораны":200,"Концерты":0,"Маникюр":0,"Дети разное":110,"Дни рождения":75,"Стоянка":150,"Учеба Дети":480,"Temu":210,"Уборщица":0,"Проезд":370,"Хоз. товары":0,"Врач":0,"Одежда":265,"Путешествия":0,"Сигареты":2985,"Развлечения":110,"Косметика":735,"Тами4":108,"Учеба Родители":0},"debts":[{"name":"Очки Леон","total":750,"payments_left":1,"monthly":375},{"name":"Грузия тур","total":6075,"payments_left":2,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":3,"monthly":375},{"name":"Школа","total":2521,"payments_left":3,"monthly":420}],"edp_target":15000},
+  "03_26": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч группа":495},"variable":{"Супермаркет":8300,"Рестораны":1250,"Концерты":0,"Маникюр":640,"Дети разное":200,"Дни рождения":850,"Стоянка":0,"Учеба Дети":0,"Temu":0,"Уборщица":0,"Проезд":0,"Хоз. товары":660,"Врач":150,"Одежда":128,"Путешествия":0,"Сигареты":3065,"Развлечения":0,"Косметика":520,"Тами4":0,"Учеба Родители":0},"debts":[{"name":"Грузия тур","total":6075,"payments_left":1,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":2,"monthly":375},{"name":"Школа","total":2521,"payments_left":2,"monthly":420}],"edp_target":15000},
+  "04_26": {"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч группа":495},"variable":{"Супермаркет":510,"Рестораны":0,"Концерты":0,"Маникюр":0,"Дети разное":0,"Дни рождения":0,"Стоянка":0,"Учеба Дети":0,"Temu":0,"Уборщица":0,"Проезд":0,"Хоз. товары":0,"Врач":0,"Одежда":0,"Путешествия":0,"Сигареты":0,"Развлечения":0,"Косметика":0,"Тами4":0,"Учеба Родители":0},"debts":[{"name":"Лига КадурЯд","total":3750,"payments_left":1,"monthly":375},{"name":"Школа","total":2521,"payments_left":1,"monthly":420}],"edp_target":15000}
+};
+
+function parseKey(key) {
+  const [mm, yy] = key.split('_');
+  return { month: parseInt(mm), year: 2000 + parseInt(yy) };
+}
+
+function sortedMonths(keys) {
+  return [...keys].sort((a, b) => {
+    const pa = parseKey(a), pb = parseKey(b);
+    if (pa.year !== pb.year) return pa.year - pb.year;
+    return pa.month - pb.month;
+  });
+}
+
+function fmtKey(key) {
+  const { month, year } = parseKey(key);
+  return `${MONTH_NAMES[month-1]} ${year}`;
+}
+
+function fmtNum(n) {
+  return (n || 0).toLocaleString('ru-RU');
+}
+
+const sum = obj => Object.values(obj || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+
+const COLORS = {
+  income: '#4ade80',
+  fixed: '#f87171',
+  variable: '#fb923c',
+  balance: '#60a5fa',
+  debt: '#a78bfa',
+};
+
+export default function App() {
+  const [data, setData] = useState(INITIAL_DATA);
+  const [selectedMonth, setSelectedMonth] = useState('04_26');
+  const [view, setView] = useState('month');
+  const [editing, setEditing] = useState(null);
+  const [editVal, setEditVal] = useState('');
+  const [addingItem, setAddingItem] = useState(null);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemVal, setNewItemVal] = useState('');
+  const [addDebt, setAddDebt] = useState(false);
+  const [newDebt, setNewDebt] = useState({name:'',total:'',payments_left:'',monthly:''});
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await window.storage.get('budget_v2');
+        if (r) setData(JSON.parse(r.value));
+      } catch (e) {}
+    })();
+  }, []);
+
+  const save = async (nd) => {
+    setData(nd);
+    try { await window.storage.set('budget_v2', JSON.stringify(nd)); } catch (e) {}
+  };
+
+  const months = useMemo(() => sortedMonths(Object.keys(data)), [data]);
+  const md = data[selectedMonth] || { income:{}, fixed:{}, variable:{}, debts:[], edp_target:15000 };
+
+  const totalIncome = sum(md.income);
+  const totalFixed = sum(md.fixed);
+  const totalVariable = sum(md.variable);
+  const totalExpenses = totalFixed + totalVariable;
+  const balance = totalIncome - totalExpenses;
+
+  const startEdit = (section, key, val) => {
+    setEditing({ section, key });
+    setEditVal(String(val || 0));
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const commitEdit = () => {
+    if (!editing) return;
+    const { section, key } = editing;
+    const val = parseFloat(editVal) || 0;
+    const nd = { ...data, [selectedMonth]: { ...md, [section]: { ...md[section], [key]: val } } };
+    save(nd);
+    setEditing(null);
+  };
+
+  const deleteItem = (section, key) => {
+    const newSection = { ...md[section] };
+    delete newSection[key];
+    save({ ...data, [selectedMonth]: { ...md, [section]: newSection } });
+  };
+
+  const addItem = (section) => {
+    if (!newItemName.trim()) return;
+    const val = parseFloat(newItemVal) || 0;
+    const nd = { ...data, [selectedMonth]: { ...md, [section]: { ...md[section], [newItemName.trim()]: val } } };
+    save(nd);
+    setAddingItem(null);
+    setNewItemName(''); setNewItemVal('');
+  };
+
+  const removeDebt = (i) => {
+    const nd = { ...data, [selectedMonth]: { ...md, debts: md.debts.filter((_, di) => di !== i) } };
+    save(nd);
+  };
+
+  const commitDebt = () => {
+    const d = { name: newDebt.name, total: parseFloat(newDebt.total)||0, payments_left: parseInt(newDebt.payments_left)||0, monthly: parseFloat(newDebt.monthly)||0 };
+    const nd = { ...data, [selectedMonth]: { ...md, debts: [...(md.debts||[]), d] } };
+    save(nd);
+    setAddDebt(false);
+    setNewDebt({name:'',total:'',payments_left:'',monthly:''});
+  };
+
+  const addNewMonth = () => {
+    const latest = months[months.length - 1];
+    if (!latest) return;
+    const { month, year } = parseKey(latest);
+    let nm = month + 1, ny = year;
+    if (nm > 12) { nm = 1; ny++; }
+    const key = `${String(nm).padStart(2,'0')}_${String(ny-2000).padStart(2,'0')}`;
+    if (data[key]) return;
+    const base = data[latest];
+    const template = { income: { ...base.income }, fixed: { ...base.fixed }, variable: Object.fromEntries(Object.keys(base.variable).map(k => [k, 0])), debts: [], edp_target: base.edp_target || 15000 };
+    save({ ...data, [key]: template });
+    setSelectedMonth(key);
+  };
+
+  // Trend data
+  const trendData = useMemo(() => sortedMonths(Object.keys(data)).slice(-12).map(key => {
+    const d = data[key];
+    return { name: fmtKey(key).split(' ')[0].slice(0,3), fullName: fmtKey(key), income: sum(d.income), fixed: sum(d.fixed), variable: sum(d.variable), balance: sum(d.income) - sum(d.fixed) - sum(d.variable) };
+  }), [data]);
+
+  const EditableCell = ({ section, itemKey, value }) => {
+    const isEditing = editing?.section === section && editing?.key === itemKey;
+    return isEditing ? (
+      <input ref={inputRef} type="number" value={editVal} onChange={e => setEditVal(e.target.value)}
+        onBlur={commitEdit} onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(null); }}
+        className="w-20 bg-gray-700 text-white text-right px-1 rounded text-sm border border-blue-400 outline-none" />
+    ) : (
+      <span onClick={() => startEdit(section, itemKey, value)} className="cursor-pointer hover:text-white transition-colors px-1 rounded hover:bg-gray-700 text-sm font-mono" title="Нажмите для редактирования">
+        {fmtNum(value)} ₪
+      </span>
+    );
+  };
+
+  const SectionCard = ({ title, section, color, icon, items, total }) => (
+    <div className="bg-gray-900 rounded-2xl p-4 flex flex-col gap-1" style={{ borderTop: `3px solid ${color}` }}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{icon}</span>
+          <span className="font-bold text-white text-sm">{title}</span>
+        </div>
+        <span className="font-bold text-base font-mono" style={{ color }}>{fmtNum(total)} ₪</span>
+      </div>
+      <div className="flex flex-col gap-0.5 max-h-80 overflow-y-auto pr-1">
+        {Object.entries(items).map(([k, v]) => (
+          <div key={k} className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-gray-800 group transition-colors">
+            <span className="text-gray-300 text-xs flex-1 truncate">{k}</span>
+            <div className="flex items-center gap-1">
+              <EditableCell section={section} itemKey={k} value={v} />
+              <button onClick={() => deleteItem(section, k)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs px-1 transition-opacity" title="Удалить">✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {addingItem === section ? (
+        <div className="flex gap-1 mt-2">
+          <input placeholder="Название" value={newItemName} onChange={e => setNewItemName(e.target.value)} className="flex-1 bg-gray-700 text-white text-xs px-2 py-1 rounded border border-gray-600 outline-none focus:border-blue-400" />
+          <input type="number" placeholder="Сумма" value={newItemVal} onChange={e => setNewItemVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem(section)} className="w-20 bg-gray-700 text-white text-xs px-2 py-1 rounded border border-gray-600 outline-none focus:border-blue-400" />
+          <button onClick={() => addItem(section)} className="bg-blue-500 hover:bg-blue-400 text-white text-xs px-2 py-1 rounded">✓</button>
+          <button onClick={() => { setAddingItem(null); setNewItemName(''); setNewItemVal(''); }} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">✕</button>
+        </div>
+      ) : (
+        <button onClick={() => setAddingItem(section)} className="mt-2 text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors self-start px-2 py-1 rounded hover:bg-gray-800">
+          <span>+</span> Добавить
+        </button>
+      )}
+    </div>
+  );
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload) return null;
+    return (
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 text-xs">
+        <p className="text-white font-bold mb-1">{payload[0]?.payload?.fullName}</p>
+        {payload.map(p => (
+          <p key={p.name} style={{ color: p.color }}>{p.name}: {fmtNum(p.value)} ₪</p>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-300 font-sans" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      {/* Header */}
+      <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg" style={{ background: 'linear-gradient(135deg, #22c55e, #3b82f6)' }}>₪</div>
+            <div>
+              <h1 className="text-white font-bold text-sm leading-tight">Семейный Бюджет</h1>
+              <p className="text-gray-500 text-xs">Финансовый трекер</p>
+            </div>
+          </div>
+          {/* Month selector */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => { const i = months.indexOf(selectedMonth); if (i > 0) setSelectedMonth(months[i-1]); }} disabled={months.indexOf(selectedMonth) === 0} className="w-7 h-7 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white text-xs transition-colors flex items-center justify-center">‹</button>
+            <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-gray-800 text-white text-sm px-3 py-1.5 rounded-lg border border-gray-700 outline-none cursor-pointer">
+              {[...months].reverse().map(k => <option key={k} value={k}>{fmtKey(k)}</option>)}
+            </select>
+            <button onClick={() => { const i = months.indexOf(selectedMonth); if (i < months.length - 1) setSelectedMonth(months[i+1]); }} disabled={months.indexOf(selectedMonth) === months.length - 1} className="w-7 h-7 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white text-xs transition-colors flex items-center justify-center">›</button>
+            <button onClick={addNewMonth} className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg border border-gray-700 transition-colors">+ Месяц</button>
+          </div>
+          {/* Nav tabs */}
+          <div className="flex gap-1">
+            {[['month','📊 Месяц'],['trends','📈 Тренды'],['debts','💳 Долги']].map(([v, l]) => (
+              <button key={v} onClick={() => setView(v)} className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${view === v ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>{l}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {[
+            { label: 'Доходы', value: totalIncome, color: COLORS.income, icon: '↑' },
+            { label: 'Постоянные', value: totalFixed, color: COLORS.fixed, icon: '🏠' },
+            { label: 'Переменные', value: totalVariable, color: COLORS.variable, icon: '🛒' },
+            { label: 'Остаток', value: balance, color: balance >= 0 ? COLORS.balance : '#ef4444', icon: balance >= 0 ? '✓' : '!' },
+          ].map(({ label, value, color, icon }) => (
+            <div key={label} className="bg-gray-900 rounded-2xl p-4" style={{ borderLeft: `3px solid ${color}` }}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base">{icon}</span>
+                <span className="text-gray-500 text-xs">{label}</span>
+              </div>
+              <div className="font-bold text-xl font-mono" style={{ color }}>{fmtNum(value)} ₪</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        {view === 'month' && (
+          <>
+            {/* Progress bar */}
+            <div className="bg-gray-900 rounded-2xl p-4 mb-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>Распределение расходов ({fmtKey(selectedMonth)})</span>
+                <span className="text-gray-400">{totalExpenses > 0 ? Math.round((totalExpenses / totalIncome) * 100) : 0}% от дохода</span>
+              </div>
+              <div className="h-4 bg-gray-800 rounded-full overflow-hidden flex">
+                {totalIncome > 0 && <>
+                  <div style={{ width: `${Math.min((totalFixed / totalIncome) * 100, 100)}%`, background: COLORS.fixed }} className="transition-all duration-500" title={`Постоянные: ${fmtNum(totalFixed)} ₪`} />
+                  <div style={{ width: `${Math.min((totalVariable / totalIncome) * 100, 100)}%`, background: COLORS.variable }} className="transition-all duration-500" title={`Переменные: ${fmtNum(totalVariable)} ₪`} />
+                </>}
+              </div>
+              <div className="flex gap-4 mt-2 text-xs">
+                <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: COLORS.fixed }}></span>Пост.: {fmtNum(totalFixed)} ₪</span>
+                <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: COLORS.variable }}></span>Перем.: {fmtNum(totalVariable)} ₪</span>
+                <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: COLORS.income }}></span>Доход: {fmtNum(totalIncome)} ₪</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <SectionCard title="Доходы" section="income" color={COLORS.income} icon="💰" items={md.income} total={totalIncome} />
+              <SectionCard title="Постоянные расходы" section="fixed" color={COLORS.fixed} icon="🏠" items={md.fixed} total={totalFixed} />
+              <SectionCard title="Переменные расходы" section="variable" color={COLORS.variable} icon="🛒" items={md.variable} total={totalVariable} />
+            </div>
+          </>
+        )}
+
+        {view === 'trends' && (
+          <div className="flex flex-col gap-4">
+            <div className="bg-gray-900 rounded-2xl p-4">
+              <h3 className="text-white font-bold mb-4 text-sm">💰 Доходы vs Расходы (последние 12 месяцев)</h3>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={trendData} margin={{ left: 10, right: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                  <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ color: '#9ca3af', fontSize: 12 }} />
+                  <Bar dataKey="income" name="Доходы" fill={COLORS.income} radius={[4,4,0,0]} />
+                  <Bar dataKey="fixed" name="Постоянные" fill={COLORS.fixed} radius={[4,4,0,0]} />
+                  <Bar dataKey="variable" name="Переменные" fill={COLORS.variable} radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="bg-gray-900 rounded-2xl p-4">
+              <h3 className="text-white font-bold mb-4 text-sm">📊 Остаток по месяцам</h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={trendData} margin={{ left: 10, right: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                  <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="balance" name="Остаток" stroke={COLORS.balance} strokeWidth={2} dot={{ fill: COLORS.balance, r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Средний доход', value: Math.round(trendData.reduce((s,d)=>s+d.income,0)/trendData.length), color: COLORS.income },
+                { label: 'Средние пост. расходы', value: Math.round(trendData.reduce((s,d)=>s+d.fixed,0)/trendData.length), color: COLORS.fixed },
+                { label: 'Средние перем. расходы', value: Math.round(trendData.reduce((s,d)=>s+d.variable,0)/trendData.length), color: COLORS.variable },
+                { label: 'Средний остаток', value: Math.round(trendData.reduce((s,d)=>s+d.balance,0)/trendData.length), color: COLORS.balance },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="bg-gray-900 rounded-2xl p-3" style={{ borderLeft: `3px solid ${color}` }}>
+                  <div className="text-gray-500 text-xs mb-1">{label}</div>
+                  <div className="font-bold text-lg font-mono" style={{ color }}>{fmtNum(value)} ₪</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {view === 'debts' && (
+          <div className="flex flex-col gap-3">
+            <div className="bg-gray-900 rounded-2xl p-4" style={{ borderTop: `3px solid ${COLORS.debt}` }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-bold text-sm">💳 Долги — {fmtKey(selectedMonth)}</h3>
+                <span className="text-xs font-mono font-bold" style={{ color: COLORS.debt }}>
+                  Итого: {fmtNum((md.debts||[]).reduce((s,d)=>s+(d.total||0),0))} ₪
+                </span>
+              </div>
+              {(!md.debts || md.debts.length === 0) && <p className="text-gray-500 text-sm text-center py-4">Нет долгов в этом месяце</p>}
+              <div className="flex flex-col gap-2">
+                {(md.debts||[]).map((debt, i) => {
+                  const progress = debt.payments_left > 0 ? Math.max(0, 100 - (debt.payments_left / (debt.payments_left + 1)) * 100) : 100;
+                  return (
+                    <div key={i} className="bg-gray-800 rounded-xl p-3 group">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-medium text-sm">{debt.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono" style={{ color: COLORS.debt }}>{fmtNum(debt.total)} ₪</span>
+                          <button onClick={() => removeDebt(i)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs transition-opacity">✕</button>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 text-xs text-gray-400 mb-2">
+                        <span>Выплат осталось: <b className="text-white">{debt.payments_left}</b></span>
+                        <span>В месяц: <b className="text-white font-mono">{fmtNum(debt.monthly)} ₪</b></span>
+                      </div>
+                      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div style={{ width: `${progress}%`, background: COLORS.debt }} className="h-full rounded-full transition-all" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {addDebt ? (
+                <div className="mt-4 bg-gray-800 rounded-xl p-3 flex flex-col gap-2">
+                  <div className="text-xs text-gray-400 font-medium mb-1">Новый долг</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input placeholder="Название" value={newDebt.name} onChange={e=>setNewDebt({...newDebt,name:e.target.value})} className="bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg border border-gray-600 outline-none focus:border-blue-400 col-span-2" />
+                    <input type="number" placeholder="Сумма долга" value={newDebt.total} onChange={e=>setNewDebt({...newDebt,total:e.target.value})} className="bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg border border-gray-600 outline-none focus:border-blue-400" />
+                    <input type="number" placeholder="Ежемес. платёж" value={newDebt.monthly} onChange={e=>setNewDebt({...newDebt,monthly:e.target.value})} className="bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg border border-gray-600 outline-none focus:border-blue-400" />
+                    <input type="number" placeholder="Выплат осталось" value={newDebt.payments_left} onChange={e=>setNewDebt({...newDebt,payments_left:e.target.value})} className="bg-gray-700 text-white text-xs px-2 py-1.5 rounded-lg border border-gray-600 outline-none focus:border-blue-400" />
+                  </div>
+                  <div className="flex gap-2 mt-1">
+                    <button onClick={commitDebt} className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-4 py-1.5 rounded-lg transition-colors">Добавить</button>
+                    <button onClick={() => { setAddDebt(false); setNewDebt({name:'',total:'',payments_left:'',monthly:''}); }} className="bg-gray-700 text-gray-300 text-xs px-4 py-1.5 rounded-lg hover:bg-gray-600 transition-colors">Отмена</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setAddDebt(true)} className="mt-3 text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-gray-800">
+                  + Добавить долг
+                </button>
+              )}
+            </div>
+
+            {/* Debt summary across months */}
+            <div className="bg-gray-900 rounded-2xl p-4">
+              <h3 className="text-white font-bold text-sm mb-3">📅 История долгов по месяцам</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-gray-500">
+                      <th className="text-left py-1 pr-3">Месяц</th>
+                      <th className="text-right py-1 pr-3">Кол-во</th>
+                      <th className="text-right py-1">Сумма</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedMonths(Object.keys(data)).filter(k => (data[k].debts||[]).length > 0).slice(-12).reverse().map(k => {
+                      const total = (data[k].debts||[]).reduce((s,d)=>s+(d.total||0),0);
+                      return (
+                        <tr key={k} onClick={() => { setSelectedMonth(k); }} className="cursor-pointer hover:bg-gray-800 rounded transition-colors">
+                          <td className="py-1 pr-3 text-gray-300">{fmtKey(k)}</td>
+                          <td className="py-1 pr-3 text-right text-gray-400">{data[k].debts.length}</td>
+                          <td className="py-1 text-right font-mono" style={{ color: COLORS.debt }}>{fmtNum(total)} ₪</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
