@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" id="ati"/>
 <link rel="icon" id="favicon" type="image/png"/>
 <style>
-:root{--bg:#0b0f1a;--card:#111827;--card2:#1a2236;--border:#1f2937;--text:#cbd5e1;--muted:#6b7280;--white:#f1f5f9}
+:root{--bg:#0b0f1a;--card:#111827;--card2:#1a2236;--border:#1f2937;--text:#cbd5e1;--muted:#6b7280;--white:#f1f5f9;--fs:1}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg)}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--text);min-height:100vh;padding-bottom:env(safe-area-inset-bottom,16px)}
@@ -85,45 +85,45 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 @media(max-width:650px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:400px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 .stat{background:var(--card);border-radius:10px;padding:10px 11px;border-left:3px solid}
-.stat-lbl{font-size:13px;color:var(--muted);margin-bottom:3px}
-.stat-val{font-size:19px;font-weight:700;font-family:'Courier New',monospace}
+.stat-lbl{font-size:calc(13px * var(--fs));color:var(--muted);margin-bottom:3px}
+.stat-val{font-size:calc(19px * var(--fs));font-weight:700;font-family:'Courier New',monospace}
 .prog-card{background:var(--card);border-radius:11px;padding:11px;margin-bottom:8px}
-.prog-title{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+.prog-title{display:flex;justify-content:space-between;font-size:calc(12px * var(--fs));color:var(--muted);margin-bottom:6px}
 .prog-bar{height:10px;background:#1f2937;border-radius:5px;overflow:hidden;display:flex}
 .pseg{transition:width .4s}
-.prog-leg{display:flex;gap:10px;margin-top:6px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.prog-leg{display:flex;gap:10px;margin-top:6px;font-size:calc(12px * var(--fs));color:var(--muted);flex-wrap:wrap}
 .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
 .col3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 @media(max-width:600px){.col3{grid-template-columns:1fr}}
 .scard2{background:var(--card);border-radius:13px;padding:11px;border-top:3px solid}
 .shead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;cursor:pointer;user-select:none}
 .shead-l{display:flex;align-items:center;gap:7px;flex:1}
-.stitle{font-size:16px;font-weight:700;color:var(--white)}
-.stotal{font-size:16px;font-weight:700;font-family:monospace}
-.cbtn2{font-size:14px;color:var(--muted);transition:transform .2s;display:inline-block;line-height:1}
+.stitle{font-size:calc(16px * var(--fs));font-weight:700;color:var(--white)}
+.stotal{font-size:calc(16px * var(--fs));font-weight:700;font-family:monospace}
+.cbtn2{font-size:calc(14px * var(--fs));color:var(--muted);transition:transform .2s;display:inline-block;line-height:1}
 .collapsed2 .cbtn2{transform:rotate(-90deg)}
 .items2{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
 .collapsed2 .items2{max-height:0;overflow:hidden}
 .collapsed2 .add-trig2,.collapsed2 .add-row2{display:none}
 .item2{display:flex;align-items:center;justify-content:space-between;padding:6px 6px;border-radius:6px}
 .item2:hover{background:var(--card2)}
-.iname{font-size:16px;color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:5px}
+.iname{font-size:calc(16px * var(--fs));color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:5px}
 .iright{display:flex;align-items:center;gap:2px}
-.iamt{font-size:16px;font-family:monospace;cursor:pointer;padding:3px 5px;border-radius:4px;transition:background .1s;white-space:nowrap}
+.iamt{font-size:calc(16px * var(--fs));font-family:monospace;cursor:pointer;padding:3px 5px;border-radius:4px;transition:background .1s;white-space:nowrap}
 .iamt:hover{background:#374151;color:white}
 .del2{color:#f87171;font-size:9px;cursor:pointer;background:none;border:none;opacity:0;padding:0 2px}
 .item2:hover .del2{opacity:1}
 .ein{width:68px;background:#374151;color:white;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;font-family:monospace;outline:none;text-align:right}
 .add-row2{display:flex;gap:3px;margin-top:7px}
-.add-row2 input{flex:1;background:var(--card2);color:white;border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:13px;outline:none;min-width:0}
+.add-row2 input{flex:1;background:var(--card2);color:white;border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:calc(13px * var(--fs));outline:none;min-width:0}
 .add-row2 input:focus{border-color:#3b82f6}
 .add-row2 input[type=number]{width:75px;flex:none}
-.bok{background:#2563eb;color:white;border:none;border-radius:5px;padding:6px 9px;font-size:13px;cursor:pointer}
-.bcanc{background:#374151;color:var(--text);border:none;border-radius:5px;padding:6px 9px;font-size:13px;cursor:pointer}
-.add-trig2{margin-top:7px;font-size:12px;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:5px;background:none;border:none}
+.bok{background:#2563eb;color:white;border:none;border-radius:5px;padding:6px 9px;font-size:calc(13px * var(--fs));cursor:pointer}
+.bcanc{background:#374151;color:var(--text);border:none;border-radius:5px;padding:6px 9px;font-size:calc(13px * var(--fs));cursor:pointer}
+.add-trig2{margin-top:7px;font-size:calc(12px * var(--fs));color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:5px;background:none;border:none}
 .add-trig2:hover{background:var(--card2);color:var(--text)}
 .ccrd{background:var(--card);border-radius:13px;padding:13px;margin-bottom:9px}
-.ctitle{font-size:14px;font-weight:700;color:var(--white);margin-bottom:10px}
+.ctitle{font-size:calc(14px * var(--fs));font-weight:700;color:var(--white);margin-bottom:10px}
 .cbars{display:flex;align-items:flex-end;gap:3px;height:150px;overflow-x:auto}
 .bgrp{flex:1;min-width:26px;display:flex;flex-direction:column;align-items:center}
 .bcols{display:flex;align-items:flex-end;gap:1px;height:130px;width:100%}
@@ -135,21 +135,21 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 @media(max-width:550px){.avgrid{grid-template-columns:repeat(2,1fr)}}
 .ditm{background:var(--card2);border-radius:10px;padding:11px;margin-bottom:6px}
 .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
-.dname{font-size:16px;font-weight:600;color:var(--white)}
-.dmeta{display:flex;gap:10px;font-size:13px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
+.dname{font-size:calc(16px * var(--fs));font-weight:600;color:var(--white)}
+.dmeta{display:flex;gap:10px;font-size:calc(13px * var(--fs));color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
 .dbar{height:5px;background:#374151;border-radius:2px;overflow:hidden}
 .dbar-f{height:100%;background:#a78bfa;border-radius:2px}
 .ddel{color:#f87171;cursor:pointer;font-size:12px;background:none;border:none;opacity:0;padding:0 3px}
 .ditm:hover .ddel{opacity:1}
 .dform{background:var(--card2);border-radius:10px;padding:11px;margin-top:7px}
 .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:7px 0}
-.dgrid input{background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;padding:7px 9px;font-size:13px;outline:none}
+.dgrid input{background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;padding:7px 9px;font-size:calc(13px * var(--fs));outline:none}
 .dgrid input:focus{border-color:#a78bfa}
 .dgrid .sp2{grid-column:1/-1}
-.bpurp{background:#7c3aed;color:white;border:none;border-radius:6px;padding:7px 16px;font-size:13px;cursor:pointer}
-.dhist th{color:var(--muted);font-size:13px;padding:5px 8px;font-weight:500;text-align:right}
+.bpurp{background:#7c3aed;color:white;border:none;border-radius:6px;padding:7px 16px;font-size:calc(13px * var(--fs));cursor:pointer}
+.dhist th{color:var(--muted);font-size:calc(13px * var(--fs));padding:5px 8px;font-weight:500;text-align:right}
 .dhist th:first-child{text-align:left}
-.dhist td{padding:6px 8px;font-size:14px;text-align:right;cursor:pointer}
+.dhist td{padding:6px 8px;font-size:calc(14px * var(--fs));text-align:right;cursor:pointer}
 .dhist td:first-child{text-align:left;color:var(--text)}
 .dhist tr:hover td{background:var(--card2)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e3a5f;border:1px solid #3b82f6;color:#93c5fd;padding:9px 18px;border-radius:18px;font-size:11px;transition:transform .3s;z-index:999;white-space:nowrap}
@@ -169,6 +169,10 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .member-chip{background:var(--card2);border-radius:8px;padding:6px 12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin-bottom:5px}
 .mchip-dot{width:8px;height:8px;border-radius:50%;background:#4ade80}
 .mchip-you{font-size:9px;color:#60a5fa;margin-left:auto}
+.font-row{display:flex;gap:6px;margin-bottom:4px}
+.font-btn{flex:1;background:var(--card2);border:2px solid var(--border);border-radius:9px;color:var(--text);cursor:pointer;padding:10px 4px;font-weight:800;transition:all .15s;line-height:1}
+.font-btn:hover{border-color:#3b82f6;color:#93c5fd}
+.font-btn.factive{border-color:#3b82f6;color:#60a5fa;background:#1e3a5f}
 </style>
 </head>
 <body>
@@ -177,7 +181,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1">Семейный Бюджет <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.1.0</span></h1>
+    <h1 class="setup-h1">Семейный Бюджет <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.2.0</span></h1>
     <p class="setup-sub">Финансовый трекер</p>
 
     <!-- sub: welcome -->
@@ -286,6 +290,13 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   <div class="modal">
     <button class="mclose" onclick="closeSettings()">×</button>
     <h3>⚙ Настройки</h3>
+    <div class="mlabel">Размер шрифта</div>
+    <div class="font-row" id="fontRow">
+      <button class="font-btn" data-fk="s" onclick="setFont('s')" style="font-size:12px">А<br><span style="font-size:9px;font-weight:400">S</span></button>
+      <button class="font-btn" data-fk="m" onclick="setFont('m')" style="font-size:15px">А<br><span style="font-size:9px;font-weight:400">M</span></button>
+      <button class="font-btn" data-fk="l" onclick="setFont('l')" style="font-size:18px">А<br><span style="font-size:9px;font-weight:400">L</span></button>
+      <button class="font-btn" data-fk="xl" onclick="setFont('xl')" style="font-size:21px">А<br><span style="font-size:9px;font-weight:400">XL</span></button>
+    </div>
     <div class="mlabel">Семейный код (для приглашения)</div>
     <div class="fcode-box" onclick="copyFamilyCode()" id="settingsFamilyCode">
       <code id="settingsFamilyCodeText">—</code>
@@ -303,9 +314,23 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VER = '2.1.0';
+const APP_VER = '2.2.0';
 const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const CC = {income:'#4ade80',fixed:'#f87171',variable:'#fb923c',balance:'#60a5fa',debt:'#a78bfa'};
+
+// ─── FONT SCALE ───────────────────────────────────────────────────────────────
+const FONT_SCALES = {s:0.82, m:1.0, l:1.2, xl:1.4};
+function applyFontScale(key) {
+  const scale = FONT_SCALES[key] || 1.0;
+  document.documentElement.style.setProperty('--fs', scale);
+  try { localStorage.setItem('bgt_font', key); } catch(e) {}
+  document.querySelectorAll('.font-btn').forEach(b =>
+    b.classList.toggle('factive', b.dataset.fk === key)
+  );
+}
+function setFont(key) { applyFontScale(key); }
+// Apply saved font immediately (before rendering)
+applyFontScale((() => { try { return localStorage.getItem('bgt_font') || 'm'; } catch(e) { return 'm'; } })());
 
 // ─── ICON GENERATION (no Google badge - proper maskable PNG) ──────────────────
 function makeIcon(size) {
@@ -678,6 +703,9 @@ function openSettings() {
     </div>`).join('');
   document.getElementById('changeNameInp').value = CONFIG.userName;
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
+  // Refresh font selector active state
+  const savedFont = (() => { try { return localStorage.getItem('bgt_font') || 'm'; } catch(e) { return 'm'; } })();
+  document.querySelectorAll('.font-btn').forEach(b => b.classList.toggle('factive', b.dataset.fk === savedFont));
   document.getElementById('settingsModal').classList.add('open');
 }
 
@@ -738,7 +766,10 @@ function setMD(monthData) {
 function pk(k) { const [m,y]=k.split('_'); return {m:+m, y:2000+(+y)}; }
 function sortK(ks) { return [...ks].sort((a,b)=>{ const pa=pk(a),pb=pk(b); return pa.y!==pb.y?pa.y-pb.y:pa.m-pb.m; }); }
 function fmtK(k) { const {m,y}=pk(k); return MN[m-1]+' '+y; }
-function fmtN(n) { return (n||0).toLocaleString('ru-RU')+'₪'; }
+function fmtN(n) {
+  // Format without thousands separator spaces (ru-RU uses non-breaking space U+00A0 or U+202F)
+  return Math.round(n||0).toLocaleString('ru-RU').replace(/[\u00A0\u202F\u2009\u0020]/g, '') + '₪';
+}
 function S(o) { return Object.values(o||{}).reduce((s,v)=>s+(+v||0),0); }
 
 function toast(msg, dur=2600) {
@@ -768,7 +799,7 @@ function renderStats() {
   if (!el) return;
   el.innerHTML = [
     ['Доходы',tI,CC.income,'↑'], ['Постоянные',tF,CC.fixed,'🏠'],
-    ['Переменные',tV,CC.variable,'🛒'], ['Долги/мес',tD,CC.debt,'💳'],
+    ['Переменные',tV,CC.variable,'🛒'], ['Кредиты/мес',tD,CC.debt,'💳'],
     ['Остаток',bal,bal>=0?CC.balance:'#ef4444',bal>=0?'✓':'⚠']
   ].map(([l,v,c,i])=>`<div class="stat" style="border-left-color:${c}">
     <div class="stat-lbl">${i} ${l}</div><div class="stat-val" style="color:${c}">${fmtN(v)}</div>
@@ -810,7 +841,7 @@ function renderMonth() {
   const tD=(md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
   const pct=(v,t)=>t>0?Math.min((v/t)*100,100):0;
   const debtList=(md.debts||[]).length===0
-    ? '<span style="color:var(--muted);font-size:13px">Нет долгов</span>'
+    ? '<span style="color:var(--muted);font-size:13px">Нет кредитов</span>'
     : (md.debts||[]).map(d=>{
         const pl = d.payments_left;
         const word = (pl%10===1&&pl%100!==11)?'платёж':(pl%10>=2&&pl%10<=4&&(pl%100<10||pl%100>=20))?'платежа':'платежей';
@@ -836,7 +867,7 @@ function renderMonth() {
       <div class="prog-leg">
         <span><span class="dot" style="background:${CC.fixed}"></span>Пост.: ${fmtN(tF)}</span>
         <span><span class="dot" style="background:${CC.variable}"></span>Перем.: ${fmtN(tV)}</span>
-        <span><span class="dot" style="background:${CC.debt}"></span>Долги: ${fmtN(tD)}</span>
+        <span><span class="dot" style="background:${CC.debt}"></span>Кредиты: ${fmtN(tD)}</span>
         <span><span class="dot" style="background:${CC.income}"></span>Доход: ${fmtN(tI)}</span>
       </div>
     </div>
@@ -846,7 +877,7 @@ function renderMonth() {
       ${secHTML('variable','🛒 Переменные расходы',CC.variable,md.variable,tV)}
     </div>
     <div class="scard2" style="border-top-color:${CC.debt}">
-      <div class="shead" id="dch"><div class="shead-l"><span class="cbtn2" id="dcb">▾</span><span class="stitle">💳 Долги в этом месяце</span></div><span class="stotal" style="color:${CC.debt}">${fmtN(tD)}/мес</span></div>
+      <div class="shead" id="dch"><div class="shead-l"><span class="cbtn2" id="dcb">▾</span><span class="stitle">💳 Кредиты в этом месяце</span></div><span class="stotal" style="color:${CC.debt}">${fmtN(tD)}/мес</span></div>
       <div id="dcbd" style="padding-top:2px">${debtList}</div>
     </div>`;
 
@@ -937,7 +968,7 @@ function renderTrends() {
     <div class="ccrd"><div class="ctitle">📊 Доходы и расходы</div><div style="overflow-x:auto"><div class="cbars" style="min-width:${keys.length*36}px">${bars}</div></div>
       <div class="prog-leg" style="margin-top:8px"><span><span class="dot" style="background:${CC.income}"></span>Доходы</span><span><span class="dot" style="background:${CC.fixed}"></span>Постоянные</span><span><span class="dot" style="background:${CC.variable}"></span>Переменные</span></div>
     </div>
-    <div class="ccrd"><div class="ctitle">📈 Остаток (за вычетом долгов)</div>
+    <div class="ccrd"><div class="ctitle">📈 Остаток (за вычетом кредитов)</div>
       <div class="lchrt"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="overflow:visible">
         <line x1="0" y1="${85-((0-minB)/rng)*75}" x2="100" y2="${85-((0-minB)/rng)*75}" stroke="#374151" stroke-width="0.4" stroke-dasharray="2,2"/>
         <polyline points="${pts}" fill="none" stroke="${CC.balance}" stroke-width="0.9" vector-effect="non-scaling-stroke"/>
@@ -945,7 +976,7 @@ function renderTrends() {
       </svg></div>
       <div class="prog-leg" style="margin-top:6px">${td.map(d=>`<span style="font-size:8px;color:var(--muted)">${d.lbl}</span>`).join(' ')}</div>
     </div>
-    <div class="avgrid">${avgs.map(([l,v,c])=>`<div class="stat" style="border-left-color:${c}"><div class="stat-lbl">${l}</div><div class="stat-val" style="color:${c};font-size:13px">${fmtN(v)}</div></div>`).join('')}</div>`;
+    <div class="avgrid">${avgs.map(([l,v,c])=>`<div class="stat" style="border-left-color:${c}"><div class="stat-lbl">${l}</div><div class="stat-val" style="color:${c}">${fmtN(v)}</div></div>`).join('')}</div>`;
 }
 
 // ─── RENDER DEBTS ─────────────────────────────────────────────────────────────
@@ -956,14 +987,14 @@ function renderDebts() {
       <div class="dmeta"><span>Осталось: <b style="color:white">${d.payments_left}</b></span><span>В мес.: <b style="color:white;font-family:monospace">${fmtN(d.monthly)}</b></span></div>
       <div class="dbar"><div class="dbar-f" style="width:${p}%"></div></div></div>`;
   }).join('');
-  const form=addDebtMode?`<div class="dform"><div style="font-size:11px;color:var(--muted);margin-bottom:5px">Новый долг</div><div class="dgrid"><input id="dN" placeholder="Название" class="sp2"/><input id="dT" type="number" placeholder="Сумма долга"/><input id="dM" type="number" placeholder="Платёж в мес."/><input id="dL" type="number" placeholder="Выплат осталось"/></div><button class="bpurp" id="dOK">Добавить</button><button class="bcanc" id="dCanc" style="margin-left:5px">Отмена</button></div>`:`<button class="add-trig2" id="addDebtBtn">+ Добавить долг</button>`;
+  const form=addDebtMode?`<div class="dform"><div style="font-size:11px;color:var(--muted);margin-bottom:5px">Новый кредит</div><div class="dgrid"><input id="dN" placeholder="Название" class="sp2"/><input id="dT" type="number" placeholder="Сумма кредита"/><input id="dM" type="number" placeholder="Платёж в мес."/><input id="dL" type="number" placeholder="Выплат осталось"/></div><button class="bpurp" id="dOK">Добавить</button><button class="bcanc" id="dCanc" style="margin-left:5px">Отмена</button></div>`:`<button class="add-trig2" id="addDebtBtn">+ Добавить кредит</button>`;
   const data=getBudgetData(), histK=sortK(Object.keys(data)).filter(k=>(data[k].debts||[]).length>0).slice(-12).reverse();
 
   document.getElementById('mainContent').innerHTML = `
-    <div class="scard2" style="border-top-color:${CC.debt};margin-bottom:8px"><div class="shead"><div class="stitle">💳 Долги — ${fmtK(selMonth)}</div><div class="stotal" style="color:${CC.debt}">${fmtN(totDebt)}</div></div>
-      ${debts.length===0?'<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Нет долгов</p>':''}${rows}${form}
+    <div class="scard2" style="border-top-color:${CC.debt};margin-bottom:8px"><div class="shead"><div class="stitle">💳 Кредиты — ${fmtK(selMonth)}</div><div class="stotal" style="color:${CC.debt}">${fmtN(totDebt)}</div></div>
+      ${debts.length===0?'<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Нет кредитов</p>':''}${rows}${form}
     </div>
-    <div class="ccrd"><div class="ctitle">📅 История долгов</div><div style="overflow-x:auto"><table class="dhist" style="width:100%;border-collapse:collapse"><thead><tr><th>Месяц</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>
+    <div class="ccrd"><div class="ctitle">📅 История кредитов</div><div style="overflow-x:auto"><table class="dhist" style="width:100%;border-collapse:collapse"><thead><tr><th>Месяц</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>
       ${histK.map(k=>{const t=(data[k].debts||[]).reduce((s,d)=>s+(d.total||0),0);return`<tr data-hm="${k}"><td>${fmtK(k)}</td><td>${data[k].debts.length}</td><td style="color:${CC.debt};font-family:monospace">${fmtN(t)}</td></tr>`;}).join('')}
     </tbody></table></div></div>`;
 
