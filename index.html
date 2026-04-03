@@ -4,721 +4,1042 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Семейный Бюджет</title>
-
-<!-- PWA Meta -->
 <meta name="theme-color" content="#0b0f1a"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Бюджет"/>
-<meta name="description" content="Семейный финансовый трекер"/>
-
-<!-- Apple Touch Icon (SVG -> inline data URI) -->
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322c55e'/%3E%3Cstop offset='1' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' font-family='Arial'>₪%3C/text%3E%3C/svg%3E"/>
-
-<!-- Inline PWA Manifest -->
-<link rel="manifest" id="manifest-link"/>
-
+<link rel="manifest" id="mlink"/>
+<link rel="apple-touch-icon" id="ati"/>
 <style>
-:root {
-  --bg: #0b0f1a; --card: #111827; --card2: #1a2236; --border: #1f2937;
-  --text: #cbd5e1; --muted: #6b7280; --white: #f1f5f9;
-  --green: #4ade80; --red: #f87171; --orange: #fb923c;
-  --blue: #60a5fa; --purple: #a78bfa; --yellow: #fbbf24;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { background: var(--bg); }
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; min-height: -webkit-fill-available; padding-bottom: env(safe-area-inset-bottom, 16px); }
-::-webkit-scrollbar { width: 3px; height: 3px; }
-::-webkit-scrollbar-track { background: var(--card); }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+:root{--bg:#0b0f1a;--card:#111827;--card2:#1a2236;--border:#1f2937;--text:#cbd5e1;--muted:#6b7280;--white:#f1f5f9}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg)}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--text);min-height:100vh;padding-bottom:env(safe-area-inset-bottom,16px)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--card)}::-webkit-scrollbar-thumb{background:#374151;border-radius:2px}
+input,button,select,textarea{font-family:inherit}
+.screen{display:none}.screen.active{display:block}
 
-/* Header */
-.header { background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 14px; position: sticky; top: 0; z-index: 100; }
-.header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.logo { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #22c55e, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 900; color: white; flex-shrink: 0; }
-.app-name { flex: 1; min-width: 100px; }
-.app-name h1 { font-size: 14px; font-weight: 700; color: var(--white); line-height: 1.2; }
-.app-name span { font-size: 10px; color: var(--muted); }
-.month-nav { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-.nav-arrow { width: 28px; height: 28px; background: var(--card2); border: 1px solid var(--border); border-radius: 7px; color: var(--white); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
-.nav-arrow:disabled { opacity: 0.3; }
-select.month-sel { background: var(--card2); color: var(--white); border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; font-size: 12px; cursor: pointer; outline: none; }
-.add-month { background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; font-size: 11px; cursor: pointer; white-space: nowrap; }
-.tabs { display: flex; gap: 3px; }
-.tab { padding: 5px 11px; border-radius: 7px; font-size: 11px; border: none; cursor: pointer; background: var(--card2); color: var(--muted); touch-action: manipulation; transition: all .15s; }
-.tab.active { background: #2563eb; color: white; }
-.install-btn { background: linear-gradient(135deg, #7c3aed, #2563eb); color: white; border: none; border-radius: 7px; padding: 5px 11px; font-size: 11px; cursor: pointer; display: none; align-items: center; gap: 4px; white-space: nowrap; }
-.install-btn.visible { display: flex; }
-.ios-hint { background: #1e3a5f; border: 1px solid #3b82f6; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; font-size: 11px; color: #93c5fd; display: none; }
-.ios-hint.visible { display: block; }
+/* SETUP */
+.setup-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px}
+.setup-logo{width:86px;height:86px;border-radius:22px;background:linear-gradient(135deg,#22c55e,#2563eb);display:flex;align-items:center;justify-content:center;font-size:46px;color:white;margin-bottom:20px;box-shadow:0 8px 36px rgba(34,197,94,.3)}
+.setup-h1{font-size:26px;font-weight:800;color:var(--white);text-align:center;margin-bottom:8px}
+.setup-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:32px;max-width:280px;line-height:1.6}
+.scard{background:var(--card);border-radius:18px;padding:24px;width:100%;max-width:370px;border:1px solid var(--border)}
+.scard h3{font-size:15px;font-weight:700;color:var(--white);margin-bottom:16px}
+.sinp{width:100%;background:var(--card2);color:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;outline:none;margin-bottom:10px;transition:border-color .15s}
+.sinp:focus{border-color:#3b82f6}
+.sinp::placeholder{color:var(--muted)}
+.sinp-hint{font-size:10px;color:var(--muted);margin:-6px 0 10px 4px;line-height:1.4}
+.sbtn{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s;margin-top:4px}
+.sbtn:hover{opacity:.85}
+.sbtn-green{background:linear-gradient(135deg,#16a34a,#2563eb);color:white}
+.sbtn-purple{background:linear-gradient(135deg,#7c3aed,#2563eb);color:white}
+.sbtn-gray{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.or-div{display:flex;align-items:center;gap:10px;margin:14px 0}
+.or-div hr{flex:1;border:none;border-top:1px solid var(--border)}
+.or-div span{font-size:11px;color:var(--muted)}
+.back-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:16px}
+.back-btn:hover{color:var(--white)}
+.hint-box{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:#93c5fd;line-height:1.6}
+.code-box{background:var(--card2);border:2px dashed #374151;border-radius:10px;padding:16px;text-align:center;margin:12px 0;cursor:pointer}
+.code-box:hover{border-color:#3b82f6}
+.code-box code{font-size:10px;color:#60a5fa;word-break:break-all;font-family:monospace;line-height:1.7;display:block}
+.code-box small{font-size:10px;color:var(--muted);margin-top:6px;display:block}
+.success-icon{font-size:40px;text-align:center;margin-bottom:12px}
+.members-preview{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.member-row{background:var(--card2);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text)}
+.mbadge{width:8px;height:8px;border-radius:50%;background:#4ade80}
 
-/* Layout */
-.main { max-width: 900px; margin: 0 auto; padding: 12px 12px; }
+/* HEADER */
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:9px 14px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#22c55e,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:white;flex-shrink:0}
+.app-name{flex:1;min-width:80px}
+.app-name h1{font-size:12px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:5px;line-height:1.3}
+.ver-badge{font-size:9px;color:#374151;background:#1f2937;padding:1px 5px;border-radius:3px;font-family:monospace}
+.app-name .sub{font-size:10px;color:var(--muted)}
+.nav-arr{width:26px;height:26px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.nav-arr:disabled{opacity:.3}
+select.msel{background:var(--card2);color:var(--white);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;outline:none}
+.add-m{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;white-space:nowrap}
+.tabs{display:flex;gap:3px}
+.tab{padding:4px 10px;border-radius:6px;font-size:10px;border:none;cursor:pointer;background:var(--card2);color:var(--muted);transition:all .15s}
+.tab.active{background:#2563eb;color:white}
+.sync-wrap{display:flex;align-items:center;gap:5px}
+.sync-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.sync-btn:hover{background:var(--card2);color:var(--white)}
+.s-ok{color:#4ade80}.s-err{color:#f87171}.s-spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.user-badge{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:10px;color:var(--white);display:flex;align-items:center;gap:4px;cursor:pointer}
+.user-badge:hover{border-color:#3b82f6}
+.udot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
+.install-btn{background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;display:none;align-items:center;gap:3px;white-space:nowrap}
+.install-btn.vis{display:flex}
+.ios-hint{background:#1e3a5f;border:1px solid #3b82f6;border-radius:8px;padding:8px 12px;margin:8px 12px 0;font-size:11px;color:#93c5fd;display:none}
+.ios-hint.vis{display:block}
 
-/* Stats */
-.stats-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 10px; }
-@media(max-width:700px){ .stats-grid { grid-template-columns: repeat(3,1fr); } }
-@media(max-width:420px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
-.stat { background: var(--card); border-radius: 12px; padding: 11px 12px; border-left: 3px solid; }
-.stat-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
-.stat-value { font-size: 17px; font-weight: 700; font-family: 'Courier New', monospace; }
-
-/* Progress */
-.progress-card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-.prog-title { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 7px; }
-.prog-bar { height: 10px; background: #1f2937; border-radius: 5px; overflow: hidden; display: flex; }
-.prog-seg { transition: width .4s; }
-.prog-legend { display: flex; gap: 12px; margin-top: 7px; font-size: 10px; color: var(--muted); flex-wrap: wrap; }
-.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: middle; }
-
-/* 3-col grid */
-.col3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-@media(max-width:640px){ .col3 { grid-template-columns: 1fr; } }
-
-/* Section cards */
-.sec-card { background: var(--card); border-radius: 14px; padding: 12px; border-top: 3px solid; }
-.sec-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; cursor: pointer; user-select: none; }
-.sec-head-left { display: flex; align-items: center; gap: 8px; flex: 1; }
-.sec-title { font-size: 13px; font-weight: 700; color: var(--white); }
-.sec-total { font-size: 14px; font-weight: 700; font-family: monospace; }
-.collapse-btn { font-size: 13px; color: var(--muted); transition: transform .25s; display: inline-block; line-height: 1; }
-.collapsed .collapse-btn { transform: rotate(-90deg); }
-.items { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; transition: max-height .25s; }
-.collapsed .items { max-height: 0; overflow: hidden; }
-.collapsed .add-trig, .collapsed .add-row { display: none; }
-.item { display: flex; align-items: center; justify-content: space-between; padding: 5px 6px; border-radius: 7px; }
-.item:hover { background: var(--card2); }
-.item-name { font-size: 14px; color: #cbd5e1; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; }
-.item-right { display: flex; align-items: center; gap: 3px; }
-.item-amt { font-size: 14px; font-family: monospace; cursor: pointer; padding: 2px 5px; border-radius: 5px; transition: background .1s; white-space: nowrap; }
-.item-amt:hover { background: #374151; color: white; }
-.del { color: #f87171; font-size: 10px; cursor: pointer; background: none; border: none; opacity: 0; padding: 0 2px; transition: opacity .15s; }
-.item:hover .del { opacity: 1; }
-.edit-in { width: 70px; background: #374151; color: white; border: 1px solid #3b82f6; border-radius: 5px; padding: 2px 5px; font-size: 11px; font-family: monospace; outline: none; text-align: right; }
-.add-row { display: flex; gap: 4px; margin-top: 8px; }
-.add-row input { flex: 1; background: var(--card2); color: white; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 11px; outline: none; min-width: 0; }
-.add-row input:focus { border-color: #3b82f6; }
-.add-row input[type=number] { width: 72px; flex: none; }
-.btn-ok { background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 9px; font-size: 11px; cursor: pointer; }
-.btn-cancel { background: #374151; color: var(--text); border: none; border-radius: 6px; padding: 5px 9px; font-size: 11px; cursor: pointer; }
-.add-trig { margin-top: 7px; font-size: 10px; color: var(--muted); cursor: pointer; padding: 3px 6px; border-radius: 6px; background: none; border: none; transition: all .1s; touch-action: manipulation; }
-.add-trig:hover { background: var(--card2); color: var(--text); }
-
-/* Charts */
-.chart-card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
-.chart-title { font-size: 12px; font-weight: 700; color: var(--white); margin-bottom: 12px; }
-.chart-bars { display: flex; align-items: flex-end; gap: 3px; height: 160px; padding: 0; overflow-x: auto; }
-.bar-group { flex: 1; min-width: 28px; display: flex; flex-direction: column; align-items: center; gap: 0; }
-.bar-cols { display: flex; align-items: flex-end; gap: 1px; height: 140px; width: 100%; }
-.bar-col { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; transition: height .3s; cursor: pointer; }
-.bar-label { font-size: 8px; color: var(--muted); margin-top: 3px; text-align: center; }
-.line-chart { position: relative; height: 90px; margin: 0 4px; }
-.line-chart svg { width: 100%; height: 100%; }
-.avgs { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
-@media(max-width:580px){ .avgs { grid-template-columns: repeat(2,1fr); } }
-
-/* Debts */
-.debt-item { background: var(--card2); border-radius: 11px; padding: 11px; margin-bottom: 7px; }
-.debt-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.debt-name { font-size: 12px; font-weight: 600; color: var(--white); }
-.debt-meta { display: flex; gap: 12px; font-size: 10px; color: var(--muted); margin-bottom: 7px; flex-wrap: wrap; }
-.debt-prog { height: 4px; background: #374151; border-radius: 2px; overflow: hidden; }
-.debt-fill { height: 100%; background: var(--purple); border-radius: 2px; }
-.debt-del { color: var(--red); cursor: pointer; font-size: 11px; background: none; border: none; opacity: 0; padding: 0 3px; }
-.debt-item:hover .debt-del { opacity: 1; }
-.debt-form { background: var(--card2); border-radius: 11px; padding: 12px; margin-top: 8px; }
-.debt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
-.debt-grid input { background: #374151; color: white; border: 1px solid #4b5563; border-radius: 7px; padding: 7px 9px; font-size: 11px; outline: none; }
-.debt-grid input:focus { border-color: var(--purple); }
-.debt-grid .span2 { grid-column: 1/-1; }
-.btn-purple { background: #7c3aed; color: white; border: none; border-radius: 7px; padding: 7px 16px; font-size: 11px; cursor: pointer; }
-.debt-hist th { color: var(--muted); font-size: 10px; padding: 4px 8px; font-weight: 500; text-align: right; }
-.debt-hist th:first-child { text-align: left; }
-.debt-hist td { padding: 5px 8px; font-size: 11px; text-align: right; cursor: pointer; }
-.debt-hist td:first-child { text-align: left; color: var(--text); }
-.debt-hist tr:hover td { background: var(--card2); }
-
-/* Toast */
-.toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom,0px)); left: 50%; transform: translateX(-50%) translateY(80px); background: #1e3a5f; border: 1px solid #3b82f6; color: #93c5fd; padding: 10px 20px; border-radius: 20px; font-size: 12px; transition: transform .3s; z-index: 999; white-space: nowrap; }
-.toast.show { transform: translateX(-50%) translateY(0); }
-
-/* Version badge */
-.ver { font-size: 9px; color: #374151; background: #1f2937; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+/* MAIN */
+.main{max-width:900px;margin:0 auto;padding:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+@media(max-width:650px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:400px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border-radius:10px;padding:10px 11px;border-left:3px solid}
+.stat-lbl{font-size:9px;color:var(--muted);margin-bottom:3px}
+.stat-val{font-size:15px;font-weight:700;font-family:'Courier New',monospace}
+.prog-card{background:var(--card);border-radius:11px;padding:11px;margin-bottom:8px}
+.prog-title{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:6px}
+.prog-bar{height:9px;background:#1f2937;border-radius:5px;overflow:hidden;display:flex}
+.pseg{transition:width .4s}
+.prog-leg{display:flex;gap:10px;margin-top:6px;font-size:10px;color:var(--muted);flex-wrap:wrap}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+.col3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+@media(max-width:600px){.col3{grid-template-columns:1fr}}
+.scard2{background:var(--card);border-radius:13px;padding:11px;border-top:3px solid}
+.shead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;cursor:pointer;user-select:none}
+.shead-l{display:flex;align-items:center;gap:7px;flex:1}
+.stitle{font-size:12px;font-weight:700;color:var(--white)}
+.stotal{font-size:13px;font-weight:700;font-family:monospace}
+.cbtn2{font-size:12px;color:var(--muted);transition:transform .2s;display:inline-block;line-height:1}
+.collapsed2 .cbtn2{transform:rotate(-90deg)}
+.items2{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+.collapsed2 .items2{max-height:0;overflow:hidden}
+.collapsed2 .add-trig2,.collapsed2 .add-row2{display:none}
+.item2{display:flex;align-items:center;justify-content:space-between;padding:5px 5px;border-radius:6px}
+.item2:hover{background:var(--card2)}
+.iname{font-size:13px;color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:5px}
+.iright{display:flex;align-items:center;gap:2px}
+.iamt{font-size:13px;font-family:monospace;cursor:pointer;padding:2px 4px;border-radius:4px;transition:background .1s;white-space:nowrap}
+.iamt:hover{background:#374151;color:white}
+.del2{color:#f87171;font-size:9px;cursor:pointer;background:none;border:none;opacity:0;padding:0 2px}
+.item2:hover .del2{opacity:1}
+.ein{width:68px;background:#374151;color:white;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;font-family:monospace;outline:none;text-align:right}
+.add-row2{display:flex;gap:3px;margin-top:7px}
+.add-row2 input{flex:1;background:var(--card2);color:white;border:1px solid var(--border);border-radius:5px;padding:5px 7px;font-size:11px;outline:none;min-width:0}
+.add-row2 input:focus{border-color:#3b82f6}
+.add-row2 input[type=number]{width:65px;flex:none}
+.bok{background:#2563eb;color:white;border:none;border-radius:5px;padding:5px 8px;font-size:11px;cursor:pointer}
+.bcanc{background:#374151;color:var(--text);border:none;border-radius:5px;padding:5px 8px;font-size:11px;cursor:pointer}
+.add-trig2{margin-top:6px;font-size:10px;color:var(--muted);cursor:pointer;padding:3px 5px;border-radius:5px;background:none;border:none}
+.add-trig2:hover{background:var(--card2);color:var(--text)}
+.ccrd{background:var(--card);border-radius:13px;padding:13px;margin-bottom:9px}
+.ctitle{font-size:12px;font-weight:700;color:var(--white);margin-bottom:10px}
+.cbars{display:flex;align-items:flex-end;gap:3px;height:150px;overflow-x:auto}
+.bgrp{flex:1;min-width:26px;display:flex;flex-direction:column;align-items:center}
+.bcols{display:flex;align-items:flex-end;gap:1px;height:130px;width:100%}
+.bcol{flex:1;border-radius:2px 2px 0 0;min-height:2px}
+.blbl{font-size:8px;color:var(--muted);margin-top:3px;text-align:center}
+.lchrt{position:relative;height:85px;margin:0 4px}
+.lchrt svg{width:100%;height:100%}
+.avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+@media(max-width:550px){.avgrid{grid-template-columns:repeat(2,1fr)}}
+.ditm{background:var(--card2);border-radius:10px;padding:10px;margin-bottom:6px}
+.dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.dname{font-size:12px;font-weight:600;color:var(--white)}
+.dmeta{display:flex;gap:10px;font-size:10px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
+.dbar{height:4px;background:#374151;border-radius:2px;overflow:hidden}
+.dbar-f{height:100%;background:#a78bfa;border-radius:2px}
+.ddel{color:#f87171;cursor:pointer;font-size:11px;background:none;border:none;opacity:0;padding:0 3px}
+.ditm:hover .ddel{opacity:1}
+.dform{background:var(--card2);border-radius:10px;padding:11px;margin-top:7px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:7px 0}
+.dgrid input{background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;padding:6px 8px;font-size:11px;outline:none}
+.dgrid input:focus{border-color:#a78bfa}
+.dgrid .sp2{grid-column:1/-1}
+.bpurp{background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;cursor:pointer}
+.dhist th{color:var(--muted);font-size:10px;padding:4px 8px;font-weight:500;text-align:right}
+.dhist th:first-child{text-align:left}
+.dhist td{padding:5px 8px;font-size:11px;text-align:right;cursor:pointer}
+.dhist td:first-child{text-align:left;color:var(--text)}
+.dhist tr:hover td{background:var(--card2)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e3a5f;border:1px solid #3b82f6;color:#93c5fd;padding:9px 18px;border-radius:18px;font-size:11px;transition:transform .3s;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+/* Settings modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border-radius:18px;padding:24px;width:100%;max-width:380px;border:1px solid var(--border);max-height:90vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:700;color:var(--white);margin-bottom:16px}
+.mclose{float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;margin-top:-4px}
+.mclose:hover{color:var(--white)}
+.fcode-box{background:var(--card2);border:1px dashed #374151;border-radius:10px;padding:14px;cursor:pointer;margin-bottom:12px}
+.fcode-box:hover{border-color:#3b82f6}
+.fcode-box code{font-size:9px;color:#60a5fa;word-break:break-all;font-family:monospace;line-height:1.8;display:block}
+.fcode-box small{font-size:10px;color:var(--muted);display:block;margin-top:4px}
+.mlabel{font-size:11px;color:var(--muted);margin-bottom:6px;margin-top:12px}
+.member-chip{background:var(--card2);border-radius:8px;padding:6px 12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin-bottom:5px}
+.mchip-dot{width:8px;height:8px;border-radius:50%;background:#4ade80}
+.mchip-you{font-size:9px;color:#60a5fa;margin-left:auto}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-inner">
-    <div class="logo">₪</div>
-    <div class="app-name">
-      <h1>Семейный Бюджет <span class="ver" id="verBadge">v1.2.0</span></h1>
-      <span id="monthCount">загрузка...</span>
+<!-- ═══ SETUP SCREEN ═══ -->
+<div id="screenSetup" class="screen active">
+  <div class="setup-wrap">
+    <div class="setup-logo">₪</div>
+    <h1 class="setup-h1">Семейный Бюджет</h1>
+    <p class="setup-sub">Финансовый трекер с синхронизацией через GitHub</p>
+
+    <!-- sub: welcome -->
+    <div id="subWelcome" class="scard">
+      <h3>👋 Добро пожаловать!</h3>
+      <button class="sbtn sbtn-green" onclick="showSub('subCreate')">
+        ➕ Создать семью (новый аккаунт)
+      </button>
+      <div class="or-div"><hr/><span>или</span><hr/></div>
+      <button class="sbtn sbtn-purple" onclick="showSub('subJoin')">
+        🔗 Присоединиться к семье
+      </button>
     </div>
-    <div class="month-nav">
-      <button class="nav-arrow" id="prevBtn">‹</button>
-      <select class="month-sel" id="monthSel"></select>
-      <button class="nav-arrow" id="nextBtn">›</button>
-      <button class="add-month" id="addMonthBtn">+ Месяц</button>
+
+    <!-- sub: create -->
+    <div id="subCreate" class="scard" style="display:none">
+      <button class="back-btn" onclick="showSub('subWelcome')">← Назад</button>
+      <h3>➕ Создать семью</h3>
+      <div class="hint-box">
+        Для синхронизации через GitHub нужен <b>Personal Access Token</b>
+        с правами на <b>Gist</b>.<br/>
+        Создайте на: <b>github.com → Settings → Developer settings → Tokens (classic)</b>
+        → выберите scope <b>gist</b>.
+      </div>
+      <input class="sinp" id="cFamilyName" placeholder="Название семьи (напр. Наша семья)" maxlength="40"/>
+      <input class="sinp" id="cUserName" placeholder="Ваше имя (напр. Дима)" maxlength="30"/>
+      <input class="sinp" id="cToken" placeholder="GitHub Token (ghp_...)" type="password" autocomplete="off"/>
+      <div class="sinp-hint">Токен будет зашифрован и сохранён только на вашем устройстве</div>
+      <button class="sbtn sbtn-green" onclick="createFamily()">🚀 Создать семью</button>
     </div>
-    <div class="tabs">
-      <button class="tab active" data-view="month">📊</button>
-      <button class="tab" data-view="trends">📈</button>
-      <button class="tab" data-view="debts">💳</button>
+
+    <!-- sub: created -->
+    <div id="subCreated" class="scard" style="display:none">
+      <div class="success-icon">🎉</div>
+      <h3>Семья создана!</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        Поделитесь этим кодом с членами семьи, чтобы они могли присоединиться:
+      </p>
+      <div class="code-box" onclick="copyFamilyCode()" id="familyCodeDisplay">
+        <code id="familyCodeText">—</code>
+        <small>📋 Нажмите, чтобы скопировать</small>
+      </div>
+      <button class="sbtn sbtn-green" onclick="enterApp()">✅ Начать работу</button>
     </div>
-    <button class="install-btn" id="installBtn">📲 Установить</button>
+
+    <!-- sub: join -->
+    <div id="subJoin" class="scard" style="display:none">
+      <button class="back-btn" onclick="showSub('subWelcome')">← Назад</button>
+      <h3>🔗 Присоединиться к семье</h3>
+      <input class="sinp" id="jCode" placeholder="Семейный код (от администратора)" autocomplete="off"/>
+      <input class="sinp" id="jUserName" placeholder="Ваше имя (напр. Оксана)" maxlength="30"/>
+      <button class="sbtn sbtn-purple" onclick="joinFamily()">🔗 Присоединиться</button>
+    </div>
+
   </div>
 </div>
 
-<div id="iosHint" class="ios-hint" style="margin:8px 12px 0">
-  📱 <b>iOS:</b> Нажмите <b>«Поделиться»</b> (□↑) → <b>«На экран Домой»</b> для установки приложения
+<!-- ═══ MAIN APP ═══ -->
+<div id="screenApp" class="screen">
+
+  <div id="iosHint" class="ios-hint">
+    📱 <b>iOS:</b> Нажмите «Поделиться» (□↑) → «На экран Домой» для установки
+  </div>
+
+  <div class="header">
+    <div class="header-inner">
+      <div class="logo">₪</div>
+      <div class="app-name">
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.0.0</span></h1>
+        <div class="sub" id="hSubTitle">Загрузка...</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <button class="nav-arr" id="prevBtn">‹</button>
+        <select class="msel" id="monthSel"></select>
+        <button class="nav-arr" id="nextBtn">›</button>
+        <button class="add-m" id="addMonthBtn">+ Мес.</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-view="month">📊</button>
+        <button class="tab" data-view="trends">📈</button>
+        <button class="tab" data-view="debts">💳</button>
+      </div>
+      <div class="sync-wrap">
+        <button class="sync-btn" id="syncBtn" onclick="syncNow()">
+          <span id="syncIcon">☁</span>
+          <span id="syncText">Синхр.</span>
+        </button>
+        <div class="user-badge" onclick="openSettings()" id="userBadge">
+          <span class="udot"></span>
+          <span id="userNameBadge">...</span>
+          ⚙
+        </div>
+        <button class="install-btn" id="installBtn">📲</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div id="mainContent"></div>
+  </div>
 </div>
 
-<div class="main">
-  <div class="stats-grid" id="statsGrid"></div>
-  <div id="mainContent"></div>
+<!-- Settings modal -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <button class="mclose" onclick="closeSettings()">×</button>
+    <h3>⚙ Настройки</h3>
+    <div class="mlabel">Семейный код (для приглашения)</div>
+    <div class="fcode-box" onclick="copyFamilyCode()" id="settingsFamilyCode">
+      <code id="settingsFamilyCodeText">—</code>
+      <small>📋 Нажмите, чтобы скопировать</small>
+    </div>
+    <div class="mlabel">Члены семьи</div>
+    <div id="membersList"></div>
+    <div class="mlabel">Ваше имя</div>
+    <input class="sinp" id="changeNameInp" placeholder="Изменить имя..."/>
+    <button class="sbtn sbtn-green" style="margin-top:6px" onclick="changeName()">Сохранить имя</button>
+    <button class="sbtn sbtn-gray" style="margin-top:8px" onclick="leaveFamily()">🚪 Выйти из семьи</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VERSION = '1.2.0';
-const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-const C = { income:'#4ade80', fixed:'#f87171', variable:'#fb923c', balance:'#60a5fa', debt:'#a78bfa' };
+const APP_VER = '2.0.0';
+const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const CC = {income:'#4ade80',fixed:'#f87171',variable:'#fb923c',balance:'#60a5fa',debt:'#a78bfa'};
 
-// ─── PWA Manifest ───────────────────────────────────────────────────────────
-const MANIFEST = {
-  name: "Семейный Бюджет",
-  short_name: "Бюджет",
-  description: "Семейный финансовый трекер",
-  start_url: "./",
-  display: "standalone",
-  background_color: "#0b0f1a",
-  theme_color: "#0b0f1a",
-  orientation: "any",
-  lang: "ru",
-  icons: [
-    { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322c55e'/%3E%3Cstop offset='1' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' font-family='Arial'>%E2%82%AA%3C/text%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" },
-    { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322c55e'/%3E%3Cstop offset='1' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' font-family='Arial'>%E2%82%AA%3C/text%3E%3C/svg%3E", sizes: "512x512", type: "image/svg+xml" }
-  ]
-};
-
-try {
-  const blob = new Blob([JSON.stringify(MANIFEST)], {type:'application/manifest+json'});
-  document.getElementById('manifest-link').href = URL.createObjectURL(blob);
-} catch(e) {}
-
-// ─── Service Worker ──────────────────────────────────────────────────────────
-const SW_CODE = `
-const CACHE = 'budget-v${APP_VERSION}';
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./']).catch(()=>{})));
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(()=>new Response('Offline', {status:503}))));
-});
-`;
-try {
-  const swBlob = new Blob([SW_CODE], {type:'application/javascript'});
-  const swURL = URL.createObjectURL(swBlob);
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(swURL, {scope: './'}).catch(()=>{});
-  }
-} catch(e) {}
-
-// ─── Install Prompt ──────────────────────────────────────────────────────────
-let deferredPrompt = null;
-const installBtn = document.getElementById('installBtn');
-const iosHint = document.getElementById('iosHint');
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.classList.add('visible');
-});
-
-installBtn.addEventListener('click', async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    installBtn.classList.remove('visible');
-    if (outcome === 'accepted') showToast('✅ Приложение установлено!');
-  }
-});
-
-window.addEventListener('appinstalled', () => {
-  installBtn.classList.remove('visible');
-  showToast('✅ Приложение успешно установлено!');
-});
-
-// iOS detection
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-const isInStandalone = window.navigator.standalone;
-if (isIOS && !isInStandalone) {
-  iosHint.classList.add('visible');
+// ─── ICON GENERATION (no Google badge - proper maskable PNG) ──────────────────
+function makeIcon(size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  // Full bleed background for maskable icon (no rounded corners - mask handles it)
+  const g = ctx.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, '#16a34a');
+  g.addColorStop(0.5, '#1d4ed8');
+  g.addColorStop(1, '#7c3aed');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  // Subtle inner glow
+  const g2 = ctx.createRadialGradient(size*0.4, size*0.35, 0, size/2, size/2, size*0.6);
+  g2.addColorStop(0, 'rgba(255,255,255,0.15)');
+  g2.addColorStop(1, 'rgba(0,0,0,0.1)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, size, size);
+  // ₪ symbol — bold, centered, white
+  ctx.fillStyle = 'white';
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = size * 0.06;
+  ctx.font = `900 ${Math.round(size * 0.54)}px Arial, 'Segoe UI'`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('₪', size / 2, size / 2 + size * 0.03);
+  return c.toDataURL('image/png');
 }
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-const INITIAL = {
-  "02_25":{"income":{"Зарплата":29850,"Детские деньги":270,"Возврат за тиюль":250},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Сигареты":2000,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5033,"Рестораны":1000,"Концерты":320,"Леон Турнир":1200,"Дети":65,"Дни рождения":880,"Стоянка":64,"Учитель":560,"Temu":135},"debts":[],"edp_target":15000},
-  "03_25":{"income":{"Зарплата":29850,"Детские деньги":270,"Налоговая":6137},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Сигареты":2000,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":4052,"Рестораны":1008,"Концерты":1142,"Леон Турнир":550,"Дети":954,"Дни рождения":795,"Стоянка":32,"Учитель":1328,"Уборщица":350,"Проезд":400,"Хоз. товары":540,"Одежда":655,"Путешествия":4142,"Маникюр":330},"debts":[{"name":"Холодильник","total":4365,"payments_left":11,"monthly":181}],"edp_target":15000},
-  "04_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9850,"Детские деньги":270,"Доп. доход":500},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":5057,"Рестораны":1220,"Маникюр":380,"Дети":862,"Дни рождения":374,"Стоянка":223,"Учитель":927,"Temu":121,"Уборщица":860,"Проезд":201,"Хоз. товары":279,"Врач":923,"Одежда":798},"debts":[{"name":"Холодильник","total":4365,"payments_left":10,"monthly":181}],"edp_target":15000},
-  "05_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9850,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5006,"Рестораны":1630,"Маникюр":915,"Дети":1131,"Дни рождения":730,"Стоянка":24,"Учитель":907,"Temu":140,"Проезд":365,"Хоз. товары":843,"Одежда":2740,"Путешествия":2570,"Сигареты":3028},"debts":[{"name":"Холодильник","total":4365,"payments_left":9,"monthly":181},{"name":"Греция","total":12400,"payments_left":2,"monthly":6200}],"edp_target":15000},
-  "06_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9935,"Детские деньги":270,"Доп. доход":3150},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":7520,"Рестораны":1000,"Маникюр":170,"Дети":1015,"Дни рождения":2650,"Стоянка":227,"Учитель":620,"Проезд":315,"Хоз. товары":1245,"Одежда":597,"Сигареты":3368},"debts":[{"name":"Холодильник","total":4365,"payments_left":8,"monthly":181},{"name":"Греция","total":12400,"payments_left":1,"monthly":6200}],"edp_target":15000},
-  "07_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":3215,"Маникюр":450,"Дети":151,"Дни рождения":997,"Temu":72,"Проезд":140,"Хоз. товары":1635,"Врач":75,"Одежда":520,"Путешествия":2559,"Сигареты":710},"debts":[{"name":"Холодильник","total":4365,"payments_left":7,"monthly":181},{"name":"Ташкент","total":11263,"payments_left":3,"monthly":3754}],"edp_target":15000},
-  "08_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":12140,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5909,"Рестораны":1595,"Маникюр":330,"Дети":280,"Дни рождения":2511,"Temu":308,"Уборщица":550,"Проезд":314,"Хоз. товары":403,"Врач":639,"Одежда":1353,"Сигареты":3050},"debts":[{"name":"Холодильник","total":4365,"payments_left":6,"monthly":181},{"name":"Ташкент","total":11263,"payments_left":2,"monthly":3754}],"edp_target":15000},
-  "09_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":3761,"Рестораны":123,"Маникюр":165,"Дети":350,"Дни рождения":100,"Стоянка":22,"Учитель":280,"Проезд":415,"Врач":952,"Одежда":400,"Путешествия":2800,"Сигареты":1911},"debts":[{"name":"Холодильник","total":4365,"payments_left":5,"monthly":181},{"name":"Ташкент","total":11263,"payments_left":1,"monthly":3754}],"edp_target":15000},
-  "10_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":6865,"Рестораны":1106,"Концерты":140,"Маникюр":170,"Дети":911,"Дни рождения":800,"Учитель":880,"Temu":730,"Проезд":50,"Хоз. товары":296,"Врач":54,"Путешествия":155,"Сигареты":3275},"debts":[{"name":"Холодильник","total":4365,"payments_left":4,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":7,"monthly":375}],"edp_target":15000},
-  "11_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":560,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify":22,"Chat GPT":65,"Макаби страховка":175,"Страховки Дима":917,"Страховки Оксана":33,"Mifal Pais":60,"Google Disk":14},"variable":{"Супермаркет":5300,"Рестораны":1236,"Маникюр":820,"Дни рождения":1725,"Стоянка":45,"Учитель":420,"Проезд":507,"Хоз. товары":550,"Врач":23,"Одежда":620,"Путешествия":200,"Сигареты":3355,"Развлечения":220},"debts":[{"name":"Холодильник","total":4365,"payments_left":3,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":6,"monthly":375},{"name":"Школа","total":2521,"payments_left":6,"monthly":420}],"edp_target":15000},
-  "12_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4237,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":220,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Chat GPT":65,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129},"variable":{"Супермаркет":6085,"Рестораны":325,"Концерты":560,"Дети разное":145,"Дни рождения":50,"Стоянка":320,"Учеба Дети":610,"Temu":162,"Проезд":315,"Хоз. товары":1105,"Врач":995,"Одежда":1500,"Путешествия":1740,"Сигареты":1985,"Развлечения":80,"Косметика":70,"Учеба Родители":1500},"debts":[{"name":"Холодильник","total":4365,"payments_left":2,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":5,"monthly":375},{"name":"Школа","total":2521,"payments_left":5,"monthly":420}],"edp_target":15000},
-  "01_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":5175,"Рестораны":227,"Концерты":885,"Маникюр":410,"Дети разное":515,"Дни рождения":1200,"Стоянка":30,"Учеба Дети":560,"Temu":320,"Проезд":520,"Хоз. товары":525,"Одежда":650,"Сигареты":3245,"Развлечения":500,"Косметика":305},"debts":[{"name":"Холодильник","total":4365,"payments_left":1,"monthly":181},{"name":"Очки Леон","total":750,"payments_left":2,"monthly":375},{"name":"Грузия тур","total":6075,"payments_left":3,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":4,"monthly":375},{"name":"Школа","total":2521,"payments_left":4,"monthly":420}],"edp_target":15000},
-  "02_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":5090,"Рестораны":200,"Дети разное":110,"Дни рождения":75,"Стоянка":150,"Учеба Дети":480,"Temu":210,"Проезд":370,"Одежда":265,"Сигареты":2985,"Развлечения":110,"Косметика":735,"Тами4":108},"debts":[{"name":"Очки Леон","total":750,"payments_left":1,"monthly":375},{"name":"Грузия тур","total":6075,"payments_left":2,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":3,"monthly":375},{"name":"Школа","total":2521,"payments_left":3,"monthly":420}],"edp_target":15000},
-  "03_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":8300,"Рестораны":1250,"Маникюр":640,"Дети разное":200,"Дни рождения":850,"Хоз. товары":660,"Врач":150,"Одежда":128,"Сигареты":3065,"Косметика":520},"debts":[{"name":"Грузия тур","total":6075,"payments_left":1,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":2,"monthly":375},{"name":"Школа","total":2521,"payments_left":2,"monthly":420}],"edp_target":15000},
-  "04_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":510,"Рестораны":0,"Маникюр":0,"Дети разное":0,"Дни рождения":0,"Стоянка":0,"Учеба Дети":0,"Temu":0,"Проезд":0,"Хоз. товары":0,"Врач":0,"Одежда":0,"Сигареты":0,"Косметика":0},"debts":[{"name":"Лига КадурЯд","total":3750,"payments_left":1,"monthly":375},{"name":"Школа","total":2521,"payments_left":1,"monthly":420}],"edp_target":15000}
+// ─── PWA SETUP ────────────────────────────────────────────────────────────────
+function setupPWA() {
+  const icon192 = makeIcon(192);
+  const icon512 = makeIcon(512);
+
+  // Set apple-touch-icon to proper PNG (no Google badge on iOS)
+  document.getElementById('ati').href = icon192;
+
+  // Build manifest with maskable icons (removes badge on Android)
+  const manifest = {
+    name: 'Семейный Бюджет',
+    short_name: 'Бюджет',
+    description: 'Семейный финансовый трекер',
+    start_url: './',
+    display: 'standalone',
+    background_color: '#0b0f1a',
+    theme_color: '#0b0f1a',
+    orientation: 'any',
+    lang: 'ru',
+    icons: [
+      { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    ]
+  };
+  try {
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    document.getElementById('mlink').href = URL.createObjectURL(blob);
+  } catch(e) {}
+
+  // Service Worker
+  const swCode = `
+const CV='budget-${APP_VER}';
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CV).then(c=>c.addAll(['./']).catch(()=>{})));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CV).map(k=>caches.delete(k)))));self.clients.claim();});
+self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});
+  `;
+  try {
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swURL = URL.createObjectURL(swBlob);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register(swURL, { scope: './' }).catch(() => {});
+  } catch(e) {}
+
+  // iOS hint
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone) {
+    document.getElementById('iosHint').classList.add('vis');
+  }
+
+  // Install button
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferredPrompt = e;
+    document.getElementById('installBtn').classList.add('vis');
+  });
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('installBtn').classList.remove('vis');
+    }
+  });
+}
+
+// ─── GITHUB GIST API ──────────────────────────────────────────────────────────
+const GH_API = 'https://api.github.com';
+const GH_FNAME = 'family_budget.json';
+
+async function ghCreateGist(token, description, data) {
+  const r = await fetch(`${GH_API}/gists`, {
+    method: 'POST',
+    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      description, public: false,
+      files: { [GH_FNAME]: { content: JSON.stringify(data, null, 2) } }
+    })
+  });
+  if (!r.ok) throw new Error(`GitHub error ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+async function ghReadGist(token, gistId) {
+  const r = await fetch(`${GH_API}/gists/${gistId}`, {
+    headers: { 'Authorization': `token ${token}` }
+  });
+  if (!r.ok) throw new Error(`Read error ${r.status}`);
+  const gist = await r.json();
+  const content = gist.files[GH_FNAME]?.content;
+  if (!content) throw new Error('No data file in Gist');
+  return JSON.parse(content);
+}
+
+async function ghUpdateGist(token, gistId, data) {
+  const r = await fetch(`${GH_API}/gists/${gistId}`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      files: { [GH_FNAME]: { content: JSON.stringify(data, null, 2) } }
+    })
+  });
+  if (!r.ok) throw new Error(`Update error ${r.status}`);
+  return r.json();
+}
+
+// ─── FAMILY CODE ENCODING ─────────────────────────────────────────────────────
+function encodeCode(gistId, token) {
+  return btoa(JSON.stringify({ g: gistId, t: token })).replace(/=/g, '');
+}
+function decodeCode(code) {
+  try {
+    // Add padding back
+    const padded = code + '==='.slice(0, (4 - code.length % 4) % 4);
+    return JSON.parse(atob(padded));
+  } catch(e) { return null; }
+}
+
+// ─── LOCAL STATE ──────────────────────────────────────────────────────────────
+const LS = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch(e) {} }
 };
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let DATA = JSON.parse(JSON.stringify(INITIAL));
+let CONFIG = null; // { gistId, token, familyName, userId, userName }
+let GIST_DATA = null; // { family_name, members, budget_data, last_updated, updated_by }
+let syncTimer = null;
+
+// ─── SETUP FLOWS ──────────────────────────────────────────────────────────────
+function showSub(id) {
+  ['subWelcome','subCreate','subCreated','subJoin'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? '' : 'none';
+  });
+}
+
+function genUID() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function genColor() {
+  const colors = ['#4ade80','#60a5fa','#fb923c','#f472b6','#a78bfa','#fbbf24','#34d399','#f87171'];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+async function createFamily() {
+  const familyName = document.getElementById('cFamilyName').value.trim();
+  const userName = document.getElementById('cUserName').value.trim();
+  const token = document.getElementById('cToken').value.trim();
+
+  if (!familyName || !userName || !token) {
+    toast('⚠ Заполните все поля'); return;
+  }
+  if (!token.startsWith('ghp_') && !token.startsWith('github_pat_') && token.length < 20) {
+    toast('⚠ Похоже, токен неверный'); return;
+  }
+
+  setSyncStatus('spin', 'Создание...');
+  try {
+    const userId = genUID();
+    const initData = {
+      family_name: familyName,
+      members: [{ id: userId, name: userName, color: genColor(), joined: new Date().toISOString() }],
+      budget_data: getInitialData(),
+      last_updated: new Date().toISOString(),
+      updated_by: userName
+    };
+
+    const gist = await ghCreateGist(token, `Семейный Бюджет — ${familyName}`, initData);
+    const gistId = gist.id;
+
+    CONFIG = { gistId, token, familyName, userId, userName };
+    LS.set('bgt_config', CONFIG);
+    GIST_DATA = initData;
+    LS.set('bgt_data', GIST_DATA);
+
+    const code = encodeCode(gistId, token);
+    document.getElementById('familyCodeText').textContent = code;
+    LS.set('bgt_family_code', code);
+    showSub('subCreated');
+    setSyncStatus('ok', 'Синхр.');
+  } catch(e) {
+    toast('❌ Ошибка: ' + e.message);
+    setSyncStatus('err', 'Ошибка');
+  }
+}
+
+async function joinFamily() {
+  const code = document.getElementById('jCode').value.trim();
+  const userName = document.getElementById('jUserName').value.trim();
+
+  if (!code || !userName) { toast('⚠ Заполните все поля'); return; }
+
+  const decoded = decodeCode(code);
+  if (!decoded || !decoded.g || !decoded.t) {
+    toast('❌ Неверный семейный код'); return;
+  }
+
+  setSyncStatus('spin', 'Подключение...');
+  try {
+    const { g: gistId, t: token } = decoded;
+    const data = await ghReadGist(token, gistId);
+
+    const userId = genUID();
+    const member = { id: userId, name: userName, color: genColor(), joined: new Date().toISOString() };
+
+    // Add member if not already there
+    if (!data.members.find(m => m.name.toLowerCase() === userName.toLowerCase())) {
+      data.members.push(member);
+      await ghUpdateGist(token, gistId, { ...data, last_updated: new Date().toISOString(), updated_by: userName });
+    } else {
+      // Reuse existing member ID for this name
+      const existing = data.members.find(m => m.name.toLowerCase() === userName.toLowerCase());
+      member.id = existing.id;
+    }
+
+    CONFIG = { gistId, token, familyName: data.family_name, userId: member.id, userName };
+    LS.set('bgt_config', CONFIG);
+    LS.set('bgt_family_code', code);
+    GIST_DATA = data;
+    LS.set('bgt_data', GIST_DATA);
+
+    setSyncStatus('ok', 'Синхр.');
+    enterApp();
+  } catch(e) {
+    toast('❌ Ошибка: ' + e.message);
+    setSyncStatus('err', 'Ошибка');
+  }
+}
+
+function copyFamilyCode() {
+  const code = LS.get('bgt_family_code');
+  if (!code) return;
+  navigator.clipboard?.writeText(code).then(() => toast('📋 Код скопирован!')).catch(() => {
+    prompt('Скопируйте семейный код:', code);
+  });
+}
+
+function enterApp() {
+  document.getElementById('screenSetup').classList.remove('active');
+  document.getElementById('screenApp').classList.add('active');
+  initApp();
+}
+
+// ─── APP INIT ─────────────────────────────────────────────────────────────────
+function initApp() {
+  if (!CONFIG || !GIST_DATA) return;
+
+  document.getElementById('hFamilyName').innerHTML = `${CONFIG.familyName} <span class="ver-badge">v${APP_VER}</span>`;
+  document.getElementById('userNameBadge').textContent = CONFIG.userName;
+  updateSubTitle();
+
+  buildSel();
+  renderView();
+
+  // Auto sync every 60 seconds
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(syncNow, 60000);
+
+  // Settings
+  document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
+}
+
+function updateSubTitle() {
+  if (!GIST_DATA) return;
+  const updated = GIST_DATA.last_updated ? new Date(GIST_DATA.last_updated).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+  document.getElementById('hSubTitle').textContent =
+    `${GIST_DATA.members?.length || 0} чел. · обновл. ${GIST_DATA.updated_by || '?'} ${updated}`;
+}
+
+// ─── SYNC ─────────────────────────────────────────────────────────────────────
+function setSyncStatus(state, text) {
+  const icon = document.getElementById('syncIcon');
+  const txt = document.getElementById('syncText');
+  if (!icon || !txt) return;
+  icon.className = state === 'spin' ? 's-spin' : state === 'ok' ? 's-ok' : 's-err';
+  icon.textContent = state === 'spin' ? '↻' : state === 'ok' ? '✓' : '✗';
+  txt.textContent = text;
+}
+
+async function syncNow() {
+  if (!CONFIG) return;
+  setSyncStatus('spin', 'Синхр...');
+  try {
+    const remote = await ghReadGist(CONFIG.token, CONFIG.gistId);
+    const localTs = GIST_DATA?.last_updated || '0';
+    const remoteTs = remote?.last_updated || '0';
+
+    if (remoteTs > localTs) {
+      // Remote is newer — use remote
+      GIST_DATA = remote;
+      LS.set('bgt_data', GIST_DATA);
+      buildSel(); renderView(); updateSubTitle();
+      toast('🔄 Данные обновлены (' + (remote.updated_by || 'другой пользователь') + ')');
+    } else {
+      setSyncStatus('ok', 'Синхр.');
+    }
+    setSyncStatus('ok', 'Синхр.');
+  } catch(e) {
+    setSyncStatus('err', 'Ошибка');
+    // Fall back to local data silently
+  }
+}
+
+async function pushData() {
+  if (!CONFIG || !GIST_DATA) return;
+  GIST_DATA.last_updated = new Date().toISOString();
+  GIST_DATA.updated_by = CONFIG.userName;
+  LS.set('bgt_data', GIST_DATA);
+  setSyncStatus('spin', 'Сохр...');
+  try {
+    await ghUpdateGist(CONFIG.token, CONFIG.gistId, GIST_DATA);
+    setSyncStatus('ok', 'Синхр.');
+    updateSubTitle();
+  } catch(e) {
+    setSyncStatus('err', 'Не сохр.');
+    // Data saved locally, will retry next sync
+  }
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function openSettings() {
+  if (!GIST_DATA) return;
+  const el = document.getElementById('membersList');
+  el.innerHTML = (GIST_DATA.members || []).map(m => `
+    <div class="member-chip">
+      <span class="mchip-dot" style="background:${m.color||'#4ade80'}"></span>
+      <span>${m.name}</span>
+      ${m.id === CONFIG.userId ? '<span class="mchip-you">Вы</span>' : ''}
+      <span style="font-size:9px;color:var(--muted);margin-left:auto">
+        ${m.joined ? new Date(m.joined).toLocaleDateString('ru-RU') : ''}
+      </span>
+    </div>`).join('');
+  document.getElementById('changeNameInp').value = CONFIG.userName;
+  document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+async function changeName() {
+  const name = document.getElementById('changeNameInp').value.trim();
+  if (!name) return;
+  const oldName = CONFIG.userName;
+  CONFIG.userName = name;
+  LS.set('bgt_config', CONFIG);
+  if (GIST_DATA) {
+    const m = GIST_DATA.members.find(x => x.id === CONFIG.userId);
+    if (m) { m.name = name; await pushData(); }
+  }
+  document.getElementById('userNameBadge').textContent = name;
+  toast(`✅ Имя изменено на ${name}`);
+  closeSettings();
+}
+
+function leaveFamily() {
+  if (!confirm('Выйти из семьи? Данные будут удалены с этого устройства.')) return;
+  LS.del('bgt_config'); LS.del('bgt_data'); LS.del('bgt_family_code');
+  if (syncTimer) clearInterval(syncTimer);
+  location.reload();
+}
+
+// ─── BUDGET STATE ─────────────────────────────────────────────────────────────
 let selMonth = '04_26';
 let curView = 'month';
 let editing = null;
 let addSec = null;
 let addDebtMode = false;
-let collapsedSections = new Set(); // track collapsed section cards
+let collapsed = new Set();
 
-// ─── Storage ─────────────────────────────────────────────────────────────────
-async function loadData() {
-  try {
-    if (window.storage) {
-      const r = await window.storage.get('budget_v1_1');
-      if (r) DATA = JSON.parse(r.value);
-    } else {
-      const s = localStorage.getItem('budget_v1_1');
-      if (s) DATA = JSON.parse(s);
-    }
-  } catch(e) {}
+function getBudgetData() { return GIST_DATA?.budget_data || {}; }
+function getMD() {
+  const d = getBudgetData();
+  return d[selMonth] || { income:{}, fixed:{}, variable:{}, debts:[], edp_target:15000 };
 }
-async function saveData() {
-  const s = JSON.stringify(DATA);
-  try {
-    if (window.storage) await window.storage.set('budget_v1_1', s);
-    localStorage.setItem('budget_v1_1', s);
-  } catch(e) {
-    try { localStorage.setItem('budget_v1_1', s); } catch(e2) {}
-  }
+function setMD(monthData) {
+  if (!GIST_DATA) return;
+  if (!GIST_DATA.budget_data) GIST_DATA.budget_data = {};
+  GIST_DATA.budget_data[selMonth] = monthData;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 function pk(k) { const [m,y]=k.split('_'); return {m:+m, y:2000+(+y)}; }
-function sortKeys(ks) { return [...ks].sort((a,b)=>{ const pa=pk(a),pb=pk(b); return pa.y!==pb.y?pa.y-pb.y:pa.m-pb.m; }); }
-function fmtKey(k) { const {m,y}=pk(k); return MONTH_NAMES[m-1]+' '+y; }
+function sortK(ks) { return [...ks].sort((a,b)=>{ const pa=pk(a),pb=pk(b); return pa.y!==pb.y?pa.y-pb.y:pa.m-pb.m; }); }
+function fmtK(k) { const {m,y}=pk(k); return MN[m-1]+' '+y; }
 function fmtN(n) { return (n||0).toLocaleString('ru-RU')+'₪'; }
 function S(o) { return Object.values(o||{}).reduce((s,v)=>s+(+v||0),0); }
-function getMD() { return DATA[selMonth]||{income:{},fixed:{},variable:{},debts:[],edp_target:15000}; }
 
-function showToast(msg) {
+function toast(msg, dur=2600) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2800);
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
 }
 
-// ─── Build month selector ─────────────────────────────────────────────────────
-function buildSelector() {
-  const ms = sortKeys(Object.keys(DATA));
+// ─── MONTH SELECTOR ───────────────────────────────────────────────────────────
+function buildSel() {
+  const data = getBudgetData();
+  const ms = sortK(Object.keys(data));
+  if (ms.length && !data[selMonth]) selMonth = ms[ms.length - 1];
   const sel = document.getElementById('monthSel');
-  sel.innerHTML = [...ms].reverse().map(k=>`<option value="${k}"${k===selMonth?' selected':''}>${fmtKey(k)}</option>`).join('');
+  if (!sel) return;
+  sel.innerHTML = [...ms].reverse().map(k => `<option value="${k}"${k===selMonth?' selected':''}>${fmtK(k)}</option>`).join('');
   document.getElementById('prevBtn').disabled = ms.indexOf(selMonth) === 0;
-  document.getElementById('nextBtn').disabled = ms.indexOf(selMonth) === ms.length-1;
-  document.getElementById('monthCount').textContent = ms.length + ' месяцев';
+  document.getElementById('nextBtn').disabled = ms.indexOf(selMonth) === ms.length - 1;
 }
 
-// ─── Render Stats ─────────────────────────────────────────────────────────────
+// ─── STATS ────────────────────────────────────────────────────────────────────
 function renderStats() {
-  const md = getMD();
-  const tI=S(md.income), tF=S(md.fixed), tV=S(md.variable);
-  const tDebt = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
-  const bal = tI - tF - tV - tDebt;
-  document.getElementById('statsGrid').innerHTML = [
-    ['Доходы',    tI,    C.income,  '↑'],
-    ['Постоянные',tF,    C.fixed,   '🏠'],
-    ['Переменные',tV,    C.variable,'🛒'],
-    ['Долги/мес', tDebt, C.debt,    '💳'],
-    ['Остаток',   bal,   bal>=0?C.balance:'#ef4444', bal>=0?'✓':'⚠']
+  const md = getMD(), tI=S(md.income), tF=S(md.fixed), tV=S(md.variable);
+  const tD = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0), 0);
+  const bal = tI - tF - tV - tD;
+  const el = document.getElementById('statsGrid');
+  if (!el) return;
+  el.innerHTML = [
+    ['Доходы',tI,CC.income,'↑'], ['Постоянные',tF,CC.fixed,'🏠'],
+    ['Переменные',tV,CC.variable,'🛒'], ['Долги/мес',tD,CC.debt,'💳'],
+    ['Остаток',bal,bal>=0?CC.balance:'#ef4444',bal>=0?'✓':'⚠']
   ].map(([l,v,c,i])=>`<div class="stat" style="border-left-color:${c}">
-    <div class="stat-label">${i} ${l}</div>
-    <div class="stat-value" style="color:${c}">${fmtN(v)}</div>
+    <div class="stat-lbl">${i} ${l}</div><div class="stat-val" style="color:${c}">${fmtN(v)}</div>
   </div>`).join('');
 }
 
-// ─── Render Section ───────────────────────────────────────────────────────────
+// ─── SECTION HTML ─────────────────────────────────────────────────────────────
 function secHTML(sec, title, color, items, total) {
-  // Sort items alphabetically (Cyrillic + Latin)
-  const sortedEntries = Object.entries(items).sort((a,b) => a[0].localeCompare(b[0], ['ru','en'], {sensitivity:'base'}));
-  const isCollapsed = collapsedSections.has(sec);
-
-  const rows = sortedEntries.map(([k,v]) => {
-    const isEdit = editing && editing.sec===sec && editing.key===k;
-    const safeKey = encodeURIComponent(k);
-    return `<div class="item">
-      <span class="item-name" title="${k}">${k}</span>
-      <div class="item-right">
-        ${isEdit
-          ? `<input class="edit-in" id="editIn" type="number" value="${v||0}"/>`
-          : `<span class="item-amt" style="color:${color}" data-sec="${sec}" data-key="${safeKey}">${fmtN(v||0)}</span>`
-        }
-        <button class="del" data-dsec="${sec}" data-dkey="${safeKey}">✕</button>
+  const entries = Object.entries(items).sort((a,b) => a[0].localeCompare(b[0], ['ru','en'], {sensitivity:'base'}));
+  const isColl = collapsed.has(sec);
+  const rows = entries.map(([k,v]) => {
+    const isEd = editing?.sec===sec && editing?.key===k;
+    const sk = encodeURIComponent(k);
+    return `<div class="item2">
+      <span class="iname" title="${k}">${k}</span>
+      <div class="iright">
+        ${isEd ? `<input class="ein" id="editIn" type="number" value="${v||0}"/>`
+               : `<span class="iamt" style="color:${color}" data-sec="${sec}" data-key="${sk}">${fmtN(v||0)}</span>`}
+        <button class="del2" data-ds="${sec}" data-dk="${sk}">✕</button>
       </div>
     </div>`;
   }).join('');
-
-  const addForm = addSec === sec
-    ? `<div class="add-row">
-        <input id="aiName" placeholder="Название"/>
-        <input id="aiVal" type="number" placeholder="Сумма"/>
-        <button class="btn-ok" data-aok="${sec}">✓</button>
-        <button class="btn-cancel" id="aiCancel">✕</button>
-       </div>`
-    : `<button class="add-trig" data-asec="${sec}">+ Добавить</button>`;
-
-  return `<div class="sec-card${isCollapsed?' collapsed':''}" style="border-top-color:${color}">
-    <div class="sec-head" data-toggle="${sec}">
-      <div class="sec-head-left">
-        <span class="collapse-btn">${isCollapsed?'▸':'▾'}</span>
-        <div class="sec-title">${title}</div>
-      </div>
-      <div class="sec-total" style="color:${color}">${fmtN(total)}</div>
+  const addForm = addSec===sec
+    ? `<div class="add-row2"><input id="aiN" placeholder="Название"/><input id="aiV" type="number" placeholder="Сумма"/><button class="bok" data-aok="${sec}">✓</button><button class="bcanc" id="aiCnl">✕</button></div>`
+    : `<button class="add-trig2" data-asec="${sec}">+ Добавить</button>`;
+  return `<div class="scard2${isColl?' collapsed2':''}" style="border-top-color:${color}">
+    <div class="shead" data-toggle="${sec}">
+      <div class="shead-l"><span class="cbtn2">${isColl?'▸':'▾'}</span><div class="stitle">${title}</div></div>
+      <div class="stotal" style="color:${color}">${fmtN(total)}</div>
     </div>
-    <div class="items">${rows}</div>
+    <div class="items2">${rows}</div>
     ${addForm}
   </div>`;
 }
 
-// ─── Render Month ─────────────────────────────────────────────────────────────
+// ─── RENDER MONTH ─────────────────────────────────────────────────────────────
 function renderMonth() {
   const md=getMD(), tI=S(md.income), tF=S(md.fixed), tV=S(md.variable);
-  const tDebt=(md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
-  const bal=tI-tF-tV-tDebt;
+  const tD=(md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
   const pct=(v,t)=>t>0?Math.min((v/t)*100,100):0;
-
   const debtList=(md.debts||[]).length===0
-    ? '<span style="color:var(--muted);font-size:13px">Нет долгов в этом месяце</span>'
-    : (md.debts||[]).map(d=>`<div style="display:flex;justify-content:space-between;padding:5px 6px;border-radius:7px;transition:background .1s" onmouseover="this.style.background=\'#1a2236\'" onmouseout="this.style.background=\'\'">
+    ? '<span style="color:var(--muted);font-size:13px">Нет долгов</span>'
+    : (md.debts||[]).map(d=>`<div style="display:flex;justify-content:space-between;padding:5px 5px;border-radius:6px" onmouseover="this.style.background='#1a2236'" onmouseout="this.style.background=''">
         <span style="font-size:13px;color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">${d.name}</span>
-        <span style="font-size:13px;font-family:monospace;color:${C.debt};white-space:nowrap">${fmtN(d.monthly)}/мес · всего ${fmtN(d.total)}</span>
+        <span style="font-size:13px;font-family:monospace;color:${CC.debt};white-space:nowrap">${fmtN(d.monthly)}/мес · ${fmtN(d.total)}</span>
       </div>`).join('');
 
-  document.getElementById('mainContent').innerHTML = `
-    <div class="progress-card">
-      <div class="prog-title"><span>Распределение — ${fmtKey(selMonth)}</span><span>${tI>0?Math.round(((tF+tV+tDebt)/tI)*100):0}% от дохода</span></div>
+  const el = document.getElementById('mainContent');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="prog-card">
+      <div class="prog-title"><span>Распределение — ${fmtK(selMonth)}</span><span>${tI>0?Math.round(((tF+tV+tD)/tI)*100):0}% от дохода</span></div>
       <div class="prog-bar">
-        <div class="prog-seg" style="width:${pct(tF,tI)}%;background:${C.fixed}"></div>
-        <div class="prog-seg" style="width:${pct(tV,tI)}%;background:${C.variable}"></div>
-        <div class="prog-seg" style="width:${pct(tDebt,tI)}%;background:${C.debt}"></div>
+        <div class="pseg" style="width:${pct(tF,tI)}%;background:${CC.fixed}"></div>
+        <div class="pseg" style="width:${pct(tV,tI)}%;background:${CC.variable}"></div>
+        <div class="pseg" style="width:${pct(tD,tI)}%;background:${CC.debt}"></div>
       </div>
-      <div class="prog-legend">
-        <span><span class="dot" style="background:${C.fixed}"></span>Пост.: ${fmtN(tF)}</span>
-        <span><span class="dot" style="background:${C.variable}"></span>Перем.: ${fmtN(tV)}</span>
-        <span><span class="dot" style="background:${C.debt}"></span>Долги: ${fmtN(tDebt)}</span>
-        <span><span class="dot" style="background:${C.income}"></span>Доход: ${fmtN(tI)}</span>
+      <div class="prog-leg">
+        <span><span class="dot" style="background:${CC.fixed}"></span>Пост.: ${fmtN(tF)}</span>
+        <span><span class="dot" style="background:${CC.variable}"></span>Перем.: ${fmtN(tV)}</span>
+        <span><span class="dot" style="background:${CC.debt}"></span>Долги: ${fmtN(tD)}</span>
+        <span><span class="dot" style="background:${CC.income}"></span>Доход: ${fmtN(tI)}</span>
       </div>
     </div>
-    <div class="col3" style="margin-bottom:8px">
-      ${secHTML('income','💰 Доходы',C.income,md.income,tI)}
-      ${secHTML('fixed','🏠 Постоянные',C.fixed,md.fixed,tF)}
-      ${secHTML('variable','🛒 Переменные',C.variable,md.variable,tV)}
+    <div class="col3" style="margin-bottom:7px">
+      ${secHTML('income','💰 Доходы',CC.income,md.income,tI)}
+      ${secHTML('fixed','🏠 Постоянные',CC.fixed,md.fixed,tF)}
+      ${secHTML('variable','🛒 Переменные',CC.variable,md.variable,tV)}
     </div>
-    <div class="sec-card" style="border-top-color:${C.debt}">
-      <div class="sec-head" id="debtCardHead">
-        <div class="sec-head-left">
-          <span class="collapse-btn" id="debtCBtn">▾</span>
-          <span class="sec-title">💳 Долги в этом месяце</span>
-        </div>
-        <span class="sec-total" style="color:${C.debt}">${fmtN(tDebt)}/мес</span>
-      </div>
-      <div id="debtCardBody" style="padding-top:2px">${debtList}</div>
+    <div class="scard2" style="border-top-color:${CC.debt}">
+      <div class="shead" id="dch"><div class="shead-l"><span class="cbtn2" id="dcb">▾</span><span class="stitle">💳 Долги в этом месяце</span></div><span class="stotal" style="color:${CC.debt}">${fmtN(tD)}/мес</span></div>
+      <div id="dcbd" style="padding-top:2px">${debtList}</div>
     </div>`;
-  bindMonthEvents();
 
-  // Debt card collapse toggle
-  const dHead=document.getElementById('debtCardHead'), dBody=document.getElementById('debtCardBody'), dBtn=document.getElementById('debtCBtn');
-  if(dHead && dBody){
-    if(collapsedSections.has('_debt')){ dBody.style.display='none'; dBtn.style.transform='rotate(-90deg)'; }
-    dHead.addEventListener('click',()=>{
-      const isNowHidden=dBody.style.display==='none';
-      dBody.style.display=isNowHidden?'':'none';
-      dBtn.style.transform=isNowHidden?'':'rotate(-90deg)';
-      isNowHidden?collapsedSections.delete('_debt'):collapsedSections.add('_debt');
-    });
+  bindMonth();
+  const dh=document.getElementById('dch'), db=document.getElementById('dcbd'), dcb=document.getElementById('dcb');
+  if(dh && db){
+    if(collapsed.has('_d')){db.style.display='none';dcb.style.transform='rotate(-90deg)';}
+    dh.addEventListener('click',()=>{const h=db.style.display==='none';db.style.display=h?'':'none';dcb.style.transform=h?'':'rotate(-90deg)';h?collapsed.delete('_d'):collapsed.add('_d');});
   }
 }
 
-function bindMonthEvents() {
-  // Collapse/expand section cards
-  document.querySelectorAll('[data-toggle]').forEach(head => {
-    head.addEventListener('click', (e) => {
-      // Don't collapse when clicking on amount or delete
-      if (e.target.closest('.item-amt, .del, .add-trig, .add-row, [data-asec]')) return;
-      const sec = head.dataset.toggle;
-      if (collapsedSections.has(sec)) collapsedSections.delete(sec);
-      else collapsedSections.add(sec);
+function bindMonth() {
+  document.querySelectorAll('[data-toggle]').forEach(h => {
+    h.addEventListener('click', e => {
+      if (e.target.closest('.iamt,.del2,.add-trig2,.add-row2,[data-asec]')) return;
+      const s = h.dataset.toggle;
+      collapsed.has(s) ? collapsed.delete(s) : collapsed.add(s);
       renderMonth(); renderStats();
     });
   });
-  // Edit amount
-  document.querySelectorAll('.item-amt').forEach(el => {
-    el.addEventListener('click', (e) => {
+  document.querySelectorAll('.iamt').forEach(el => {
+    el.addEventListener('click', e => {
       e.stopPropagation();
-      editing = {sec:el.dataset.sec, key:decodeURIComponent(el.dataset.key)};
+      editing = { sec: el.dataset.sec, key: decodeURIComponent(el.dataset.key) };
       renderMonth(); renderStats();
-      setTimeout(()=>{ const i=document.getElementById('editIn'); if(i){i.focus();i.select();} },50);
+      setTimeout(() => { const i=document.getElementById('editIn'); if(i){i.focus();i.select();} }, 50);
     });
   });
-  // Commit edit
   const ei = document.getElementById('editIn');
   if (ei) {
     const commit = () => {
       if (!editing) return;
       const md = getMD();
-      DATA[selMonth] = {...md, [editing.sec]: {...md[editing.sec], [editing.key]: parseFloat(ei.value)||0}};
-      editing = null; saveData(); renderMonth(); renderStats();
+      md[editing.sec][editing.key] = parseFloat(ei.value)||0;
+      setMD(md); editing = null;
+      pushData(); renderMonth(); renderStats();
     };
     ei.addEventListener('blur', commit);
     ei.addEventListener('keydown', e => { if(e.key==='Enter') commit(); if(e.key==='Escape'){editing=null;renderMonth();} });
   }
-  // Delete item
-  document.querySelectorAll('[data-dsec]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  document.querySelectorAll('[data-ds]').forEach(b => {
+    b.addEventListener('click', e => {
       e.stopPropagation();
-      const sec=btn.dataset.dsec, key=decodeURIComponent(btn.dataset.dkey);
-      const md=getMD(), ns={...md[sec]};
-      delete ns[key];
-      DATA[selMonth]={...md,[sec]:ns};
-      saveData(); renderMonth(); renderStats();
-      showToast('🗑 Удалено: '+key);
+      const sec=b.dataset.ds, key=decodeURIComponent(b.dataset.dk);
+      const md=getMD(); delete md[sec][key]; setMD(md);
+      pushData(); renderMonth(); renderStats(); toast('🗑 '+key);
     });
   });
-  // Add section trigger
-  document.querySelectorAll('[data-asec]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.stopPropagation(); addSec=btn.dataset.asec; renderMonth(); setTimeout(()=>document.getElementById('aiName')?.focus(),50); });
+  document.querySelectorAll('[data-asec]').forEach(b => {
+    b.addEventListener('click', e => { e.stopPropagation(); addSec=b.dataset.asec; renderMonth(); setTimeout(()=>document.getElementById('aiN')?.focus(),50); });
   });
-  document.getElementById('aiCancel')?.addEventListener('click', ()=>{ addSec=null; renderMonth(); });
-  document.querySelectorAll('[data-aok]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const sec=btn.dataset.aok, name=document.getElementById('aiName')?.value.trim(), val=parseFloat(document.getElementById('aiVal')?.value)||0;
+  document.getElementById('aiCnl')?.addEventListener('click', () => { addSec=null; renderMonth(); });
+  document.querySelectorAll('[data-aok]').forEach(b => {
+    b.addEventListener('click', () => {
+      const sec=b.dataset.aok, name=document.getElementById('aiN')?.value.trim(), val=parseFloat(document.getElementById('aiV')?.value)||0;
       if (!name) return;
-      const md=getMD();
-      DATA[selMonth]={...md,[sec]:{...md[sec],[name]:val}};
-      addSec=null; saveData(); renderMonth(); renderStats();
-      showToast('✅ Добавлено: '+name);
+      const md=getMD(); md[sec][name]=val; setMD(md);
+      addSec=null; pushData(); renderMonth(); renderStats(); toast('✅ '+name);
     });
   });
 }
 
-// ─── Render Trends ─────────────────────────────────────────────────────────────
+// ─── RENDER TRENDS ─────────────────────────────────────────────────────────────
 function renderTrends() {
-  const keys = sortKeys(Object.keys(DATA)).slice(-12);
+  const data = getBudgetData();
+  const keys = sortK(Object.keys(data)).slice(-12);
   const td = keys.map(k => {
-    const d=DATA[k], i=S(d.income), f=S(d.fixed), v=S(d.variable);
-    return {lbl:fmtKey(k).split(' ')[0].slice(0,3), full:fmtKey(k), income:i, fixed:f, variable:v, balance:i-f-v};
+    const d=data[k], i=S(d.income), f=S(d.fixed), v=S(d.variable);
+    const debt=(d.debts||[]).reduce((s,x)=>s+(x.monthly||0),0);
+    return { lbl:fmtK(k).split(' ')[0].slice(0,3), full:fmtK(k), income:i, fixed:f, variable:v, balance:i-f-v-debt };
   });
   const maxV = Math.max(...td.map(d=>d.income), 1);
-
-  // Build bars
   const bars = td.map(d => {
-    const h=(v)=>Math.max(2,Math.round((v/maxV)*130));
-    return `<div class="bar-group" title="${d.full}&#10;Доход: ${fmtN(d.income)}&#10;Пост.: ${fmtN(d.fixed)}&#10;Перем.: ${fmtN(d.variable)}">
-      <div class="bar-cols">
-        <div class="bar-col" style="height:${h(d.income)}px;background:${C.income}"></div>
-        <div class="bar-col" style="height:${h(d.fixed)}px;background:${C.fixed}"></div>
-        <div class="bar-col" style="height:${h(d.variable)}px;background:${C.variable}"></div>
-      </div>
-      <div class="bar-label">${d.lbl}</div>
+    const h=v=>Math.max(2,Math.round((v/maxV)*120));
+    return `<div class="bgrp" title="${d.full}\nДоход: ${fmtN(d.income)}\nПост.: ${fmtN(d.fixed)}\nПерем.: ${fmtN(d.variable)}">
+      <div class="bcols"><div class="bcol" style="height:${h(d.income)}px;background:${CC.income}"></div><div class="bcol" style="height:${h(d.fixed)}px;background:${CC.fixed}"></div><div class="bcol" style="height:${h(d.variable)}px;background:${CC.variable}"></div></div>
+      <div class="blbl">${d.lbl}</div>
     </div>`;
   }).join('');
-
-  // Line chart
-  const bals = td.map(d=>d.balance);
-  const minB=Math.min(...bals), maxB=Math.max(...bals), rng=maxB-minB||1;
-  const pts = td.map((d,i)=>`${(i/(td.length-1||1))*100},${90-((d.balance-minB)/rng)*80}`).join(' ');
-  const circles = td.map((d,i)=>{
-    const cx=(i/(td.length-1||1))*100, cy=90-((d.balance-minB)/rng)*80;
-    return `<circle cx="${cx}" cy="${cy}" r="3" fill="${d.balance>=0?C.balance:'#ef4444'}"><title>${d.full}: ${fmtN(d.balance)}</title></circle>`;
-  }).join('');
-
-  const avg = arr => Math.round(arr.reduce((s,v)=>s+v,0)/arr.length);
-  const avgs = [
-    ['Средний доход', avg(td.map(d=>d.income)), C.income],
-    ['Пост. расходы', avg(td.map(d=>d.fixed)), C.fixed],
-    ['Перем. расходы', avg(td.map(d=>d.variable)), C.variable],
-    ['Ср. остаток',   avg(td.map(d=>d.balance)), C.balance],
-  ];
+  const bals=td.map(d=>d.balance), minB=Math.min(...bals), maxB=Math.max(...bals), rng=maxB-minB||1;
+  const pts=td.map((d,i)=>`${(i/(td.length-1||1))*100},${85-((d.balance-minB)/rng)*75}`).join(' ');
+  const cirs=td.map((d,i)=>{const cx=(i/(td.length-1||1))*100,cy=85-((d.balance-minB)/rng)*75;return`<circle cx="${cx}" cy="${cy}" r="2.5" fill="${d.balance>=0?CC.balance:'#ef4444'}"><title>${d.full}: ${fmtN(d.balance)}</title></circle>`;}).join('');
+  const avg=a=>Math.round(a.reduce((s,v)=>s+v,0)/a.length);
+  const avgs=[['Ср. доход',avg(td.map(d=>d.income)),CC.income],['Ср. пост.',avg(td.map(d=>d.fixed)),CC.fixed],['Ср. перем.',avg(td.map(d=>d.variable)),CC.variable],['Ср. остаток',avg(td.map(d=>d.balance)),CC.balance]];
 
   document.getElementById('mainContent').innerHTML = `
-    <div class="chart-card">
-      <div class="chart-title">📊 Доходы и расходы (последние ${keys.length} мес.)</div>
-      <div style="overflow-x:auto">
-        <div class="chart-bars" style="min-width:${keys.length*40}px">${bars}</div>
-      </div>
-      <div class="prog-legend" style="margin-top:10px">
-        <span><span class="dot" style="background:${C.income}"></span>Доходы</span>
-        <span><span class="dot" style="background:${C.fixed}"></span>Постоянные</span>
-        <span><span class="dot" style="background:${C.variable}"></span>Переменные</span>
-      </div>
+    <div class="ccrd"><div class="ctitle">📊 Доходы и расходы</div><div style="overflow-x:auto"><div class="cbars" style="min-width:${keys.length*36}px">${bars}</div></div>
+      <div class="prog-leg" style="margin-top:8px"><span><span class="dot" style="background:${CC.income}"></span>Доходы</span><span><span class="dot" style="background:${CC.fixed}"></span>Постоянные</span><span><span class="dot" style="background:${CC.variable}"></span>Переменные</span></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">📈 Остаток по месяцам</div>
-      <div class="line-chart">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="overflow:visible">
-          <line x1="0" y1="${90-((0-minB)/rng)*80}" x2="100" y2="${90-((0-minB)/rng)*80}" stroke="#374151" stroke-width="0.3" stroke-dasharray="2,2"/>
-          <polyline points="${pts}" fill="none" stroke="${C.balance}" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
-          ${circles}
-        </svg>
-      </div>
-      <div class="prog-legend" style="margin-top:8px">
-        ${td.map(d=>`<span style="font-size:9px;color:var(--muted)">${d.lbl}</span>`).join(' ')}
-      </div>
+    <div class="ccrd"><div class="ctitle">📈 Остаток (за вычетом долгов)</div>
+      <div class="lchrt"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="overflow:visible">
+        <line x1="0" y1="${85-((0-minB)/rng)*75}" x2="100" y2="${85-((0-minB)/rng)*75}" stroke="#374151" stroke-width="0.4" stroke-dasharray="2,2"/>
+        <polyline points="${pts}" fill="none" stroke="${CC.balance}" stroke-width="0.9" vector-effect="non-scaling-stroke"/>
+        ${cirs}
+      </svg></div>
+      <div class="prog-leg" style="margin-top:6px">${td.map(d=>`<span style="font-size:8px;color:var(--muted)">${d.lbl}</span>`).join(' ')}</div>
     </div>
-    <div class="avgs">
-      ${avgs.map(([l,v,c])=>`<div class="stat" style="border-left-color:${c}"><div class="stat-label">${l}</div><div class="stat-value" style="color:${c};font-size:14px">${fmtN(v)}</div></div>`).join('')}
-    </div>`;
+    <div class="avgrid">${avgs.map(([l,v,c])=>`<div class="stat" style="border-left-color:${c}"><div class="stat-lbl">${l}</div><div class="stat-val" style="color:${c};font-size:13px">${fmtN(v)}</div></div>`).join('')}</div>`;
 }
 
-// ─── Render Debts ─────────────────────────────────────────────────────────────
+// ─── RENDER DEBTS ─────────────────────────────────────────────────────────────
 function renderDebts() {
-  const md=getMD(), debts=md.debts||[];
-  const totalDebt=debts.reduce((s,d)=>s+(d.total||0),0);
-  const debtRows = debts.map((d,i)=>{
-    const prog=Math.max(0,100-(d.payments_left/(d.payments_left+1))*100);
-    return `<div class="debt-item">
-      <div class="debt-head">
-        <span class="debt-name">${d.name}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;font-family:monospace;color:${C.debt}">${fmtN(d.total)}</span>
-          <button class="debt-del" data-di="${i}">✕</button>
-        </div>
-      </div>
-      <div class="debt-meta">
-        <span>Осталось выплат: <b style="color:white">${d.payments_left}</b></span>
-        <span>В месяц: <b style="color:white;font-family:monospace">${fmtN(d.monthly)}</b></span>
-      </div>
-      <div class="debt-prog"><div class="debt-fill" style="width:${prog}%"></div></div>
-    </div>`;
+  const md=getMD(), debts=md.debts||[], totDebt=debts.reduce((s,d)=>s+(d.total||0),0);
+  const rows=debts.map((d,i)=>{const p=Math.max(0,100-(d.payments_left/(d.payments_left+1))*100);
+    return`<div class="ditm"><div class="dhead"><span class="dname">${d.name}</span><div style="display:flex;align-items:center;gap:7px"><span style="font-size:11px;font-family:monospace;color:${CC.debt}">${fmtN(d.total)}</span><button class="ddel" data-di="${i}">✕</button></div></div>
+      <div class="dmeta"><span>Осталось: <b style="color:white">${d.payments_left}</b></span><span>В мес.: <b style="color:white;font-family:monospace">${fmtN(d.monthly)}</b></span></div>
+      <div class="dbar"><div class="dbar-f" style="width:${p}%"></div></div></div>`;
   }).join('');
-
-  const debtForm = addDebtMode
-    ? `<div class="debt-form">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Новый долг</div>
-        <div class="debt-grid">
-          <input id="dName" placeholder="Название" class="span2"/>
-          <input id="dTotal" type="number" placeholder="Сумма долга"/>
-          <input id="dMonthly" type="number" placeholder="Платёж в месяц"/>
-          <input id="dLeft" type="number" placeholder="Кол-во выплат"/>
-        </div>
-        <button class="btn-purple" id="dOK">Добавить</button>
-        <button class="btn-cancel" id="dCancel" style="margin-left:6px">Отмена</button>
-       </div>`
-    : `<button class="add-trig" id="addDebtBtn">+ Добавить долг</button>`;
-
-  // Debt history
-  const histKeys = sortKeys(Object.keys(DATA)).filter(k=>(DATA[k].debts||[]).length>0).slice(-12).reverse();
-  const histRows = histKeys.map(k=>{
-    const tot=(DATA[k].debts||[]).reduce((s,d)=>s+(d.total||0),0);
-    return `<tr data-hm="${k}"><td>${fmtKey(k)}</td><td>${DATA[k].debts.length}</td><td style="color:${C.debt};font-family:monospace">${fmtN(tot)}</td></tr>`;
-  }).join('');
+  const form=addDebtMode?`<div class="dform"><div style="font-size:11px;color:var(--muted);margin-bottom:5px">Новый долг</div><div class="dgrid"><input id="dN" placeholder="Название" class="sp2"/><input id="dT" type="number" placeholder="Сумма долга"/><input id="dM" type="number" placeholder="Платёж в мес."/><input id="dL" type="number" placeholder="Выплат осталось"/></div><button class="bpurp" id="dOK">Добавить</button><button class="bcanc" id="dCanc" style="margin-left:5px">Отмена</button></div>`:`<button class="add-trig2" id="addDebtBtn">+ Добавить долг</button>`;
+  const data=getBudgetData(), histK=sortK(Object.keys(data)).filter(k=>(data[k].debts||[]).length>0).slice(-12).reverse();
 
   document.getElementById('mainContent').innerHTML = `
-    <div class="sec-card" style="border-top-color:${C.debt};margin-bottom:10px">
-      <div class="sec-head">
-        <div class="sec-title">💳 Долги — ${fmtKey(selMonth)}</div>
-        <div class="sec-total" style="color:${C.debt}">${fmtN(totalDebt)}</div>
-      </div>
-      ${debts.length===0?'<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0">Нет долгов в этом месяце</p>':''}
-      ${debtRows}
-      ${debtForm}
+    <div class="scard2" style="border-top-color:${CC.debt};margin-bottom:8px"><div class="shead"><div class="stitle">💳 Долги — ${fmtK(selMonth)}</div><div class="stotal" style="color:${CC.debt}">${fmtN(totDebt)}</div></div>
+      ${debts.length===0?'<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Нет долгов</p>':''}${rows}${form}
     </div>
-    <div class="chart-card">
-      <div class="chart-title">📅 История долгов по месяцам</div>
-      <div style="overflow-x:auto">
-        <table class="debt-hist" style="width:100%;border-collapse:collapse">
-          <thead><tr><th>Месяц</th><th>Кол-во</th><th>Сумма</th></tr></thead>
-          <tbody>${histRows}</tbody>
-        </table>
-      </div>
-    </div>`;
+    <div class="ccrd"><div class="ctitle">📅 История долгов</div><div style="overflow-x:auto"><table class="dhist" style="width:100%;border-collapse:collapse"><thead><tr><th>Месяц</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>
+      ${histK.map(k=>{const t=(data[k].debts||[]).reduce((s,d)=>s+(d.total||0),0);return`<tr data-hm="${k}"><td>${fmtK(k)}</td><td>${data[k].debts.length}</td><td style="color:${CC.debt};font-family:monospace">${fmtN(t)}</td></tr>`;}).join('')}
+    </tbody></table></div></div>`;
 
-  bindDebtEvents(md);
+  bindDebts(md);
 }
 
-function bindDebtEvents(md) {
-  document.querySelectorAll('[data-di]').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const i=+btn.dataset.di;
-      DATA[selMonth]={...md,debts:md.debts.filter((_,di)=>di!==i)};
-      saveData(); renderDebts(); renderStats();
+function bindDebts(md) {
+  document.querySelectorAll('[data-di]').forEach(b => {
+    b.addEventListener('click', () => {
+      const i=+b.dataset.di;
+      const nm = {...md, debts: md.debts.filter((_,di)=>di!==i)};
+      setMD(nm); pushData(); renderDebts(); renderStats();
     });
   });
-  document.getElementById('addDebtBtn')?.addEventListener('click',()=>{addDebtMode=true;renderDebts();setTimeout(()=>document.getElementById('dName')?.focus(),50);});
-  document.getElementById('dCancel')?.addEventListener('click',()=>{addDebtMode=false;renderDebts();});
-  document.getElementById('dOK')?.addEventListener('click',()=>{
-    const name=document.getElementById('dName')?.value.trim();
+  document.getElementById('addDebtBtn')?.addEventListener('click', () => { addDebtMode=true; renderDebts(); setTimeout(()=>document.getElementById('dN')?.focus(),50); });
+  document.getElementById('dCanc')?.addEventListener('click', () => { addDebtMode=false; renderDebts(); });
+  document.getElementById('dOK')?.addEventListener('click', () => {
+    const name=document.getElementById('dN')?.value.trim();
     if (!name) return;
-    const d={name,total:parseFloat(document.getElementById('dTotal')?.value)||0,monthly:parseFloat(document.getElementById('dMonthly')?.value)||0,payments_left:parseInt(document.getElementById('dLeft')?.value)||0};
-    DATA[selMonth]={...md,debts:[...(md.debts||[]),d]};
-    addDebtMode=false; saveData(); renderDebts(); renderStats();
-    showToast('✅ Долг добавлен: '+name);
+    const d={name,total:parseFloat(document.getElementById('dT')?.value)||0,monthly:parseFloat(document.getElementById('dM')?.value)||0,payments_left:parseInt(document.getElementById('dL')?.value)||0};
+    const nm={...md, debts:[...(md.debts||[]),d]};
+    setMD(nm); addDebtMode=false; pushData(); renderDebts(); renderStats(); toast('✅ '+name);
   });
-  document.querySelectorAll('[data-hm]').forEach(row=>{
-    row.addEventListener('click',()=>{selMonth=row.dataset.hm;buildSelector();renderStats();renderDebts();});
-  });
+  document.querySelectorAll('[data-hm]').forEach(r => { r.addEventListener('click', () => { selMonth=r.dataset.hm; buildSel(); renderStats(); renderDebts(); }); });
 }
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+// ─── RENDER VIEW ─────────────────────────────────────────────────────────────
 function renderView() {
   renderStats();
   if (curView==='month') renderMonth();
   else if (curView==='trends') renderTrends();
-  else if (curView==='debts') renderDebts();
+  else renderDebts();
 }
 
-// ─── Events ───────────────────────────────────────────────────────────────────
-document.getElementById('prevBtn').addEventListener('click',()=>{
-  const ms=sortKeys(Object.keys(DATA)), i=ms.indexOf(selMonth);
-  if(i>0){selMonth=ms[i-1];editing=null;buildSelector();renderView();}
+// ─── HEADER EVENTS ────────────────────────────────────────────────────────────
+document.getElementById('prevBtn').addEventListener('click', () => {
+  const ms=sortK(Object.keys(getBudgetData())), i=ms.indexOf(selMonth);
+  if(i>0){selMonth=ms[i-1];editing=null;buildSel();renderView();}
 });
-document.getElementById('nextBtn').addEventListener('click',()=>{
-  const ms=sortKeys(Object.keys(DATA)), i=ms.indexOf(selMonth);
-  if(i<ms.length-1){selMonth=ms[i+1];editing=null;buildSelector();renderView();}
+document.getElementById('nextBtn').addEventListener('click', () => {
+  const ms=sortK(Object.keys(getBudgetData())), i=ms.indexOf(selMonth);
+  if(i<ms.length-1){selMonth=ms[i+1];editing=null;buildSel();renderView();}
 });
-document.getElementById('monthSel').addEventListener('change',e=>{selMonth=e.target.value;editing=null;renderView();});
-document.getElementById('addMonthBtn').addEventListener('click',()=>{
-  const ms=sortKeys(Object.keys(DATA)), latest=ms[ms.length-1];
-  const {m,y}=pk(latest);
-  let nm=m+1,ny=y; if(nm>12){nm=1;ny++;}
+document.getElementById('monthSel').addEventListener('change', e => { selMonth=e.target.value; editing=null; renderView(); });
+document.getElementById('addMonthBtn').addEventListener('click', () => {
+  const data=getBudgetData(), ms=sortK(Object.keys(data)), latest=ms[ms.length-1];
+  const {m,y}=pk(latest); let nm=m+1,ny=y; if(nm>12){nm=1;ny++;}
   const key=String(nm).padStart(2,'0')+'_'+String(ny-2000).padStart(2,'0');
-  if(DATA[key]){showToast('⚠ Месяц уже существует');return;}
-  const base=DATA[latest];
-  DATA[key]={income:{...base.income},fixed:{...base.fixed},variable:Object.fromEntries(Object.keys(base.variable).map(k=>[k,0])),debts:[],edp_target:base.edp_target||15000};
-  selMonth=key; saveData(); buildSelector(); renderView();
-  showToast('✅ Создан: '+fmtKey(key));
+  if(data[key]){toast('⚠ Уже существует');return;}
+  const base=data[latest];
+  data[key]={income:{...base.income},fixed:{...base.fixed},variable:Object.fromEntries(Object.keys(base.variable).map(k=>[k,0])),debts:[],edp_target:15000};
+  selMonth=key; pushData(); buildSel(); renderView(); toast('✅ '+fmtK(key));
 });
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
     curView=t.dataset.view; editing=null; addSec=null; addDebtMode=false;
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    renderView();
+    t.classList.add('active'); renderView();
   });
 });
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-loadData().then(()=>{ buildSelector(); renderView(); });
+// ─── INITIAL DATA ─────────────────────────────────────────────────────────────
+function getInitialData() {
+  return {
+"02_25":{"income":{"Зарплата":29850,"Детские деньги":270,"Возврат за тиюль":250},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Сигареты":2000,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5033,"Рестораны":1000,"Концерты":320,"Леон Турнир":1200,"Дети":65,"Дни рождения":880,"Стоянка":64,"Учитель":560,"Temu":135},"debts":[]},
+"03_25":{"income":{"Зарплата":29850,"Детские деньги":270,"Налоговая":6137},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Сигареты":2000,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":4052,"Рестораны":1008,"Концерты":1142,"Леон Турнир":550,"Дети":954,"Дни рождения":795,"Стоянка":32,"Учитель":1328,"Уборщица":350,"Проезд":400,"Хоз. товары":540,"Одежда":655,"Путешествия":4142,"Маникюр":330},"debts":[{"name":"Холодильник","total":4365,"payments_left":11,"monthly":181}]},
+"04_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9850,"Детские деньги":270,"Доп. доход":500},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5057,"Рестораны":1220,"Маникюр":380,"Дети":862,"Дни рождения":374,"Стоянка":223,"Учитель":927,"Temu":121,"Уборщица":860,"Проезд":201,"Хоз. товары":279,"Врач":923,"Одежда":798},"debts":[{"name":"Холодильник","total":4365,"payments_left":10,"monthly":181}]},
+"05_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9850,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5006,"Рестораны":1630,"Маникюр":915,"Дети":1131,"Дни рождения":730,"Стоянка":24,"Учитель":907,"Temu":140,"Проезд":365,"Хоз. товары":843,"Одежда":2740,"Путешествия":2570,"Сигареты":3028},"debts":[{"name":"Холодильник","total":4365,"payments_left":9,"monthly":181},{"name":"Греция","total":12400,"payments_left":2,"monthly":6200}]},
+"06_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9935,"Детские деньги":270,"Доп. доход":3150},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":7520,"Рестораны":1000,"Маникюр":170,"Дети":1015,"Дни рождения":2650,"Стоянка":227,"Учитель":620,"Проезд":315,"Хоз. товары":1245,"Одежда":597,"Сигареты":3368},"debts":[{"name":"Холодильник","total":4365,"payments_left":8,"monthly":181},{"name":"Греция","total":12400,"payments_left":1,"monthly":6200}]},
+"07_25":{"income":{"Зарплата Дима":19970,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":3215,"Маникюр":450,"Дети":151,"Дни рождения":997,"Temu":72,"Врач":75,"Одежда":520,"Путешествия":2559,"Сигареты":710},"debts":[{"name":"Холодильник","total":4365,"payments_left":7,"monthly":181},{"name":"Ташкент","total":11263,"payments_left":3,"monthly":3754}]},
+"08_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":12140,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":350,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5909,"Рестораны":1595,"Маникюр":330,"Дети":280,"Дни рождения":2511,"Temu":308,"Уборщица":550,"Проезд":314,"Хоз. товары":403,"Врач":639,"Одежда":1353,"Сигареты":3050},"debts":[{"name":"Холодильник","total":4365,"payments_left":6,"monthly":181},{"name":"Ташкент","total":11263,"payments_left":2,"monthly":3754}]},
+"09_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":3761,"Рестораны":123,"Маникюр":165,"דети":350,"Дни рождения":100,"Стоянка":22,"Учитель":280,"Проезд":415,"Врач":952,"Одежда":400,"Путешествия":2800,"Сигареты":1911},"debts":[{"name":"Холодильник","total":4365,"payments_left":5,"monthly":181},{"name":"Ташкент","total":11263,"payments_left":1,"monthly":3754}]},
+"10_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":530,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify+Google":35,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":6865,"Рестораны":1106,"Концерты":140,"Маникюр":170,"Дети":911,"Дни рождения":800,"Учитель":880,"Temu":730,"Врач":54,"Путешествия":155,"Сигареты":3275},"debts":[{"name":"Холодильник","total":4365,"payments_left":4,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":7,"monthly":375}]},
+"11_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4100,"Арнона":560,"Подъезд":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Ваад байт":100,"Spotify":22,"Chat GPT":65,"Макаби страховка":175,"Страховки Дима":917,"Страховки Оксана":33,"Mifal Pais":60},"variable":{"Супермаркет":5300,"Рестораны":1236,"Маникюр":820,"Дни рождения":1725,"Стоянка":45,"Учитель":420,"Проезд":507,"Хоз. товары":550,"Врач":23,"Одежда":620,"Путешествия":200,"Сигареты":3355,"Развлечения":220},"debts":[{"name":"Холодильник","total":4365,"payments_left":3,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":6,"monthly":375},{"name":"Школа","total":2521,"payments_left":6,"monthly":420}]},
+"12_25":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4237,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефон":220,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби страховка":175,"Страховки Дима":680,"Страховки Оксана":33,"Chat GPT":65,"Spotify":22,"LastPass":36,"Lupinsky Club":129},"variable":{"Супермаркет":6085,"Рестораны":325,"Концерты":560,"Дети разное":145,"Дни рождения":50,"Учеба Дети":610,"Врач":995,"Одежда":1500,"Путешествия":1740,"Сигареты":1985,"Развлечения":80,"Учеба Родители":1500},"debts":[{"name":"Холодильник","total":4365,"payments_left":2,"monthly":181},{"name":"Лига КадурЯд","total":3750,"payments_left":5,"monthly":375},{"name":"Школа","total":2521,"payments_left":5,"monthly":420}]},
+"01_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":5175,"Рестораны":227,"Концерты":885,"Маникюр":410,"Дети разное":515,"Дни рождения":1200,"Учеба Дети":560,"Temu":320,"Одежда":650,"Сигареты":3245,"Развлечения":500,"Косметика":305},"debts":[{"name":"Холодильник","total":4365,"payments_left":1,"monthly":181},{"name":"Очки Леон","total":750,"payments_left":2,"monthly":375},{"name":"Грузия тур","total":6075,"payments_left":3,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":4,"monthly":375},{"name":"Школа","total":2521,"payments_left":4,"monthly":420}]},
+"02_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":5090,"Рестораны":200,"Дети разное":110,"Дни рождения":75,"Учеба Дети":480,"Temu":210,"Одежда":265,"Сигареты":2985,"Развлечения":110,"Косметика":735,"Тами4":108},"debts":[{"name":"Очки Леон","total":750,"payments_left":1,"monthly":375},{"name":"Грузия тур","total":6075,"payments_left":2,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":3,"monthly":375},{"name":"Школа","total":2521,"payments_left":3,"monthly":420}]},
+"03_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":8300,"Рестораны":1250,"Маникюр":640,"Дети разное":200,"Дни рождения":850,"Хоз. товары":660,"Врач":150,"Одежда":128,"Сигареты":3065,"Косметика":520},"debts":[{"name":"Грузия тур","total":6075,"payments_left":1,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":2,"monthly":375},{"name":"Школа","total":2521,"payments_left":2,"monthly":420}]},
+"04_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч":495},"variable":{"Супермаркет":510,"Рестораны":0,"Маникюр":0,"Дети разное":0,"Дни рождения":0,"Учеба Дети":0,"Одежда":0,"Сигареты":0,"Косметика":0},"debts":[{"name":"Лига КадурЯд","total":3750,"payments_left":1,"monthly":375},{"name":"Школа","total":2521,"payments_left":1,"monthly":420}]}
+  };
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+setupPWA();
+
+// Check if already set up
+const savedConfig = LS.get('bgt_config');
+const savedData = LS.get('bgt_data');
+
+if (savedConfig && savedData) {
+  CONFIG = savedConfig;
+  GIST_DATA = savedData;
+  // Update family code display
+  document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
+  // Switch to app screen
+  document.getElementById('screenSetup').classList.remove('active');
+  document.getElementById('screenApp').classList.add('active');
+  initApp();
+  // Sync with GitHub on load
+  setTimeout(syncNow, 1500);
+} else {
+  // Show setup
+  document.getElementById('screenSetup').classList.add('active');
+}
 </script>
 </body>
 </html>
