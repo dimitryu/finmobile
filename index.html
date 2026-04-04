@@ -58,7 +58,7 @@ input,button,select,textarea{font-family:inherit}
 .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#22c55e,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:white;flex-shrink:0}
 .app-name{flex:1;min-width:80px}
 .app-name h1{font-size:12px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:5px;line-height:1.3}
-.ver-badge{font-size:9px;color:#374151;background:#1f2937;padding:1px 5px;border-radius:3px;font-family:monospace}
+.ver-badge{font-size:9px;color:#94a3b8;background:#374151;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:600}
 .app-name .sub{font-size:10px;color:var(--muted)}
 .nav-arr{width:26px;height:26px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
 .nav-arr:disabled{opacity:.3}
@@ -124,14 +124,17 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .ccrd{background:var(--card);border-radius:13px;padding:13px;margin-bottom:9px}
 .ctitle{font-size:calc(14px * var(--fs));font-weight:700;color:var(--white);margin-bottom:10px}
 .cbars{display:flex;align-items:flex-end;gap:3px;height:150px;overflow-x:auto}
-.bgrp{flex:1;min-width:26px;display:flex;flex-direction:column;align-items:center}
-.bcols{display:flex;align-items:flex-end;gap:1px;height:130px;width:100%}
+.bgrp{flex:1;min-width:32px;display:flex;flex-direction:column;align-items:center}
+.bcols{display:flex;align-items:flex-end;gap:1px;height:110px;width:100%}
 .bcol{flex:1;border-radius:2px 2px 0 0;min-height:2px}
-.blbl{font-size:9px;color:var(--muted);margin-top:3px;text-align:center}
+.blbl{font-size:8px;color:var(--muted);margin-top:2px;text-align:center}
+.bar-num{font-size:8px;color:var(--muted);text-align:center;margin-bottom:2px;white-space:nowrap;width:100%;overflow:hidden;text-overflow:ellipsis}
+.bar-bal{font-size:8px;font-weight:700;text-align:center;margin-top:1px;white-space:nowrap;width:100%;overflow:hidden}
 .lchrt{position:relative;height:85px;margin:0 4px}
 .lchrt svg{width:100%;height:100%}
-.avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
-@media(max-width:550px){.avgrid{grid-template-columns:repeat(2,1fr)}}
+.avgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+@media(max-width:600px){.avgrid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:400px){.avgrid{grid-template-columns:repeat(2,1fr)}}
 .ditm{background:var(--card2);border-radius:10px;padding:11px;margin-bottom:6px}
 .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
 .dname{font-size:calc(16px * var(--fs));font-weight:600;color:var(--white)}
@@ -203,7 +206,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.5.0</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.6.0</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <!-- sub: welcome -->
@@ -420,7 +423,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VER = '2.5.0';
+const APP_VER = '2.6.0';
 const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const MN_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const CC = {income:'#4ade80',fixed:'#f87171',variable:'#fb923c',balance:'#60a5fa',debt:'#a78bfa'};
@@ -604,7 +607,7 @@ function applyI18n() {
   // Setup screen
   const setupSub = document.getElementById('setupSub'); if(setupSub) setupSub.textContent = t('financialTracker');
   const setupTitle = document.getElementById('setupTitle');
-  if(setupTitle) setupTitle.innerHTML = `${t('appName')} <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v${APP_VER}</span>`;
+  if(setupTitle) setupTitle.innerHTML = `${t('appName')} <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v${APP_VER}</span>`;
   const setupEls = {
     swTitle: t('welcome'), btnCreateFamily: t('createFamily'), orText: t('or'),
     btnJoinFamily: t('joinFamily'), scTitle: t('createFamilyTitle'), tokenHintText: t('tokenHint'),
@@ -640,6 +643,30 @@ const DEFAULT_SECTIONS = [
 
 function getSections() {
   return GIST_DATA?.sections || DEFAULT_SECTIONS;
+}
+
+// Translated label for section cards (full, with icon)
+function getSectionLabel(s) {
+  if (s.id === 'income')   return t('incomeSection');
+  if (s.id === 'fixed')    return t('fixedSection');
+  if (s.id === 'variable') return t('variableSection');
+  return `${s.icon} ${s.label}`;
+}
+
+// Short label for legends, tooltips (no icon, first word)
+function getSectionShort(s) {
+  if (s.id === 'income')   return t('incLabel');
+  if (s.id === 'fixed')    return t('expLabel');
+  if (s.id === 'variable') return t('varLabel');
+  return s.label.split(' ')[0];
+}
+
+// Stat label (no icon)
+function getSectionStatLabel(s) {
+  if (s.id === 'income')   return t('statsIncome');
+  if (s.id === 'fixed')    return t('statsFixed');
+  if (s.id === 'variable') return t('statsVar');
+  return s.label;
 }
 
 function ensureSectionInMonths(secId) {
@@ -1218,10 +1245,10 @@ function renderStats() {
 
   // Build one card per income section + one combined expense card + debts + balance
   const incCards = secs.filter(s=>s.type==='income').map(s=>
-    [`${s.label}`, S(md[s.id]), s.color, s.icon]
+    [getSectionStatLabel(s), S(md[s.id]), s.color, s.icon]
   );
   const expCards = secs.filter(s=>s.type==='expense').map(s=>
-    [s.label, S(md[s.id]), s.color, s.icon]
+    [getSectionStatLabel(s), S(md[s.id]), s.color, s.icon]
   );
   const allCards = [
     ...incCards,
@@ -1293,13 +1320,13 @@ function renderMonth() {
   const debtSeg = `<div class="pseg" style="width:${pct(tD,totalIncome)}%;background:${CC.debt}"></div>`;
 
   // Build legend
-  const expLegend = secs.filter(s=>s.type==='expense').map(s=>`<span><span class="dot" style="background:${s.color}"></span>${s.label.split(' ')[0]}: ${fmtN(S(md[s.id]))}</span>`).join('');
+  const expLegend = secs.filter(s=>s.type==='expense').map(s=>`<span><span class="dot" style="background:${s.color}"></span>${getSectionShort(s)}: ${fmtN(S(md[s.id]))}</span>`).join('');
 
   // Build section cards grid — group income first, then expense
   const incomeSecs = secs.filter(s=>s.type==='income');
   const expenseSecs = secs.filter(s=>s.type==='expense');
   const allSecCards = [...incomeSecs, ...expenseSecs].map(s =>
-    secHTML(s.id, `${s.icon} ${s.label}`, s.color, md[s.id]||{}, S(md[s.id]))
+    secHTML(s.id, getSectionLabel(s), s.color, md[s.id]||{}, S(md[s.id]))
   ).join('');
 
   const el = document.getElementById('mainContent');
@@ -1390,29 +1417,49 @@ function renderTrends() {
     const totalInc = secs.filter(s=>s.type==='income').reduce((sum,s)=>sum+S(d[s.id]),0);
     const totalExp = secs.filter(s=>s.type==='expense').reduce((sum,s)=>sum+S(d[s.id]),0);
     const debt=(d.debts||[]).reduce((s,x)=>s+(x.monthly||0),0);
-    const row = { lbl:fmtK(k).split(' ')[0].slice(0,3), full:fmtK(k), income:totalInc, fixed:S(d.fixed||{}), variable:S(d.variable||{}), balance:totalInc-totalExp-debt };
+    const row = { lbl:fmtK(k).split(' ')[0].slice(0,3), full:fmtK(k),
+                  income:totalInc, fixed:S(d.fixed||{}), variable:S(d.variable||{}),
+                  debt, balance:totalInc-totalExp-debt };
     secs.forEach(s => { row[s.id] = S(d[s.id]); });
     return row;
   });
-  const maxV = Math.max(...td.map(d=>d.income), 1);
+  const maxV = Math.max(...td.map(d=>d.income+d.debt), 1);
   const bars = td.map(d => {
-    const h=v=>Math.max(2,Math.round((v/maxV)*120));
-    const segs = secs.map(s=>`<div class="bcol" style="height:${h(d[s.id]||0)}px;background:${s.color}"></div>`).join('');
-    return `<div class="bgrp" title="${d.full}\n${secs.map(s=>`${s.label.split(' ')[0]}: ${fmtN(d[s.id]||0)}`).join('\n')}">
-      <div class="bcols">${segs}</div>
+    const h=v=>Math.max(2,Math.round((v/maxV)*108));
+    // All expense sections + debt segment
+    const segs = secs.map(s=>`<div class="bcol" style="height:${h(d[s.id]||0)}px;background:${s.color}" title="${getSectionShort(s)}: ${fmtN(d[s.id]||0)}"></div>`).join('');
+    const debtSeg = d.debt>0 ? `<div class="bcol" style="height:${h(d.debt)}px;background:${CC.debt}" title="${t('tabDebts')}: ${fmtN(d.debt)}"></div>` : '';
+    // Format numbers: trim thousands (show k)
+    const incStr = d.income >= 1000 ? Math.round(d.income/1000)+'k' : fmtN(d.income);
+    const balColor = d.balance >= 0 ? '#4ade80' : '#ef4444';
+    const balStr = (d.balance >= 0 ? '+' : '') + (Math.abs(d.balance) >= 1000 ? Math.round(d.balance/1000)+'k' : String(Math.round(d.balance)));
+    return `<div class="bgrp" title="${d.full}\n${t('statsIncome')}: ${fmtN(d.income)}\n${secs.map(s=>`${getSectionShort(s)}: ${fmtN(d[s.id]||0)}`).join('\n')}\n${t('tabDebts')}: ${fmtN(d.debt)}\n${t('statsBalance')}: ${fmtN(d.balance)}">
+      <div class="bar-num">${incStr}</div>
+      <div class="bcols">${segs}${debtSeg}</div>
       <div class="blbl">${d.lbl}</div>
+      <div class="bar-bal" style="color:${balColor}">${balStr}</div>
     </div>`;
   }).join('');
   const bals=td.map(d=>d.balance), minB=Math.min(...bals), maxB=Math.max(...bals), rng=maxB-minB||1;
   const pts=td.map((d,i)=>`${(i/(td.length-1||1))*100},${85-((d.balance-minB)/rng)*75}`).join(' ');
   const cirs=td.map((d,i)=>{const cx=(i/(td.length-1||1))*100,cy=85-((d.balance-minB)/rng)*75;return`<circle cx="${cx}" cy="${cy}" r="2.5" fill="${d.balance>=0?CC.balance:'#ef4444'}"><title>${d.full}: ${fmtN(d.balance)}</title></circle>`;}).join('');
   const avg=a=>Math.round(a.reduce((s,v)=>s+v,0)/a.length);
-  const avgs=[[t('avgIncome'),avg(td.map(d=>d.income)),CC.income],[t('avgFixed'),avg(td.map(d=>d.fixed)),CC.fixed],[t('avgVar'),avg(td.map(d=>d.variable)),CC.variable],[t('avgBalance'),avg(td.map(d=>d.balance)),CC.balance]];
-  // Build dynamic section legend for bar chart
-  const barLegend = secs.map(s=>`<span><span class="dot" style="background:${s.color}"></span>${s.label.split(' ')[0]}</span>`).join('');
+  const avgDebt = avg(td.map(d=>d.debt));
+  const avgs=[
+    [t('avgIncome'),avg(td.map(d=>d.income)),CC.income],
+    [t('avgFixed'),avg(td.map(d=>d.fixed)),CC.fixed],
+    [t('avgVar'),avg(td.map(d=>d.variable)),CC.variable],
+    [t('statsDebt'),avgDebt,CC.debt],
+    [t('avgBalance'),avg(td.map(d=>d.balance)),CC.balance]
+  ];
+  // Legend: all sections + credits
+  const barLegend = [
+    ...secs.map(s=>`<span><span class="dot" style="background:${s.color}"></span>${getSectionShort(s)}</span>`),
+    `<span><span class="dot" style="background:${CC.debt}"></span>${t('tabDebts')}</span>`
+  ].join('');
 
   document.getElementById('mainContent').innerHTML = `
-    <div class="ccrd"><div class="ctitle">${t('chartTitle')}</div><div style="overflow-x:auto"><div class="cbars" style="min-width:${keys.length*36}px">${bars}</div></div>
+    <div class="ccrd"><div class="ctitle">${t('chartTitle')}</div><div style="overflow-x:auto"><div class="cbars" style="min-width:${keys.length*44}px">${bars}</div></div>
       <div class="prog-leg" style="margin-top:8px">${barLegend}</div>
     </div>
     <div class="ccrd"><div class="ctitle">${t('chartBalance')}</div>
