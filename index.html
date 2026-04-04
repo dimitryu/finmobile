@@ -11,6 +11,7 @@
 <link rel="manifest" id="mlink"/>
 <link rel="apple-touch-icon" id="ati"/>
 <link rel="icon" id="favicon" type="image/png"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#0b0f1a;--card:#111827;--card2:#1a2236;--border:#1f2937;--text:#cbd5e1;--muted:#6b7280;--white:#f1f5f9;--fs:1}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -171,6 +172,29 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .font-btn{flex:1;background:var(--card2);border:2px solid var(--border);border-radius:9px;color:var(--text);cursor:pointer;padding:10px 4px;font-weight:800;transition:all .15s;line-height:1}
 .font-btn:hover{border-color:#3b82f6;color:#93c5fd}
 .font-btn.factive{border-color:#3b82f6;color:#60a5fa;background:#1e3a5f}
+/* Import/Export */
+.ie-btn{background:linear-gradient(135deg,#0891b2,#0e7490);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.ie-btn:hover{opacity:.85}
+.drop-zone{border:2px dashed #374151;border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#3b82f6;background:rgba(59,130,246,.06)}
+.drop-zone input{display:none}
+.drop-icon{font-size:32px;margin-bottom:8px}
+.drop-text{font-size:13px;color:var(--text);margin-bottom:4px}
+.drop-hint{font-size:11px;color:var(--muted)}
+.ai-progress{background:var(--card2);border-radius:12px;padding:16px;text-align:center;margin-bottom:12px}
+.ai-spin{font-size:28px;display:inline-block;animation:spin 1s linear infinite;margin-bottom:8px}
+.ai-msg{font-size:13px;color:var(--text);margin-bottom:4px}
+.ai-sub{font-size:11px;color:var(--muted)}
+.preview-box{background:var(--card2);border-radius:12px;padding:14px;margin-bottom:12px;max-height:260px;overflow-y:auto}
+.preview-month{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:7px;margin-bottom:3px;cursor:pointer;transition:background .1s}
+.preview-month:hover{background:#1f2937}
+.preview-month-name{font-size:13px;color:var(--white);font-weight:600}
+.preview-month-stats{font-size:11px;color:var(--muted);display:flex;gap:8px}
+.preview-badge{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700}
+.pb-inc{background:rgba(74,222,128,.15);color:#4ade80}
+.pb-exp{background:rgba(248,113,113,.15);color:#f87171}
+.ie-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.modal-wide{max-width:520px}
 </style>
 </head>
 <body>
@@ -259,6 +283,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
         <button class="tab" data-view="debts">💳</button>
       </div>
       <div class="sync-wrap">
+        <button class="ie-btn" onclick="openImportExport()" title="Импорт / Экспорт Excel">📊 Excel</button>
         <button class="sync-btn" id="syncBtn" onclick="syncNow()">
           <span id="syncIcon">☁</span>
           <span id="syncText">Synced</span>
@@ -276,6 +301,63 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   <div class="main">
     <div class="stats-grid" id="statsGrid"></div>
     <div id="mainContent"></div>
+  </div>
+</div>
+
+<!-- Import/Export modal -->
+<div class="modal-bg" id="ieModal">
+  <div class="modal modal-wide">
+    <button class="mclose" onclick="closeImportExport()">×</button>
+    <h3>📊 Импорт / Экспорт Excel</h3>
+
+    <!-- EXPORT -->
+    <div class="mlabel">⬇ Экспорт данных в Excel</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Скачать все месяцы в файл <b>.xlsx</b> — каждый месяц на отдельном листе с разделами Доходы, Расходы, Кредиты.
+    </p>
+    <button class="sbtn sbtn-green" style="font-size:13px" onclick="exportToExcel()">⬇ Скачать Excel файл</button>
+
+    <hr class="ie-divider"/>
+
+    <!-- IMPORT -->
+    <div class="mlabel">⬆ Импорт из Excel (AI-анализ)</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+      Загрузите файл <b>.xlsx</b> или <b>.xls</b> — ИИ автоматически распознает структуру и заполнит все месяцы.
+    </p>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('excelFileIn').click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="handleFileDrop(event)">
+      <input type="file" id="excelFileIn" accept=".xlsx,.xls,.ods" onchange="handleFileSelect(event)"/>
+      <div class="drop-icon">📁</div>
+      <div class="drop-text">Перетащите файл сюда или нажмите для выбора</div>
+      <div class="drop-hint">.xlsx · .xls · .ods</div>
+    </div>
+
+    <!-- AI Progress -->
+    <div class="ai-progress" id="aiProgress" style="display:none">
+      <div class="ai-spin">🤖</div>
+      <div class="ai-msg" id="aiMsg">ИИ анализирует файл...</div>
+      <div class="ai-sub" id="aiSub">Это займёт несколько секунд</div>
+    </div>
+
+    <!-- Preview -->
+    <div id="importPreview" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700;color:var(--white)">📋 Найдено месяцев: <span id="previewCount">0</span></span>
+        <span style="font-size:11px;color:var(--muted)">Нажмите на месяц для просмотра</span>
+      </div>
+      <div class="preview-box" id="previewList"></div>
+      <div style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.2);border-radius:8px;padding:10px;font-size:11px;color:#fb923c;margin-bottom:12px">
+        ⚠ Импорт <b>заменит</b> текущие данные. Создайте резервную копию через «Экспорт» если нужно.
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="sbtn sbtn-green" style="font-size:13px" onclick="confirmImport()">✅ Импортировать данные</button>
+        <button class="sbtn sbtn-gray" style="font-size:13px;flex:0 0 auto;width:auto;padding:13px 16px" onclick="resetImport()">✕ Отмена</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1445,6 +1527,305 @@ function getInitialData() {
 "03_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч группа":495},"variable":{"Супермаркет":8300,"Рестораны":1250,"Маникюр":640,"Дети разное":200,"Дни рождения":850,"Хоз. товары":660,"Врач":150,"Одежда":128,"Сигареты":3065,"Косметика":520},"debts":[{"name":"Грузия тур","total":6075,"payments_left":1,"monthly":2025},{"name":"Лига КадурЯд","total":3750,"payments_left":2,"monthly":375},{"name":"Школа","total":2521,"payments_left":2,"monthly":420}]},
 "04_26":{"income":{"Зарплата Дима":19950,"Зарплата Оксана":9935,"Детские деньги":270},"fixed":{"Квартира":4547,"Арнона":560,"Ваад байт":100,"Свет":400,"Газ":70,"Вода":120,"Телефоны":187,"Ссуды":1050,"Интернет":140,"Mifal Pais":60,"Kodi VIP":25,"Макаби zahav":175,"Страховки Дима":917,"Страховки Оксана":38,"Страховки квартира":55,"Spotify":22,"Google Disk":14,"LastPass":36,"Lupinsky Club":129,"Спорт":355,"Gemeni":75,"Эвелин Коуч группа":495},"variable":{"Супермаркет":510,"Рестораны":0,"Маникюр":0,"Дети разное":0,"Дни рождения":0,"Стоянка":0,"Учеба Дети":0,"Temu":0,"Проезд":0,"Хоз. товары":0,"Врач":0,"Одежда":0,"Сигареты":0,"Косметика":0},"debts":[{"name":"Лига КадурЯд","total":3750,"payments_left":1,"monthly":375},{"name":"Школа","total":2521,"payments_left":1,"monthly":420}]}
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── IMPORT / EXPORT ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let importedData = null; // holds AI-parsed data before confirmation
+
+function openImportExport() {
+  resetImport();
+  document.getElementById('ieModal').classList.add('open');
+}
+function closeImportExport() {
+  document.getElementById('ieModal').classList.remove('open');
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportToExcel() {
+  if (typeof XLSX === 'undefined') { toast('⚠ Библиотека XLSX не загружена'); return; }
+  const budgetData = getBudgetData();
+  const months = sortK(Object.keys(budgetData));
+  if (!months.length) { toast('⚠ Нет данных для экспорта'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  months.forEach(key => {
+    const md = budgetData[key];
+    const secs = getSections();
+    const rows = [];
+
+    // ── Header row ──
+    const hdr = [''];
+    const secCols = secs.map(s => [s.label, 'Сумма']);
+    secCols.forEach(c => hdr.push(...c));
+    hdr.push('', 'Кредиты', 'Сумма', '', 'Выплат осталось', 'В месяц');
+    rows.push(hdr);
+
+    // ── Section items (max rows) ──
+    const secEntries = secs.map(s => Object.entries(md[s.id]||{}).filter(([,v])=>v>0));
+    const debtRows = (md.debts||[]);
+    const maxRows = Math.max(...secEntries.map(e=>e.length), debtRows.length, 1);
+
+    for (let i = 0; i < maxRows; i++) {
+      const row = [''];
+      secs.forEach((s, si) => {
+        const e = secEntries[si][i];
+        row.push(e ? e[0] : '', e ? (e[1]||0) : '');
+      });
+      const d = debtRows[i];
+      row.push('', d ? d.name : '', d ? d.monthly : '', '', d ? d.payments_left : '', '');
+      rows.push(row);
+    }
+
+    // ── Totals row ──
+    rows.push(['']);
+    const totRow = ['ИТОГО'];
+    secs.forEach(s => {
+      const total = Object.values(md[s.id]||{}).reduce((a,v)=>a+(+v||0),0);
+      totRow.push('', total);
+    });
+    rows.push(totRow);
+
+    // ── Debts total ──
+    const debtTotal = debtRows.reduce((s,d)=>s+(d.monthly||0),0);
+    rows.push(['', ...Array(secs.length*2).fill(''), '', 'Итого/мес', debtTotal]);
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Column widths
+    ws['!cols'] = [{ wch:2 }, ...secs.flatMap(()=>[{wch:24},{wch:10}]), {wch:2},{wch:24},{wch:10},{wch:2},{wch:12},{wch:10}];
+
+    // Style header row (bold simulation via cell type)
+    const sheetName = fmtK(key).replace(/[:\\\/\?\*\[\]]/g,'').slice(0,31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  const fname = `Семейный_Бюджет_${new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  toast('✅ Файл сохранён: ' + fname);
+  closeImportExport();
+}
+
+// ─── IMPORT FILE HANDLING ─────────────────────────────────────────────────────
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) processExcelFile(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files?.[0];
+  if (file) processExcelFile(file);
+}
+
+async function processExcelFile(file) {
+  if (!file.name.match(/\.(xlsx|xls|ods)$/i)) {
+    toast('⚠ Нужен файл .xlsx, .xls или .ods'); return;
+  }
+
+  // Show progress
+  document.getElementById('dropZone').style.display = 'none';
+  document.getElementById('aiProgress').style.display = '';
+  document.getElementById('importPreview').style.display = 'none';
+  setAiMsg('📖 Читаю файл...', '');
+
+  try {
+    // 1. Parse Excel
+    const rawData = await readExcelToText(file);
+    setAiMsg('🤖 ИИ анализирует структуру...', 'Claude распознаёт месяцы, доходы и расходы');
+
+    // 2. Send to Claude AI
+    const parsed = await analyzeExcelWithAI(rawData);
+    if (!parsed || !Object.keys(parsed).length) throw new Error('ИИ не смог распознать структуру файла');
+
+    importedData = parsed;
+
+    // 3. Show preview
+    showImportPreview(parsed);
+  } catch(err) {
+    document.getElementById('aiProgress').style.display = 'none';
+    document.getElementById('dropZone').style.display = '';
+    document.getElementById('excelFileIn').value = '';
+    toast('❌ ' + (err.message || 'Ошибка анализа'));
+  }
+}
+
+function setAiMsg(msg, sub) {
+  document.getElementById('aiMsg').textContent = msg;
+  document.getElementById('aiSub').textContent = sub;
+}
+
+// ─── READ EXCEL → TEXT ────────────────────────────────────────────────────────
+async function readExcelToText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: false });
+        const sheets = {};
+        wb.SheetNames.forEach(name => {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header:1, defval:'' });
+          // Filter empty rows, limit to 50 rows per sheet
+          const clean = rows.filter(r => r.some(c => c !== '')).slice(0, 50);
+          if (clean.length > 1) sheets[name] = clean;
+        });
+        resolve(sheets);
+      } catch(e) { reject(new Error('Не удалось прочитать файл: ' + e.message)); }
+    };
+    reader.onerror = () => reject(new Error('Ошибка чтения файла'));
+    reader.readAsBinaryString(file);
+  });
+}
+
+// ─── AI ANALYSIS ──────────────────────────────────────────────────────────────
+async function analyzeExcelWithAI(sheetsData) {
+  // Build compact text representation
+  const sheetTexts = Object.entries(sheetsData).map(([name, rows]) => {
+    const lines = rows.map(r => r.map(c => String(c).trim()).filter(c=>c).join('\t')).filter(l=>l);
+    return `=== Лист: ${name} ===\n${lines.join('\n')}`;
+  }).join('\n\n');
+
+  const prompt = `Ты анализируешь Excel файл семейного бюджета. Вот данные по листам:
+
+${sheetTexts.slice(0, 8000)}
+
+Задача: преобразовать эти данные в JSON следующей структуры.
+
+ПРАВИЛА:
+1. Ключи — формат MM_YY (месяц_год), например 04_26 для апреля 2026
+2. Если название листа — дата (напр. "Апрель 2026", "04_26", "April 2026") — используй как ключ месяца
+3. Если один лист содержит все месяцы — создай отдельную запись для каждого
+4. income — все источники дохода (зарплата, бонусы и т.д.)
+5. fixed — постоянные ежемесячные расходы (аренда, коммунальные, страховки)
+6. variable — переменные расходы (еда, рестораны, развлечения)
+7. debts — кредиты/рассрочки с полями: name, total (общая сумма), monthly (платёж/мес), payments_left (выплат осталось)
+8. Все суммы — положительные числа
+9. Имена статей — точно как в файле (на любом языке)
+
+Верни ТОЛЬКО валидный JSON, без объяснений, без markdown:
+
+{
+  "04_26": {
+    "income": {"Зарплата Дима": 19950, "Зарплата Оксана": 9935},
+    "fixed": {"Квартира": 4547, "Арнона": 560},
+    "variable": {"Супермаркет": 510, "Рестораны": 0},
+    "debts": [{"name":"Холодильник","total":4365,"monthly":181,"payments_left":1}]
+  }
+}`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!resp.ok) throw new Error('API ошибка: ' + resp.status);
+  const data = await resp.json();
+  const text = data.content?.find(c=>c.type==='text')?.text || '';
+
+  // Extract JSON from response
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('ИИ вернул неверный формат');
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch(e) {
+    throw new Error('Ошибка разбора ответа ИИ');
+  }
+}
+
+// ─── PREVIEW ──────────────────────────────────────────────────────────────────
+function showImportPreview(data) {
+  document.getElementById('aiProgress').style.display = 'none';
+  document.getElementById('importPreview').style.display = '';
+
+  const months = sortK(Object.keys(data));
+  document.getElementById('previewCount').textContent = months.length;
+
+  const list = document.getElementById('previewList');
+  list.innerHTML = months.map(key => {
+    const md = data[key];
+    const tI = Object.values(md.income||{}).reduce((s,v)=>s+(+v||0),0);
+    const tF = Object.values(md.fixed||{}).reduce((s,v)=>s+(+v||0),0);
+    const tV = Object.values(md.variable||{}).reduce((s,v)=>s+(+v||0),0);
+    const tD = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
+    const bal = tI - tF - tV - tD;
+    return `<div class="preview-month" onclick="togglePreviewDetail('${key}')">
+      <div>
+        <div class="preview-month-name">${fmtK(key)}</div>
+        <div class="preview-month-stats">
+          <span>${Object.keys(md.income||{}).length} доходов</span>
+          <span>${Object.keys({...(md.fixed||{}), ...(md.variable||{})}).length} расходов</span>
+          <span>${(md.debts||[]).length} кредитов</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <span class="preview-badge pb-inc">↑ ${fmtN(tI)}</span><br/>
+        <span class="preview-badge pb-exp" style="margin-top:3px;display:inline-block">↓ ${fmtN(tF+tV+tD)}</span>
+      </div>
+    </div>
+    <div id="pd_${key}" style="display:none;padding:6px 8px 8px;background:#0f1620;border-radius:8px;margin-bottom:4px;font-size:11px;color:var(--muted)">
+      ${Object.entries(md.income||{}).map(([k,v])=>`<span style="margin-right:8px">💰 ${k}: <b style="color:#4ade80">${fmtN(v)}</b></span>`).join('')}
+      <br/>${Object.entries(md.fixed||{}).map(([k,v])=>`<span style="margin-right:8px">🏠 ${k}: ${fmtN(v)}</span>`).join('')}
+      <br/>${Object.entries(md.variable||{}).filter(([,v])=>v>0).map(([k,v])=>`<span style="margin-right:8px">🛒 ${k}: ${fmtN(v)}</span>`).join('')}
+      ${(md.debts||[]).length?`<br/>${(md.debts||[]).map(d=>`<span style="margin-right:8px">💳 ${d.name}: ${fmtN(d.monthly)}/мес</span>`).join('')}`:''}
+    </div>`;
+  }).join('');
+}
+
+function togglePreviewDetail(key) {
+  const el = document.getElementById('pd_' + key);
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function resetImport() {
+  importedData = null;
+  document.getElementById('dropZone').style.display = '';
+  document.getElementById('aiProgress').style.display = 'none';
+  document.getElementById('importPreview').style.display = 'none';
+  document.getElementById('excelFileIn').value = '';
+}
+
+// ─── CONFIRM IMPORT ───────────────────────────────────────────────────────────
+async function confirmImport() {
+  if (!importedData || !GIST_DATA) return;
+
+  // Merge imported months into existing data, keeping app sections config
+  const existing = getBudgetData();
+  const merged = { ...existing };
+  const secs = getSections();
+
+  Object.entries(importedData).forEach(([key, md]) => {
+    // Build a proper month entry matching current sections
+    const entry = { debts: md.debts || [] };
+    secs.forEach(s => {
+      // Map income/fixed/variable → section IDs
+      if (s.id === 'income') entry[s.id] = md.income || {};
+      else if (s.id === 'fixed') entry[s.id] = md.fixed || {};
+      else if (s.id === 'variable') entry[s.id] = md.variable || {};
+      else entry[s.id] = md[s.id] || {};
+    });
+    merged[key] = entry;
+  });
+
+  GIST_DATA.budget_data = merged;
+  closeImportExport();
+
+  setSyncStatus('spin', 'Сохранение...');
+  await pushData();
+
+  const count = Object.keys(importedData).length;
+  buildSel(); renderView(); updateSubTitle();
+  toast(`✅ Импортировано ${count} ${count===1?'месяц':count<5?'месяца':'месяцев'}`);
+  importedData = null;
 }
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
