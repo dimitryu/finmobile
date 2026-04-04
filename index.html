@@ -178,6 +178,14 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .font-btn{flex:1;background:var(--card2);border:2px solid var(--border);border-radius:9px;color:var(--text);cursor:pointer;padding:10px 4px;font-weight:800;transition:all .15s;line-height:1}
 .font-btn:hover{border-color:#3b82f6;color:#93c5fd}
 .font-btn.factive{border-color:#3b82f6;color:#60a5fa;background:#1e3a5f}
+/* Copy month & sections drag */
+.month-src-sel{width:100%;background:var(--card2);color:var(--white);border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:14px;outline:none;cursor:pointer;margin-bottom:10px}
+.month-src-sel:focus{border-color:#3b82f6}
+.sec-drag-row{background:var(--card2);border-radius:9px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:grab;user-select:none;transition:opacity .2s,transform .1s}
+.sec-drag-row:active{cursor:grabbing}
+.sec-drag-row.dragging{opacity:.4}
+.sec-drag-row.drag-over{border:1px dashed #3b82f6;transform:scale(1.01)}
+.drag-handle{color:var(--muted);font-size:14px;cursor:grab;padding:0 2px;flex-shrink:0}
 /* Import/Export */
 .ie-btn{background:linear-gradient(135deg,#0891b2,#0e7490);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .ie-btn:hover{opacity:.85}
@@ -282,6 +290,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
         <select class="msel" id="monthSel"></select>
         <button class="nav-arr" id="nextBtn">›</button>
         <button class="add-m" id="addMonthBtn">+ Мес.</button>
+        <button class="add-m" id="copyMonthBtn" onclick="openCopyMonth()" title="Копировать данные из другого месяца" style="background:var(--card2);color:#60a5fa;border-color:#3b82f6">📋</button>
       </div>
       <div class="tabs">
         <button class="tab active" data-view="month">📊</button>
@@ -367,6 +376,26 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   </div>
 </div>
 
+<!-- Copy Month modal -->
+<div class="modal-bg" id="copyMonthModal">
+  <div class="modal">
+    <button class="mclose" onclick="closeCopyMonth()">×</button>
+    <h3 id="copyMonthTitle">📋 Копировать данные из другого месяца</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5" id="copyMonthDesc">
+      Выберите месяц, данные которого будут скопированы в <b id="copyMonthTarget">—</b>
+    </p>
+    <select class="month-src-sel" id="copyMonthSel"></select>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="sbtn sbtn-green" style="font-size:13px" onclick="confirmCopyMonth(false)">📋 Скопировать</button>
+      <button class="sbtn sbtn-purple" style="font-size:13px" onclick="confirmCopyMonth(true)">🔀 Объединить</button>
+    </div>
+    <p style="font-size:10px;color:var(--muted);line-height:1.5">
+      <b>Скопировать</b> — заменит все данные текущего месяца.<br/>
+      <b>Объединить</b> — добавит только отсутствующие статьи (не перезапишет существующие).
+    </p>
+  </div>
+</div>
+
 <!-- Settings modal -->
 <div class="modal-bg" id="settingsModal">
   <div class="modal">
@@ -429,7 +458,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.7.0';  // Версия приложения
+const APP_VER = '2.8.0';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -776,14 +805,52 @@ function renderSettingsSections() {
   const el = document.getElementById('sectionsManager');
   if (!el) return;
   const secs = getSections();
-  el.innerHTML = secs.map(s => `
-    <div style="background:var(--card2);border-radius:9px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+  el.innerHTML = secs.map((s, i) => `
+    <div class="sec-drag-row" data-sid="${s.id}" draggable="true"
+         ondragstart="secDragStart(event,'${s.id}')"
+         ondragover="secDragOver(event)"
+         ondragleave="secDragLeave(event)"
+         ondrop="secDrop(event,'${s.id}')">
+      <span class="drag-handle" title="Перетащить для сортировки">⠿</span>
       <span style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0;display:inline-block"></span>
       <span style="font-size:12px;color:var(--white);flex:1">${getSectionLabel(s)}</span>
       <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${s.type==='income'?'rgba(74,222,128,.15)':'rgba(248,113,113,.15)'};color:${s.type==='income'?'#4ade80':'#f87171'}">${s.type==='income'?t('secTypeIncome'):t('secTypeExpense')}</span>
       <button onclick="renameSection('${s.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 3px" title="${t('editSection')}">✏</button>
       ${!['income','fixed','variable'].includes(s.id)?`<button onclick="deleteSection('${s.id}')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;padding:0 3px" title="${t('deleteSection')}">🗑</button>`:''}
     </div>`).join('');
+}
+
+// ─── SECTION DRAG-AND-DROP SORT ───────────────────────────────────────────────
+let _dragSecId = null;
+function secDragStart(e, id) {
+  _dragSecId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.closest('.sec-drag-row')?.classList.add('dragging'), 0);
+}
+function secDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function secDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+async function secDrop(e, targetId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!_dragSecId || _dragSecId === targetId) { _dragSecId = null; return; }
+  const secs = getSections();
+  const fromIdx = secs.findIndex(s => s.id === _dragSecId);
+  const toIdx   = secs.findIndex(s => s.id === targetId);
+  if (fromIdx < 0 || toIdx < 0) { _dragSecId = null; return; }
+  // Reorder
+  const moved = secs.splice(fromIdx, 1)[0];
+  secs.splice(toIdx, 0, moved);
+  GIST_DATA.sections = secs;
+  _dragSecId = null;
+  await pushData();
+  renderSettingsSections();
+  renderView();
 }
 
 // ─── FONT SCALE ───────────────────────────────────────────────────────────────
@@ -1674,6 +1741,58 @@ function getInitialData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ─── COPY MONTH ───────────────────────────────────────────────────────────────
+function openCopyMonth() {
+  const data = getBudgetData();
+  const months = sortK(Object.keys(data)).filter(k => k !== selMonth);
+  if (!months.length) { toast('⚠ Нет других месяцев для копирования'); return; }
+
+  const sel = document.getElementById('copyMonthSel');
+  sel.innerHTML = [...months].reverse().map(k =>
+    `<option value="${k}">${fmtK(k)}</option>`
+  ).join('');
+
+  document.getElementById('copyMonthTarget').textContent = fmtK(selMonth);
+  document.getElementById('copyMonthModal').classList.add('open');
+}
+
+function closeCopyMonth() {
+  document.getElementById('copyMonthModal').classList.remove('open');
+}
+
+async function confirmCopyMonth(merge) {
+  const srcKey = document.getElementById('copyMonthSel').value;
+  if (!srcKey) return;
+  const data = getBudgetData();
+  const src = data[srcKey];
+  const dst = getMD();
+  const secs = getSections();
+
+  if (merge) {
+    // Merge: add items from src that don't exist in dst
+    secs.forEach(s => {
+      Object.entries(src[s.id]||{}).forEach(([k,v]) => {
+        if (dst[s.id][k] === undefined) dst[s.id][k] = v;
+      });
+    });
+    // Merge debts: add debts not already named in dst
+    const existingNames = (dst.debts||[]).map(d=>d.name);
+    (src.debts||[]).forEach(d => {
+      if (!existingNames.includes(d.name)) dst.debts.push({...d});
+    });
+  } else {
+    // Full copy: replace all sections and debts from src
+    secs.forEach(s => { dst[s.id] = {...(src[s.id]||{})}; });
+    dst.debts = (src.debts||[]).map(d=>({...d}));
+  }
+
+  setMD(dst);
+  closeCopyMonth();
+  await pushData();
+  renderView();
+  toast(merge ? `🔀 Объединено из ${fmtK(srcKey)}` : `📋 Скопировано из ${fmtK(srcKey)}`);
+}
+
 // ─── IMPORT / EXPORT ──────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
