@@ -81,9 +81,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 
 /* MAIN */
 .main{max-width:900px;margin:0 auto;padding:10px}
-.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
-@media(max-width:650px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:400px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-bottom:8px}
 .stat{background:var(--card);border-radius:10px;padding:10px 11px;border-left:3px solid}
 .stat-lbl{font-size:calc(13px * var(--fs));color:var(--muted);margin-bottom:3px}
 .stat-val{font-size:calc(19px * var(--fs));font-weight:700;font-family:'Courier New',monospace}
@@ -181,26 +179,26 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1">Семейный Бюджет <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.3.0</span></h1>
-    <p class="setup-sub">Финансовый трекер</p>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.4.0</span></h1>
+    <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <!-- sub: welcome -->
     <div id="subWelcome" class="scard">
-      <h3>👋 Добро пожаловать!</h3>
-      <button class="sbtn sbtn-green" onclick="showSub('subCreate')">
+      <h3 id="swTitle">👋 Добро пожаловать!</h3>
+      <button class="sbtn sbtn-green" id="btnCreateFamily" onclick="showSub('subCreate')">
         ➕ Создать семью (новый аккаунт)
       </button>
-      <div class="or-div"><hr/><span>или</span><hr/></div>
-      <button class="sbtn sbtn-purple" onclick="showSub('subJoin')">
+      <div class="or-div"><hr/><span id="orText">или</span><hr/></div>
+      <button class="sbtn sbtn-purple" id="btnJoinFamily" onclick="showSub('subJoin')">
         🔗 Присоединиться к семье
       </button>
     </div>
 
     <!-- sub: create -->
     <div id="subCreate" class="scard" style="display:none">
-      <button class="back-btn" onclick="showSub('subWelcome')">← Назад</button>
-      <h3>➕ Создать семью</h3>
-      <div class="hint-box">
+      <button class="back-btn" id="backFromCreate" onclick="showSub('subWelcome')">← Назад</button>
+      <h3 id="scTitle">➕ Создать семью</h3>
+      <div class="hint-box" id="tokenHintBox">
         Для синхронизации через GitHub нужен <b>Personal Access Token</b>
         с правами на <b>Gist</b>.<br/>
         Создайте на: <b>github.com → Settings → Developer settings → Tokens (classic)</b>
@@ -209,31 +207,31 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <input class="sinp" id="cFamilyName" placeholder="Название семьи (напр. Наша семья)" maxlength="40"/>
       <input class="sinp" id="cUserName" placeholder="Ваше имя (напр. Дима)" maxlength="30"/>
       <input class="sinp" id="cToken" placeholder="GitHub Token (ghp_...)" type="password" autocomplete="off"/>
-      <div class="sinp-hint">Токен будет зашифрован и сохранён только на вашем устройстве</div>
-      <button class="sbtn sbtn-green" onclick="createFamily()">🚀 Создать семью</button>
+      <div class="sinp-hint" id="tokenHintText">Токен будет зашифрован и сохранён только на вашем устройстве</div>
+      <button class="sbtn sbtn-green" id="btnCreate" onclick="createFamily()">🚀 Создать семью</button>
     </div>
 
     <!-- sub: created -->
     <div id="subCreated" class="scard" style="display:none">
       <div class="success-icon">🎉</div>
-      <h3>Семья создана!</h3>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+      <h3 id="createdTitle">Семья создана!</h3>
+      <p id="createdMsg" style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
         Поделитесь этим кодом с членами семьи, чтобы они могли присоединиться:
       </p>
       <div class="code-box" onclick="copyFamilyCode()" id="familyCodeDisplay">
         <code id="familyCodeText">—</code>
-        <small>📋 Нажмите, чтобы скопировать</small>
+        <small id="clickCopyText">📋 Нажмите, чтобы скопировать</small>
       </div>
-      <button class="sbtn sbtn-green" onclick="enterApp()">✅ Начать работу</button>
+      <button class="sbtn sbtn-green" id="btnStart" onclick="enterApp()">✅ Начать работу</button>
     </div>
 
     <!-- sub: join -->
     <div id="subJoin" class="scard" style="display:none">
-      <button class="back-btn" onclick="showSub('subWelcome')">← Назад</button>
-      <h3>🔗 Присоединиться к семье</h3>
+      <button class="back-btn" id="backFromJoin" onclick="showSub('subWelcome')">← Назад</button>
+      <h3 id="sjTitle">🔗 Присоединиться к семье</h3>
       <input class="sinp" id="jCode" placeholder="Семейный код (от администратора)" autocomplete="off"/>
       <input class="sinp" id="jUserName" placeholder="Ваше имя (напр. Оксана)" maxlength="30"/>
-      <button class="sbtn sbtn-purple" onclick="joinFamily()">🔗 Присоединиться</button>
+      <button class="sbtn sbtn-purple" id="btnJoin" onclick="joinFamily()">🔗 Присоединиться</button>
     </div>
 
   </div>
@@ -267,7 +265,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <div class="sync-wrap">
         <button class="sync-btn" id="syncBtn" onclick="syncNow()">
           <span id="syncIcon">☁</span>
-          <span id="syncText">Синхр.</span>
+          <span id="syncText">Synced</span>
         </button>
         <div class="user-badge" onclick="openSettings()" id="userBadge">
           <span class="udot"></span>
@@ -289,35 +287,366 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div class="modal-bg" id="settingsModal">
   <div class="modal">
     <button class="mclose" onclick="closeSettings()">×</button>
-    <h3>⚙ Настройки</h3>
-    <div class="mlabel">Размер шрифта</div>
+    <h3 id="stgTitle">⚙ Настройки</h3>
+
+    <!-- Language -->
+    <div class="mlabel" id="lbLang">Язык интерфейса</div>
+    <div class="font-row">
+      <button class="font-btn" data-lk="ru" onclick="setLang('ru')" style="font-size:14px">RU</button>
+      <button class="font-btn" data-lk="he" onclick="setLang('he')" style="font-size:14px">עב</button>
+      <button class="font-btn" data-lk="en" onclick="setLang('en')" style="font-size:14px">EN</button>
+    </div>
+
+    <!-- Font size -->
+    <div class="mlabel" id="lbFont">Размер шрифта</div>
     <div class="font-row" id="fontRow">
       <button class="font-btn" data-fk="s" onclick="setFont('s')" style="font-size:12px">А<br><span style="font-size:9px;font-weight:400">S</span></button>
       <button class="font-btn" data-fk="m" onclick="setFont('m')" style="font-size:15px">А<br><span style="font-size:9px;font-weight:400">M</span></button>
       <button class="font-btn" data-fk="l" onclick="setFont('l')" style="font-size:18px">А<br><span style="font-size:9px;font-weight:400">L</span></button>
       <button class="font-btn" data-fk="xl" onclick="setFont('xl')" style="font-size:21px">А<br><span style="font-size:9px;font-weight:400">XL</span></button>
     </div>
-    <div class="mlabel">Семейный код (для приглашения)</div>
+
+    <!-- Sections management -->
+    <div class="mlabel" id="lbSections">Категории (разделы)</div>
+    <div id="sectionsManager"></div>
+    <button class="sbtn sbtn-purple" style="margin-top:8px;font-size:12px" onclick="openAddSection()">+ Добавить категорию</button>
+    <div id="addSectionForm" style="display:none;margin-top:10px">
+      <input class="sinp" id="newSecLabel" placeholder="Название категории (напр. Накопления)"/>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="font-btn" id="newSecTypeInc" onclick="newSecType='income';document.getElementById('newSecTypeInc').classList.add('factive');document.getElementById('newSecTypeExp').classList.remove('factive')" style="font-size:12px;flex:1">↑ Доходы</button>
+        <button class="font-btn factive" id="newSecTypeExp" onclick="newSecType='expense';document.getElementById('newSecTypeExp').classList.add('factive');document.getElementById('newSecTypeInc').classList.remove('factive')" style="font-size:12px;flex:1">↓ Расходы</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="sbtn sbtn-green" style="font-size:12px;padding:9px" onclick="confirmAddSection()">✓ Создать</button>
+        <button class="sbtn sbtn-gray" style="font-size:12px;padding:9px" onclick="cancelAddSection()">✕</button>
+      </div>
+    </div>
+
+    <!-- Family code -->
+    <div class="mlabel" id="lbFamCode">Семейный код (для приглашения)</div>
     <div class="fcode-box" onclick="copyFamilyCode()" id="settingsFamilyCode">
       <code id="settingsFamilyCodeText">—</code>
-      <small>📋 Нажмите, чтобы скопировать</small>
+      <small id="lbCopyCode">📋 Нажмите, чтобы скопировать</small>
     </div>
-    <div class="mlabel">Члены семьи</div>
+
+    <!-- Members -->
+    <div class="mlabel" id="lbMembers">Члены семьи</div>
     <div id="membersList"></div>
-    <div class="mlabel">Ваше имя</div>
+    <div class="mlabel" id="lbYourName">Ваше имя</div>
     <input class="sinp" id="changeNameInp" placeholder="Изменить имя..."/>
-    <button class="sbtn sbtn-green" style="margin-top:6px" onclick="changeName()">Сохранить имя</button>
-    <button class="sbtn sbtn-gray" style="margin-top:8px" onclick="resetFromExcel()">🔄 Восстановить данные из Excel</button>
-    <button class="sbtn sbtn-gray" style="margin-top:8px" onclick="leaveFamily()">🚪 Выйти из семьи</button>
+    <button class="sbtn sbtn-green" style="margin-top:6px" id="btnSaveName" onclick="changeName()">Сохранить имя</button>
+    <button class="sbtn sbtn-gray" style="margin-top:8px" id="btnLeave" onclick="leaveFamily()">🚪 Выйти из семьи</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VER = '2.3.0';
+const APP_VER = '2.4.0';
 const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MN_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const CC = {income:'#4ade80',fixed:'#f87171',variable:'#fb923c',balance:'#60a5fa',debt:'#a78bfa'};
+
+// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
+const LANGS = {
+  ru: {
+    appName:'Семейный Бюджет', financialTracker:'Финансовый трекер',
+    welcome:'👋 Добро пожаловать!', createFamily:'➕ Создать семью (новый аккаунт)', joinFamily:'🔗 Присоединиться к семье',
+    or:'или', back:'← Назад', createFamilyTitle:'➕ Создать семью',
+    familyName:'Название семьи (напр. Наша семья)', yourName:'Ваше имя (напр. Дима)',
+    githubToken:'GitHub Token (ghp_...)', tokenHint:'Токен будет зашифрован и сохранён только на вашем устройстве',
+    createBtn:'🚀 Создать семью', joinTitle:'🔗 Присоединиться к семье',
+    familyCode:'Семейный код (от администратора)', joinBtn:'🔗 Присоединиться',
+    familyCreated:'Семья создана!', shareCodeMsg:'Поделитесь этим кодом с членами семьи, чтобы они могли присоединиться:',
+    clickToCopy:'📋 Нажмите, чтобы скопировать', startWork:'✅ Начать работу',
+    fillAll:'⚠ Заполните все поля', badToken:'⚠ Похоже, токен неверный',
+    creating:'Создание...', connecting:'Подключение...', saving:'Сохр...', syncing:'Синхр.',
+    syncOk:'Синхр.', syncErr:'Ошибка', synced:'✓',
+    months:'месяцев', addMonth:'+ Мес.',
+    tabMonth:'📊 Месяц', tabTrends:'📈 Тренды', tabDebts:'💳 Кредиты',
+    install:'📲 Установить', iosHint:'📱 <b>iOS:</b> Нажмите «Поделиться» (□↑) → «На экран Домой» для установки',
+    statsIncome:'Доходы', statsFixed:'Пост. расходы', statsVar:'Перем. расходы', statsDebt:'Кредиты/мес', statsBalance:'Остаток',
+    distribution:'Распределение', ofIncome:'% от дохода',
+    incomeSection:'💰 Доходы', fixedSection:'🏠 Постоянные расходы', variableSection:'🛒 Переменные расходы',
+    creditsThisMonth:'💳 Кредиты в этом месяце',
+    noCredits:'Нет кредитов', addCredit:'+ Добавить кредит', newCredit:'Новый кредит',
+    creditName:'Название', creditTotal:'Сумма кредита', creditMonthly:'Платёж в мес.', creditLeft:'Выплат осталось',
+    add:'Добавить', cancel:'Отмена', remaining:'Осталось:', perMonth:'В мес.:',
+    creditHistory:'📅 История кредитов', month:'Месяц', count:'Кол-во', amount:'Сумма',
+    deleted:'🗑 Удалено:', added:'✅ Добавлено:', creditAdded:'✅ Кредит добавлен:',
+    chartTitle:'📊 Доходы и расходы', chartBalance:'📈 Остаток (за вычетом кредитов)',
+    avgIncome:'Ср. доход', avgFixed:'Ср. пост.', avgVar:'Ср. перем.', avgBalance:'Ср. остаток',
+    incLabel:'Доходы', expLabel:'Постоянные', varLabel:'Переменные',
+    settingsTitle:'⚙ Настройки', langLabel:'Язык интерфейса', fontLabel:'Размер шрифта',
+    sectionsLabel:'Категории (разделы)', addSection:'+ Добавить категорию',
+    secNamePlaceholder:'Название категории (напр. Накопления)',
+    secTypeIncome:'↑ Доходы', secTypeExpense:'↓ Расходы',
+    createSection:'✓ Создать', editSection:'Переименовать', deleteSection:'Удалить',
+    confirmDeleteSec:'Удалить категорию "{n}" и все её данные во всех месяцах?',
+    secRenamed:'✅ Переименовано', secDeleted:'🗑 Категория удалена', secAdded:'✅ Категория создана',
+    familyCodeLabel:'Семейный код (для приглашения)',
+    codeCopied:'📋 Код скопирован!', membersLabel:'Члены семьи',
+    yourNameLabel:'Ваше имя', saveName:'Сохранить имя', nameSaved:'✅ Имя изменено на ',
+    leaveFamily:'🚪 Выйти из семьи', confirmLeave:'Выйти из семьи? Данные будут удалены с этого устройства.',
+    updatedBy:'обновл.', people:'чел.',
+    monthExists:'⚠ Уже существует', monthCreated:'✅ Создан:',
+    addItem:'+ Добавить', itemName:'Название', itemAmount:'Сумма',
+    pay:'платёж', pays:'платежа', manyPays:'платежей',
+  },
+  he: {
+    appName:'תקציב משפחתי', financialTracker:'מעקב פיננסי',
+    welcome:'👋 ברוכים הבאים!', createFamily:'➕ צור משפחה (חשבון חדש)', joinFamily:'🔗 הצטרף למשפחה',
+    or:'או', back:'← חזרה', createFamilyTitle:'➕ צור משפחה',
+    familyName:'שם המשפחה (לדוג. המשפחה שלנו)', yourName:'שמך (לדוג. דימה)',
+    githubToken:'GitHub Token (ghp_...)', tokenHint:'הטוקן יוצפן וישמר רק במכשיר זה',
+    createBtn:'🚀 צור משפחה', joinTitle:'🔗 הצטרף למשפחה',
+    familyCode:'קוד משפחה (מהמנהל)', joinBtn:'🔗 הצטרף',
+    familyCreated:'המשפחה נוצרה!', shareCodeMsg:'שתפו קוד זה עם בני המשפחה כדי שיוכלו להצטרף:',
+    clickToCopy:'📋 לחצו להעתקה', startWork:'✅ התחל לעבוד',
+    fillAll:'⚠ מלא את כל השדות', badToken:'⚠ הטוקן נראה שגוי',
+    creating:'יוצר...', connecting:'מתחבר...', saving:'שומר...', syncing:'מסנכרן...',
+    syncOk:'מסונכרן', syncErr:'שגיאה', synced:'✓',
+    months:'חודשים', addMonth:'+ חודש',
+    tabMonth:'📊 חודש', tabTrends:'📈 מגמות', tabDebts:'💳 הלוואות',
+    install:'📲 התקן', iosHint:'📱 <b>iOS:</b> לחצו «שתף» (□↑) → «הוסף למסך הבית»',
+    statsIncome:'הכנסות', statsFixed:'הוצ. קבועות', statsVar:'הוצ. משתנות', statsDebt:'הלוואות/חודש', statsBalance:'יתרה',
+    distribution:'התפלגות', ofIncome:'% מההכנסה',
+    incomeSection:'💰 הכנסות', fixedSection:'🏠 הוצאות קבועות', variableSection:'🛒 הוצאות משתנות',
+    creditsThisMonth:'💳 הלוואות החודש',
+    noCredits:'אין הלוואות', addCredit:'+ הוסף הלוואה', newCredit:'הלוואה חדשה',
+    creditName:'שם', creditTotal:'סכום כולל', creditMonthly:'תשלום חודשי', creditLeft:'תשלומים שנותרו',
+    add:'הוסף', cancel:'ביטול', remaining:'נותרו:', perMonth:'לחודש:',
+    creditHistory:'📅 היסטוריית הלוואות', month:'חודש', count:'כמות', amount:'סכום',
+    deleted:'🗑 נמחק:', added:'✅ נוסף:', creditAdded:'✅ הלוואה נוספה:',
+    chartTitle:'📊 הכנסות והוצאות', chartBalance:'📈 יתרה (בניכוי הלוואות)',
+    avgIncome:'הכנסה ממוצעת', avgFixed:'הוצ. קבועות', avgVar:'הוצ. משתנות', avgBalance:'יתרה ממוצעת',
+    incLabel:'הכנסות', expLabel:'קבועות', varLabel:'משתנות',
+    settingsTitle:'⚙ הגדרות', langLabel:'שפת ממשק', fontLabel:'גודל גופן',
+    sectionsLabel:'קטגוריות (מדורים)', addSection:'+ הוסף קטגוריה',
+    secNamePlaceholder:'שם הקטגוריה (לדוג. חסכונות)',
+    secTypeIncome:'↑ הכנסות', secTypeExpense:'↓ הוצאות',
+    createSection:'✓ צור', editSection:'שנה שם', deleteSection:'מחק',
+    confirmDeleteSec:'למחוק קטגוריה "{n}" וכל הנתונים שלה בכל החודשים?',
+    secRenamed:'✅ שונה שם', secDeleted:'🗑 קטגוריה נמחקה', secAdded:'✅ קטגוריה נוצרה',
+    familyCodeLabel:'קוד משפחה (להזמנה)',
+    codeCopied:'📋 הקוד הועתק!', membersLabel:'בני המשפחה',
+    yourNameLabel:'שמך', saveName:'שמור שם', nameSaved:'✅ שם שונה ל',
+    leaveFamily:'🚪 צא מהמשפחה', confirmLeave:'לצאת מהמשפחה? הנתונים יימחקו מהמכשיר.',
+    updatedBy:'עודכן', people:'אנשים',
+    monthExists:'⚠ כבר קיים', monthCreated:'✅ נוצר:',
+    addItem:'+ הוסף', itemName:'שם', itemAmount:'סכום',
+    pay:'תשלום', pays:'תשלומים', manyPays:'תשלומים',
+  },
+  en: {
+    appName:'Family Budget', financialTracker:'Financial Tracker',
+    welcome:'👋 Welcome!', createFamily:'➕ Create family (new account)', joinFamily:'🔗 Join a family',
+    or:'or', back:'← Back', createFamilyTitle:'➕ Create family',
+    familyName:'Family name (e.g. Our Family)', yourName:'Your name (e.g. Dima)',
+    githubToken:'GitHub Token (ghp_...)', tokenHint:'Token is encrypted and stored only on this device',
+    createBtn:'🚀 Create family', joinTitle:'🔗 Join a family',
+    familyCode:'Family code (from admin)', joinBtn:'🔗 Join',
+    familyCreated:'Family created!', shareCodeMsg:'Share this code with family members so they can join:',
+    clickToCopy:'📋 Click to copy', startWork:'✅ Start working',
+    fillAll:'⚠ Please fill all fields', badToken:'⚠ Token seems invalid',
+    creating:'Creating...', connecting:'Connecting...', saving:'Saving...', syncing:'Syncing...',
+    syncOk:'Synced', syncErr:'Error', synced:'✓',
+    months:'months', addMonth:'+ Month',
+    tabMonth:'📊 Month', tabTrends:'📈 Trends', tabDebts:'💳 Loans',
+    install:'📲 Install', iosHint:'📱 <b>iOS:</b> Tap «Share» (□↑) → «Add to Home Screen»',
+    statsIncome:'Income', statsFixed:'Fixed exp.', statsVar:'Variable exp.', statsDebt:'Loans/mo', statsBalance:'Balance',
+    distribution:'Distribution', ofIncome:'% of income',
+    incomeSection:'💰 Income', fixedSection:'🏠 Fixed expenses', variableSection:'🛒 Variable expenses',
+    creditsThisMonth:'💳 Loans this month',
+    noCredits:'No loans', addCredit:'+ Add loan', newCredit:'New loan',
+    creditName:'Name', creditTotal:'Total amount', creditMonthly:'Monthly payment', creditLeft:'Payments left',
+    add:'Add', cancel:'Cancel', remaining:'Remaining:', perMonth:'Per month:',
+    creditHistory:'📅 Loan history', month:'Month', count:'Count', amount:'Amount',
+    deleted:'🗑 Deleted:', added:'✅ Added:', creditAdded:'✅ Loan added:',
+    chartTitle:'📊 Income & Expenses', chartBalance:'📈 Balance (minus loans)',
+    avgIncome:'Avg. income', avgFixed:'Avg. fixed', avgVar:'Avg. variable', avgBalance:'Avg. balance',
+    incLabel:'Income', expLabel:'Fixed', varLabel:'Variable',
+    settingsTitle:'⚙ Settings', langLabel:'Interface language', fontLabel:'Font size',
+    sectionsLabel:'Categories (sections)', addSection:'+ Add category',
+    secNamePlaceholder:'Category name (e.g. Savings)',
+    secTypeIncome:'↑ Income', secTypeExpense:'↓ Expense',
+    createSection:'✓ Create', editSection:'Rename', deleteSection:'Delete',
+    confirmDeleteSec:'Delete category "{n}" and all its data in all months?',
+    secRenamed:'✅ Renamed', secDeleted:'🗑 Category deleted', secAdded:'✅ Category created',
+    familyCodeLabel:'Family code (for invitation)',
+    codeCopied:'📋 Code copied!', membersLabel:'Family members',
+    yourNameLabel:'Your name', saveName:'Save name', nameSaved:'✅ Name changed to ',
+    leaveFamily:'🚪 Leave family', confirmLeave:'Leave family? Data will be deleted from this device.',
+    updatedBy:'updated', people:'people',
+    monthExists:'⚠ Already exists', monthCreated:'✅ Created:',
+    addItem:'+ Add', itemName:'Name', itemAmount:'Amount',
+    pay:'payment', pays:'payments', manyPays:'payments',
+  }
+};
+
+let CURLANG = (() => { try { return localStorage.getItem('bgt_lang') || 'ru'; } catch(e) { return 'ru'; } })();
+function t(k) { return LANGS[CURLANG]?.[k] || LANGS.ru[k] || k; }
+
+function setLang(lk) {
+  CURLANG = lk;
+  try { localStorage.setItem('bgt_lang', lk); } catch(e) {}
+  // RTL for Hebrew
+  document.documentElement.setAttribute('lang', lk === 'he' ? 'he' : lk === 'en' ? 'en' : 'ru');
+  document.body.style.direction = lk === 'he' ? 'rtl' : 'ltr';
+  document.body.style.textAlign = lk === 'he' ? 'right' : 'left';
+  document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === lk));
+  applyI18n();
+  renderView();
+}
+
+function applyI18n() {
+  // Header
+  const fn = document.getElementById('hFamilyName');
+  if (fn && CONFIG) fn.innerHTML = `${CONFIG.familyName} <span class="ver-badge">v${APP_VER}</span>`;
+  // Tabs
+  document.querySelectorAll('.tab[data-view]').forEach(tab => {
+    const map = {month:t('tabMonth'), trends:t('tabTrends'), debts:t('tabDebts')};
+    tab.textContent = map[tab.dataset.view] || tab.textContent;
+  });
+  // Buttons
+  const ab = document.getElementById('addMonthBtn'); if(ab) ab.textContent = t('addMonth');
+  const ib = document.getElementById('installBtn'); if(ib) ib.textContent = t('install');
+  const st = document.getElementById('syncText'); if(st) st.textContent = t('syncOk');
+  // iOS hint
+  const ih = document.getElementById('iosHint'); if(ih) ih.innerHTML = t('iosHint');
+  // Settings modal labels
+  const ids = {
+    stgTitle: t('settingsTitle'), lbLang: t('langLabel'), lbFont: t('fontLabel'),
+    lbSections: t('sectionsLabel'), lbFamCode: t('familyCodeLabel'),
+    lbMembers: t('membersLabel'), lbYourName: t('yourNameLabel'),
+    lbCopyCode: t('clickToCopy'), btnSaveName: t('saveName'), btnLeave: t('leaveFamily'),
+  };
+  Object.entries(ids).forEach(([id, txt]) => { const el = document.getElementById(id); if(el) el.textContent = txt; });
+  // Name input placeholder
+  const ni = document.getElementById('changeNameInp'); if(ni) ni.placeholder = t('yourNameLabel') + '...';
+  // Setup screen
+  const setupSub = document.getElementById('setupSub'); if(setupSub) setupSub.textContent = t('financialTracker');
+  const setupTitle = document.getElementById('setupTitle');
+  if(setupTitle) setupTitle.innerHTML = `${t('appName')} <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v${APP_VER}</span>`;
+  const setupEls = {
+    swTitle: t('welcome'), btnCreateFamily: t('createFamily'), orText: t('or'),
+    btnJoinFamily: t('joinFamily'), scTitle: t('createFamilyTitle'), tokenHintText: t('tokenHint'),
+    btnCreate: t('createBtn'), createdTitle: t('familyCreated'), createdMsg: t('shareCodeMsg'),
+    clickCopyText: t('clickToCopy'), btnStart: t('startWork'),
+    sjTitle: t('joinTitle'), btnJoin: t('joinBtn'),
+    backFromCreate: t('back'), backFromJoin: t('back'),
+  };
+  Object.entries(setupEls).forEach(([id, txt]) => { const el = document.getElementById(id); if(el) el.textContent = txt; });
+  // Input placeholders
+  const phMap = {
+    cFamilyName: t('familyName'), cUserName: t('yourName'), cToken: t('githubToken'),
+    jCode: t('familyCode'), jUserName: t('yourName'),
+  };
+  Object.entries(phMap).forEach(([id, ph]) => { const el = document.getElementById(id); if(el) el.placeholder = ph; });
+  // Lang btn active
+  document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === CURLANG));
+}
+
+// Month name helper (language-aware)
+function fmtK(k) {
+  const {m,y}=pk(k);
+  const names = CURLANG === 'he' ? MN_HE : MN;
+  return names[m-1]+' '+y;
+}
+
+// ─── DEFAULT SECTIONS ─────────────────────────────────────────────────────────
+const DEFAULT_SECTIONS = [
+  { id:'income',   label:'Доходы',             type:'income',  color:'#4ade80', icon:'💰' },
+  { id:'fixed',    label:'Постоянные расходы',  type:'expense', color:'#f87171', icon:'🏠' },
+  { id:'variable', label:'Переменные расходы',  type:'expense', color:'#fb923c', icon:'🛒' },
+];
+
+function getSections() {
+  return GIST_DATA?.sections || DEFAULT_SECTIONS;
+}
+
+function ensureSectionInMonths(secId) {
+  // Make sure all existing months have an entry for this section
+  const data = getBudgetData();
+  Object.keys(data).forEach(k => {
+    if (!data[k][secId]) data[k][secId] = {};
+  });
+}
+
+// ─── SECTIONS MANAGER STATE ───────────────────────────────────────────────────
+let newSecType = 'expense';
+let editingSecId = null;
+
+function openAddSection() {
+  document.getElementById('addSectionForm').style.display = '';
+  document.getElementById('newSecLabel').value = '';
+  document.getElementById('newSecLabel').focus();
+  newSecType = 'expense';
+  document.getElementById('newSecTypeExp').classList.add('factive');
+  document.getElementById('newSecTypeInc').classList.remove('factive');
+}
+function cancelAddSection() {
+  document.getElementById('addSectionForm').style.display = 'none';
+}
+async function confirmAddSection() {
+  const label = document.getElementById('newSecLabel').value.trim();
+  if (!label) { toast('⚠ ' + t('secNamePlaceholder')); return; }
+  const id = 'sec_' + Date.now().toString(36);
+  const colors = ['#34d399','#60a5fa','#f472b6','#fbbf24','#a78bfa','#94a3b8'];
+  const color = colors[Math.floor(Math.random()*colors.length)];
+  const sec = { id, label, type: newSecType, color, icon: newSecType==='income'?'💰':'📦' };
+  if (!GIST_DATA.sections) GIST_DATA.sections = [...DEFAULT_SECTIONS];
+  GIST_DATA.sections.push(sec);
+  ensureSectionInMonths(id);
+  cancelAddSection();
+  await pushData();
+  renderSettingsSections();
+  renderView();
+  toast(t('secAdded'));
+}
+async function renameSection(id) {
+  const secs = getSections();
+  const sec = secs.find(s=>s.id===id);
+  if (!sec) return;
+  const newLabel = prompt(t('editSection') + ':', sec.label);
+  if (!newLabel || newLabel.trim() === sec.label) return;
+  sec.label = newLabel.trim();
+  if (!GIST_DATA.sections) GIST_DATA.sections = secs;
+  await pushData();
+  renderSettingsSections();
+  renderView();
+  toast(t('secRenamed'));
+}
+async function deleteSection(id) {
+  const secs = getSections();
+  const sec = secs.find(s=>s.id===id);
+  if (!sec) return;
+  if (['income','fixed','variable'].includes(id)) {
+    toast('⚠ Нельзя удалить базовую категорию'); return;
+  }
+  if (!confirm(t('confirmDeleteSec').replace('{n}', sec.label))) return;
+  GIST_DATA.sections = secs.filter(s=>s.id!==id);
+  // Remove from all months
+  const data = getBudgetData();
+  Object.values(data).forEach(md => { delete md[id]; });
+  await pushData();
+  renderSettingsSections();
+  renderView();
+  toast(t('secDeleted'));
+}
+
+function renderSettingsSections() {
+  const el = document.getElementById('sectionsManager');
+  if (!el) return;
+  const secs = getSections();
+  el.innerHTML = secs.map(s => `
+    <div style="background:var(--card2);border-radius:9px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0;display:inline-block"></span>
+      <span style="font-size:12px;color:var(--white);flex:1">${s.icon} ${s.label}</span>
+      <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${s.type==='income'?'rgba(74,222,128,.15)':'rgba(248,113,113,.15)'};color:${s.type==='income'?'#4ade80':'#f87171'}">${s.type==='income'?t('secTypeIncome'):t('secTypeExpense')}</span>
+      <button onclick="renameSection('${s.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 3px" title="${t('editSection')}">✏</button>
+      ${!['income','fixed','variable'].includes(s.id)?`<button onclick="deleteSection('${s.id}')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;padding:0 3px" title="${t('deleteSection')}">🗑</button>`:''}
+    </div>`).join('');
+}
 
 // ─── FONT SCALE ───────────────────────────────────────────────────────────────
 const FONT_SCALES = {s:0.82, m:1.0, l:1.2, xl:1.4};
@@ -520,18 +849,19 @@ async function createFamily() {
   const token = document.getElementById('cToken').value.trim();
 
   if (!familyName || !userName || !token) {
-    toast('⚠ Заполните все поля'); return;
+    toast(t('fillAll')); return;
   }
   if (!token.startsWith('ghp_') && !token.startsWith('github_pat_') && token.length < 20) {
-    toast('⚠ Похоже, токен неверный'); return;
+    toast(t('badToken')); return;
   }
 
-  setSyncStatus('spin', 'Создание...');
+  setSyncStatus('spin', t('creating'));
   try {
     const userId = genUID();
     const initData = {
       family_name: familyName,
       members: [{ id: userId, name: userName, color: genColor(), joined: new Date().toISOString() }],
+      sections: [...DEFAULT_SECTIONS],
       budget_data: getInitialData(),
       last_updated: new Date().toISOString(),
       updated_by: userName
@@ -549,10 +879,10 @@ async function createFamily() {
     document.getElementById('familyCodeText').textContent = code;
     LS.set('bgt_family_code', code);
     showSub('subCreated');
-    setSyncStatus('ok', 'Синхр.');
+    setSyncStatus('ok', t('syncOk'));
   } catch(e) {
-    toast('❌ Ошибка: ' + e.message);
-    setSyncStatus('err', 'Ошибка');
+    toast('❌ ' + e.message);
+    setSyncStatus('err', t('syncErr'));
   }
 }
 
@@ -560,14 +890,14 @@ async function joinFamily() {
   const code = document.getElementById('jCode').value.trim();
   const userName = document.getElementById('jUserName').value.trim();
 
-  if (!code || !userName) { toast('⚠ Заполните все поля'); return; }
+  if (!code || !userName) { toast(t('fillAll')); return; }
 
   const decoded = decodeCode(code);
   if (!decoded || !decoded.g || !decoded.t) {
-    toast('❌ Неверный семейный код'); return;
+    toast('❌ ' + (t('familyCode') || 'Invalid code')); return;
   }
 
-  setSyncStatus('spin', 'Подключение...');
+  setSyncStatus('spin', t('connecting'));
   try {
     const { g: gistId, t: token } = decoded;
     const data = await ghReadGist(token, gistId);
@@ -580,7 +910,6 @@ async function joinFamily() {
       data.members.push(member);
       await ghUpdateGist(token, gistId, { ...data, last_updated: new Date().toISOString(), updated_by: userName });
     } else {
-      // Reuse existing member ID for this name
       const existing = data.members.find(m => m.name.toLowerCase() === userName.toLowerCase());
       member.id = existing.id;
     }
@@ -591,18 +920,18 @@ async function joinFamily() {
     GIST_DATA = data;
     LS.set('bgt_data', GIST_DATA);
 
-    setSyncStatus('ok', 'Синхр.');
+    setSyncStatus('ok', t('syncOk'));
     enterApp();
   } catch(e) {
-    toast('❌ Ошибка: ' + e.message);
-    setSyncStatus('err', 'Ошибка');
+    toast('❌ ' + e.message);
+    setSyncStatus('err', t('syncErr'));
   }
 }
 
 function copyFamilyCode() {
   const code = LS.get('bgt_family_code');
   if (!code) return;
-  navigator.clipboard?.writeText(code).then(() => toast('📋 Код скопирован!')).catch(() => {
+  navigator.clipboard?.writeText(code).then(() => toast(t('codeCopied'))).catch(() => {
     prompt('Скопируйте семейный код:', code);
   });
 }
@@ -616,10 +945,18 @@ function enterApp() {
 // ─── APP INIT ─────────────────────────────────────────────────────────────────
 function initApp() {
   if (!CONFIG || !GIST_DATA) return;
+  // Ensure sections are initialized (migrate old data without sections)
+  if (!GIST_DATA.sections) GIST_DATA.sections = [...DEFAULT_SECTIONS];
+
+  // Apply saved language
+  document.body.style.direction = CURLANG === 'he' ? 'rtl' : 'ltr';
+  document.body.style.textAlign = CURLANG === 'he' ? 'right' : 'left';
+  document.documentElement.setAttribute('lang', CURLANG === 'he' ? 'he' : CURLANG === 'en' ? 'en' : 'ru');
 
   document.getElementById('hFamilyName').innerHTML = `${CONFIG.familyName} <span class="ver-badge">v${APP_VER}</span>`;
   document.getElementById('userNameBadge').textContent = CONFIG.userName;
   updateSubTitle();
+  applyI18n();
 
   buildSel();
   renderView();
@@ -628,7 +965,6 @@ function initApp() {
   if (syncTimer) clearInterval(syncTimer);
   syncTimer = setInterval(syncNow, 60000);
 
-  // Settings
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
 }
 
@@ -636,7 +972,8 @@ function updateSubTitle() {
   if (!GIST_DATA) return;
   const updated = GIST_DATA.last_updated ? new Date(GIST_DATA.last_updated).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
   document.getElementById('hSubTitle').textContent =
-    `${GIST_DATA.members?.length || 0} чел. · обновл. ${GIST_DATA.updated_by || '?'} ${updated}`;
+  document.getElementById('hSubTitle').textContent =
+    `${GIST_DATA.members?.length || 0} ${t('people')} · ${t('updatedBy')} ${GIST_DATA.updated_by || '?'} ${updated}`;
 }
 
 // ─── SYNC ─────────────────────────────────────────────────────────────────────
@@ -651,25 +988,20 @@ function setSyncStatus(state, text) {
 
 async function syncNow() {
   if (!CONFIG) return;
-  setSyncStatus('spin', 'Синхр...');
+  setSyncStatus('spin', t('syncing'));
   try {
     const remote = await ghReadGist(CONFIG.token, CONFIG.gistId);
     const localTs = GIST_DATA?.last_updated || '0';
     const remoteTs = remote?.last_updated || '0';
-
     if (remoteTs > localTs) {
-      // Remote is newer — use remote
       GIST_DATA = remote;
       LS.set('bgt_data', GIST_DATA);
       buildSel(); renderView(); updateSubTitle();
-      toast('🔄 Данные обновлены (' + (remote.updated_by || 'другой пользователь') + ')');
-    } else {
-      setSyncStatus('ok', 'Синхр.');
+      toast('🔄 ' + (remote.updated_by || '?'));
     }
-    setSyncStatus('ok', 'Синхр.');
+    setSyncStatus('ok', t('syncOk'));
   } catch(e) {
-    setSyncStatus('err', 'Ошибка');
-    // Fall back to local data silently
+    setSyncStatus('err', t('syncErr'));
   }
 }
 
@@ -678,20 +1010,22 @@ async function pushData() {
   GIST_DATA.last_updated = new Date().toISOString();
   GIST_DATA.updated_by = CONFIG.userName;
   LS.set('bgt_data', GIST_DATA);
-  setSyncStatus('spin', 'Сохр...');
+  setSyncStatus('spin', t('saving'));
   try {
     await ghUpdateGist(CONFIG.token, CONFIG.gistId, GIST_DATA);
-    setSyncStatus('ok', 'Синхр.');
+    setSyncStatus('ok', t('syncOk'));
     updateSubTitle();
   } catch(e) {
-    setSyncStatus('err', 'Не сохр.');
-    // Data saved locally, will retry next sync
+    setSyncStatus('err', t('syncErr'));
   }
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
 function openSettings() {
   if (!GIST_DATA) return;
+  // Apply i18n to modal labels
+  applyI18n();
+  // Members
   const el = document.getElementById('membersList');
   el.innerHTML = (GIST_DATA.members || []).map(m => `
     <div class="member-chip">
@@ -704,9 +1038,14 @@ function openSettings() {
     </div>`).join('');
   document.getElementById('changeNameInp').value = CONFIG.userName;
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
-  // Refresh font selector active state
+  // Font selector
   const savedFont = (() => { try { return localStorage.getItem('bgt_font') || 'm'; } catch(e) { return 'm'; } })();
-  document.querySelectorAll('.font-btn').forEach(b => b.classList.toggle('factive', b.dataset.fk === savedFont));
+  document.querySelectorAll('.font-btn[data-fk]').forEach(b => b.classList.toggle('factive', b.dataset.fk === savedFont));
+  // Lang selector
+  document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === CURLANG));
+  // Sections
+  renderSettingsSections();
+  document.getElementById('addSectionForm').style.display = 'none';
   document.getElementById('settingsModal').classList.add('open');
 }
 
@@ -725,33 +1064,18 @@ async function changeName() {
     if (m) { m.name = name; await pushData(); }
   }
   document.getElementById('userNameBadge').textContent = name;
-  toast(`✅ Имя изменено на ${name}`);
+  toast(t('nameSaved') + name);
   closeSettings();
 }
 
 function leaveFamily() {
-  if (!confirm('Выйти из семьи? Данные будут удалены с этого устройства.')) return;
+  if (!confirm(t('confirmLeave'))) return;
   LS.del('bgt_config'); LS.del('bgt_data'); LS.del('bgt_family_code');
   if (syncTimer) clearInterval(syncTimer);
   location.reload();
 }
 
-async function resetFromExcel() {
-  if (!confirm('Восстановить ВСЕ данные из оригинального Excel-файла?\n\nЭто заменит текущие данные на исходные. Продолжить?')) return;
-  if (!GIST_DATA || !CONFIG) return;
-  closeSettings();
-  setSyncStatus('spin', 'Обновление...');
-  GIST_DATA.budget_data = getInitialData();
-  GIST_DATA.last_updated = new Date().toISOString();
-  GIST_DATA.updated_by = CONFIG.userName + ' (Excel reset)';
-  LS.set('bgt_data', GIST_DATA);
-  try {
-    await ghUpdateGist(CONFIG.token, CONFIG.gistId, GIST_DATA);
-    setSyncStatus('ok', 'Синхр.');
-  } catch(e) { setSyncStatus('err', 'Локально'); }
-  buildSel(); renderView(); updateSubTitle();
-  toast('✅ Данные восстановлены из Excel (15 месяцев)');
-}
+async function resetFromExcel() {}  // removed — kept stub to avoid errors if called
 
 // ─── BUDGET STATE ─────────────────────────────────────────────────────────────
 let selMonth = '04_26';
@@ -773,7 +1097,10 @@ let collapsed = loadCollapsed();
 function getBudgetData() { return GIST_DATA?.budget_data || {}; }
 function getMD() {
   const d = getBudgetData();
-  return d[selMonth] || { income:{}, fixed:{}, variable:{}, debts:[], edp_target:15000 };
+  const md = d[selMonth] || { income:{}, fixed:{}, variable:{}, debts:[], edp_target:15000 };
+  // Ensure all defined sections exist in this month
+  getSections().forEach(s => { if (!md[s.id]) md[s.id] = {}; });
+  return md;
 }
 function setMD(monthData) {
   if (!GIST_DATA) return;
@@ -783,7 +1110,6 @@ function setMD(monthData) {
 
 function pk(k) { const [m,y]=k.split('_'); return {m:+m, y:2000+(+y)}; }
 function sortK(ks) { return [...ks].sort((a,b)=>{ const pa=pk(a),pb=pk(b); return pa.y!==pb.y?pa.y-pb.y:pa.m-pb.m; }); }
-function fmtK(k) { const {m,y}=pk(k); return MN[m-1]+' '+y; }
 function fmtN(n) {
   // Format without thousands separator spaces (ru-RU uses non-breaking space U+00A0 or U+202F)
   return Math.round(n||0).toLocaleString('ru-RU').replace(/[\u00A0\u202F\u2009\u0020]/g, '') + '₪';
@@ -810,23 +1136,37 @@ function buildSel() {
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
 function renderStats() {
-  const md = getMD(), tI=S(md.income), tF=S(md.fixed), tV=S(md.variable);
-  const tD = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0), 0);
-  const bal = tI - tF - tV - tD;
+  const md = getMD();
+  const secs = getSections();
+  const totalIncome   = secs.filter(s=>s.type==='income') .reduce((sum,s)=>sum+S(md[s.id]),0);
+  const totalExpenses = secs.filter(s=>s.type==='expense').reduce((sum,s)=>sum+S(md[s.id]),0);
+  const tD  = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
+  const bal = totalIncome - totalExpenses - tD;
   const el = document.getElementById('statsGrid');
   if (!el) return;
-  el.innerHTML = [
-    ['Доходы',tI,CC.income,'↑'], ['Пост. расходы',tF,CC.fixed,'🏠'],
-    ['Перем. расходы',tV,CC.variable,'🛒'], ['Кредиты/мес',tD,CC.debt,'💳'],
-    ['Остаток',bal,bal>=0?CC.balance:'#ef4444',bal>=0?'✓':'⚠']
-  ].map(([l,v,c,i])=>`<div class="stat" style="border-left-color:${c}">
+
+  // Build one card per income section + one combined expense card + debts + balance
+  const incCards = secs.filter(s=>s.type==='income').map(s=>
+    [`${s.label}`, S(md[s.id]), s.color, s.icon]
+  );
+  const expCards = secs.filter(s=>s.type==='expense').map(s=>
+    [s.label, S(md[s.id]), s.color, s.icon]
+  );
+  const allCards = [
+    ...incCards,
+    ...expCards,
+    [t('statsDebt'),  tD,  CC.debt,   '💳'],
+    [t('statsBalance'), bal, bal>=0?CC.balance:'#ef4444', bal>=0?'✓':'⚠']
+  ];
+
+  el.innerHTML = allCards.map(([l,v,c,i])=>`<div class="stat" style="border-left-color:${c}">
     <div class="stat-lbl">${i} ${l}</div><div class="stat-val" style="color:${c}">${fmtN(v)}</div>
   </div>`).join('');
 }
 
 // ─── SECTION HTML ─────────────────────────────────────────────────────────────
 function secHTML(sec, title, color, items, total) {
-  const entries = Object.entries(items).sort((a,b) => a[0].localeCompare(b[0], ['ru','en'], {sensitivity:'base'}));
+  const entries = Object.entries(items).sort((a,b) => a[0].localeCompare(b[0], ['ru','en','he'], {sensitivity:'base'}));
   const isColl = collapsed.has(sec);
   const rows = entries.map(([k,v]) => {
     const isEd = editing?.sec===sec && editing?.key===k;
@@ -841,8 +1181,8 @@ function secHTML(sec, title, color, items, total) {
     </div>`;
   }).join('');
   const addForm = addSec===sec
-    ? `<div class="add-row2"><input id="aiN" placeholder="Название"/><input id="aiV" type="number" placeholder="Сумма"/><button class="bok" data-aok="${sec}">✓</button><button class="bcanc" id="aiCnl">✕</button></div>`
-    : `<button class="add-trig2" data-asec="${sec}">+ Добавить</button>`;
+    ? `<div class="add-row2"><input id="aiN" placeholder="${t('itemName')}"/><input id="aiV" type="number" placeholder="${t('itemAmount')}"/><button class="bok" data-aok="${sec}">✓</button><button class="bcanc" id="aiCnl">✕</button></div>`
+    : `<button class="add-trig2" data-asec="${sec}">${t('addItem')}</button>`;
   return `<div class="scard2${isColl?' collapsed2':''}" style="border-top-color:${color}">
     <div class="shead" data-toggle="${sec}">
       <div class="shead-l"><span class="cbtn2">${isColl?'▸':'▾'}</span><div class="stitle">${title}</div></div>
@@ -855,14 +1195,19 @@ function secHTML(sec, title, color, items, total) {
 
 // ─── RENDER MONTH ─────────────────────────────────────────────────────────────
 function renderMonth() {
-  const md=getMD(), tI=S(md.income), tF=S(md.fixed), tV=S(md.variable);
+  const md=getMD(), secs=getSections();
+  const totalIncome = secs.filter(s=>s.type==='income').reduce((sum,s)=>sum+S(md[s.id]),0);
+  const totalExpense = secs.filter(s=>s.type==='expense').reduce((sum,s)=>sum+S(md[s.id]),0);
   const tD=(md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
-  const pct=(v,t)=>t>0?Math.min((v/t)*100,100):0;
+  const pct=(v,total)=>total>0?Math.min((v/total)*100,100):0;
+
   const debtList=(md.debts||[]).length===0
-    ? '<span style="color:var(--muted);font-size:13px">Нет кредитов</span>'
+    ? `<span style="color:var(--muted);font-size:13px">${t('noCredits')}</span>`
     : (md.debts||[]).map(d=>{
         const pl = d.payments_left;
-        const word = (pl%10===1&&pl%100!==11)?'платёж':(pl%10>=2&&pl%10<=4&&(pl%100<10||pl%100>=20))?'платежа':'платежей';
+        const word = CURLANG==='ru'
+          ? ((pl%10===1&&pl%100!==11)?t('pay'):(pl%10>=2&&pl%10<=4&&(pl%100<10||pl%100>=20))?t('pays'):t('manyPays'))
+          : t('pays');
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 5px;border-radius:6px" onmouseover="this.style.background='#1a2236'" onmouseout="this.style.background=''">
           <span style="font-size:14px;color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">${d.name}</span>
           <span style="display:flex;align-items:center;gap:8px;white-space:nowrap">
@@ -872,30 +1217,35 @@ function renderMonth() {
         </div>`;
       }).join('');
 
+  // Build progress bar segments for all expense sections + debt
+  const expSegments = secs.filter(s=>s.type==='expense').map(s=>`<div class="pseg" style="width:${pct(S(md[s.id]),totalIncome)}%;background:${s.color}"></div>`).join('');
+  const debtSeg = `<div class="pseg" style="width:${pct(tD,totalIncome)}%;background:${CC.debt}"></div>`;
+
+  // Build legend
+  const expLegend = secs.filter(s=>s.type==='expense').map(s=>`<span><span class="dot" style="background:${s.color}"></span>${s.label.split(' ')[0]}: ${fmtN(S(md[s.id]))}</span>`).join('');
+
+  // Build section cards grid — group income first, then expense
+  const incomeSecs = secs.filter(s=>s.type==='income');
+  const expenseSecs = secs.filter(s=>s.type==='expense');
+  const allSecCards = [...incomeSecs, ...expenseSecs].map(s =>
+    secHTML(s.id, `${s.icon} ${s.label}`, s.color, md[s.id]||{}, S(md[s.id]))
+  ).join('');
+
   const el = document.getElementById('mainContent');
   if (!el) return;
   el.innerHTML = `
     <div class="prog-card">
-      <div class="prog-title"><span>Распределение — ${fmtK(selMonth)}</span><span>${tI>0?Math.round(((tF+tV+tD)/tI)*100):0}% от дохода</span></div>
-      <div class="prog-bar">
-        <div class="pseg" style="width:${pct(tF,tI)}%;background:${CC.fixed}"></div>
-        <div class="pseg" style="width:${pct(tV,tI)}%;background:${CC.variable}"></div>
-        <div class="pseg" style="width:${pct(tD,tI)}%;background:${CC.debt}"></div>
-      </div>
+      <div class="prog-title"><span>${t('distribution')} — ${fmtK(selMonth)}</span><span>${totalIncome>0?Math.round(((totalExpense+tD)/totalIncome)*100):0}${t('ofIncome')}</span></div>
+      <div class="prog-bar">${expSegments}${debtSeg}</div>
       <div class="prog-leg">
-        <span><span class="dot" style="background:${CC.fixed}"></span>Пост.: ${fmtN(tF)}</span>
-        <span><span class="dot" style="background:${CC.variable}"></span>Перем.: ${fmtN(tV)}</span>
-        <span><span class="dot" style="background:${CC.debt}"></span>Кредиты: ${fmtN(tD)}</span>
-        <span><span class="dot" style="background:${CC.income}"></span>Доход: ${fmtN(tI)}</span>
+        ${expLegend}
+        <span><span class="dot" style="background:${CC.debt}"></span>${t('tabDebts')}: ${fmtN(tD)}</span>
+        <span><span class="dot" style="background:${CC.income}"></span>${t('statsIncome')}: ${fmtN(totalIncome)}</span>
       </div>
     </div>
-    <div class="col3" style="margin-bottom:7px">
-      ${secHTML('income','💰 Доходы',CC.income,md.income,tI)}
-      ${secHTML('fixed','🏠 Постоянные расходы',CC.fixed,md.fixed,tF)}
-      ${secHTML('variable','🛒 Переменные расходы',CC.variable,md.variable,tV)}
-    </div>
+    <div class="col3" style="margin-bottom:7px">${allSecCards}</div>
     <div class="scard2" style="border-top-color:${CC.debt}">
-      <div class="shead" id="dch"><div class="shead-l"><span class="cbtn2" id="dcb">▾</span><span class="stitle">💳 Кредиты в этом месяце</span></div><span class="stotal" style="color:${CC.debt}">${fmtN(tD)}/мес</span></div>
+      <div class="shead" id="dch"><div class="shead-l"><span class="cbtn2" id="dcb">▾</span><span class="stitle">${t('creditsThisMonth')}</span></div><span class="stotal" style="color:${CC.debt}">${fmtN(tD)}/мес</span></div>
       <div id="dcbd" style="padding-top:2px">${debtList}</div>
     </div>`;
 
@@ -942,7 +1292,7 @@ function bindMonth() {
       e.stopPropagation();
       const sec=b.dataset.ds, key=decodeURIComponent(b.dataset.dk);
       const md=getMD(); delete md[sec][key]; setMD(md);
-      pushData(); renderMonth(); renderStats(); toast('🗑 '+key);
+      pushData(); renderMonth(); renderStats(); toast(t('deleted') + key);
     });
   });
   document.querySelectorAll('[data-asec]').forEach(b => {
@@ -954,7 +1304,7 @@ function bindMonth() {
       const sec=b.dataset.aok, name=document.getElementById('aiN')?.value.trim(), val=parseFloat(document.getElementById('aiV')?.value)||0;
       if (!name) return;
       const md=getMD(); md[sec][name]=val; setMD(md);
-      addSec=null; pushData(); renderMonth(); renderStats(); toast('✅ '+name);
+      addSec=null; pushData(); renderMonth(); renderStats(); toast(t('added') + name);
     });
   });
 }
@@ -963,16 +1313,22 @@ function bindMonth() {
 function renderTrends() {
   const data = getBudgetData();
   const keys = sortK(Object.keys(data)).slice(-12);
+  const secs = getSections();
   const td = keys.map(k => {
-    const d=data[k], i=S(d.income), f=S(d.fixed), v=S(d.variable);
+    const d=data[k];
+    const totalInc = secs.filter(s=>s.type==='income').reduce((sum,s)=>sum+S(d[s.id]),0);
+    const totalExp = secs.filter(s=>s.type==='expense').reduce((sum,s)=>sum+S(d[s.id]),0);
     const debt=(d.debts||[]).reduce((s,x)=>s+(x.monthly||0),0);
-    return { lbl:fmtK(k).split(' ')[0].slice(0,3), full:fmtK(k), income:i, fixed:f, variable:v, balance:i-f-v-debt };
+    const row = { lbl:fmtK(k).split(' ')[0].slice(0,3), full:fmtK(k), income:totalInc, fixed:S(d.fixed||{}), variable:S(d.variable||{}), balance:totalInc-totalExp-debt };
+    secs.forEach(s => { row[s.id] = S(d[s.id]); });
+    return row;
   });
   const maxV = Math.max(...td.map(d=>d.income), 1);
   const bars = td.map(d => {
     const h=v=>Math.max(2,Math.round((v/maxV)*120));
-    return `<div class="bgrp" title="${d.full}\nДоход: ${fmtN(d.income)}\nПост.: ${fmtN(d.fixed)}\nПерем.: ${fmtN(d.variable)}">
-      <div class="bcols"><div class="bcol" style="height:${h(d.income)}px;background:${CC.income}"></div><div class="bcol" style="height:${h(d.fixed)}px;background:${CC.fixed}"></div><div class="bcol" style="height:${h(d.variable)}px;background:${CC.variable}"></div></div>
+    const segs = secs.map(s=>`<div class="bcol" style="height:${h(d[s.id]||0)}px;background:${s.color}"></div>`).join('');
+    return `<div class="bgrp" title="${d.full}\n${secs.map(s=>`${s.label.split(' ')[0]}: ${fmtN(d[s.id]||0)}`).join('\n')}">
+      <div class="bcols">${segs}</div>
       <div class="blbl">${d.lbl}</div>
     </div>`;
   }).join('');
@@ -980,13 +1336,16 @@ function renderTrends() {
   const pts=td.map((d,i)=>`${(i/(td.length-1||1))*100},${85-((d.balance-minB)/rng)*75}`).join(' ');
   const cirs=td.map((d,i)=>{const cx=(i/(td.length-1||1))*100,cy=85-((d.balance-minB)/rng)*75;return`<circle cx="${cx}" cy="${cy}" r="2.5" fill="${d.balance>=0?CC.balance:'#ef4444'}"><title>${d.full}: ${fmtN(d.balance)}</title></circle>`;}).join('');
   const avg=a=>Math.round(a.reduce((s,v)=>s+v,0)/a.length);
-  const avgs=[['Ср. доход',avg(td.map(d=>d.income)),CC.income],['Ср. пост.',avg(td.map(d=>d.fixed)),CC.fixed],['Ср. перем.',avg(td.map(d=>d.variable)),CC.variable],['Ср. остаток',avg(td.map(d=>d.balance)),CC.balance]];
+  const avgs=[[t('avgIncome'),avg(td.map(d=>d.income)),CC.income],[t('avgFixed'),avg(td.map(d=>d.fixed)),CC.fixed],[t('avgVar'),avg(td.map(d=>d.variable)),CC.variable],[t('avgBalance'),avg(td.map(d=>d.balance)),CC.balance]];
+  // Build dynamic section legend for bar chart
+  const secs = getSections();
+  const barLegend = secs.map(s=>`<span><span class="dot" style="background:${s.color}"></span>${s.label.split(' ')[0]}</span>`).join('');
 
   document.getElementById('mainContent').innerHTML = `
-    <div class="ccrd"><div class="ctitle">📊 Доходы и расходы</div><div style="overflow-x:auto"><div class="cbars" style="min-width:${keys.length*36}px">${bars}</div></div>
-      <div class="prog-leg" style="margin-top:8px"><span><span class="dot" style="background:${CC.income}"></span>Доходы</span><span><span class="dot" style="background:${CC.fixed}"></span>Постоянные</span><span><span class="dot" style="background:${CC.variable}"></span>Переменные</span></div>
+    <div class="ccrd"><div class="ctitle">${t('chartTitle')}</div><div style="overflow-x:auto"><div class="cbars" style="min-width:${keys.length*36}px">${bars}</div></div>
+      <div class="prog-leg" style="margin-top:8px">${barLegend}</div>
     </div>
-    <div class="ccrd"><div class="ctitle">📈 Остаток (за вычетом кредитов)</div>
+    <div class="ccrd"><div class="ctitle">${t('chartBalance')}</div>
       <div class="lchrt"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="overflow:visible">
         <line x1="0" y1="${85-((0-minB)/rng)*75}" x2="100" y2="${85-((0-minB)/rng)*75}" stroke="#374151" stroke-width="0.4" stroke-dasharray="2,2"/>
         <polyline points="${pts}" fill="none" stroke="${CC.balance}" stroke-width="0.9" vector-effect="non-scaling-stroke"/>
@@ -1005,14 +1364,14 @@ function renderDebts() {
       <div class="dmeta"><span>Осталось: <b style="color:white">${d.payments_left}</b></span><span>В мес.: <b style="color:white;font-family:monospace">${fmtN(d.monthly)}</b></span></div>
       <div class="dbar"><div class="dbar-f" style="width:${p}%"></div></div></div>`;
   }).join('');
-  const form=addDebtMode?`<div class="dform"><div style="font-size:11px;color:var(--muted);margin-bottom:5px">Новый кредит</div><div class="dgrid"><input id="dN" placeholder="Название" class="sp2"/><input id="dT" type="number" placeholder="Сумма кредита"/><input id="dM" type="number" placeholder="Платёж в мес."/><input id="dL" type="number" placeholder="Выплат осталось"/></div><button class="bpurp" id="dOK">Добавить</button><button class="bcanc" id="dCanc" style="margin-left:5px">Отмена</button></div>`:`<button class="add-trig2" id="addDebtBtn">+ Добавить кредит</button>`;
+  const form=addDebtMode?`<div class="dform"><div style="font-size:11px;color:var(--muted);margin-bottom:5px">${t('newCredit')}</div><div class="dgrid"><input id="dN" placeholder="${t('creditName')}" class="sp2"/><input id="dT" type="number" placeholder="${t('creditTotal')}"/><input id="dM" type="number" placeholder="${t('creditMonthly')}"/><input id="dL" type="number" placeholder="${t('creditLeft')}"/></div><button class="bpurp" id="dOK">${t('add')}</button><button class="bcanc" id="dCanc" style="margin-left:5px">${t('cancel')}</button></div>`:`<button class="add-trig2" id="addDebtBtn">${t('addCredit')}</button>`;
   const data=getBudgetData(), histK=sortK(Object.keys(data)).filter(k=>(data[k].debts||[]).length>0).slice(-12).reverse();
 
   document.getElementById('mainContent').innerHTML = `
-    <div class="scard2" style="border-top-color:${CC.debt};margin-bottom:8px"><div class="shead"><div class="stitle">💳 Кредиты — ${fmtK(selMonth)}</div><div class="stotal" style="color:${CC.debt}">${fmtN(totDebt)}</div></div>
-      ${debts.length===0?'<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Нет кредитов</p>':''}${rows}${form}
+    <div class="scard2" style="border-top-color:${CC.debt};margin-bottom:8px"><div class="shead"><div class="stitle">${t('tabDebts')} — ${fmtK(selMonth)}</div><div class="stotal" style="color:${CC.debt}">${fmtN(totDebt)}</div></div>
+      ${debts.length===0?`<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">${t('noCredits')}</p>`:''}${rows}${form}
     </div>
-    <div class="ccrd"><div class="ctitle">📅 История кредитов</div><div style="overflow-x:auto"><table class="dhist" style="width:100%;border-collapse:collapse"><thead><tr><th>Месяц</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>
+    <div class="ccrd"><div class="ctitle">${t('creditHistory')}</div><div style="overflow-x:auto"><table class="dhist" style="width:100%;border-collapse:collapse"><thead><tr><th>${t('month')}</th><th>${t('count')}</th><th>${t('amount')}</th></tr></thead><tbody>
       ${histK.map(k=>{const t=(data[k].debts||[]).reduce((s,d)=>s+(d.total||0),0);return`<tr data-hm="${k}"><td>${fmtK(k)}</td><td>${data[k].debts.length}</td><td style="color:${CC.debt};font-family:monospace">${fmtN(t)}</td></tr>`;}).join('')}
     </tbody></table></div></div>`;
 
@@ -1034,7 +1393,7 @@ function bindDebts(md) {
     if (!name) return;
     const d={name,total:parseFloat(document.getElementById('dT')?.value)||0,monthly:parseFloat(document.getElementById('dM')?.value)||0,payments_left:parseInt(document.getElementById('dL')?.value)||0};
     const nm={...md, debts:[...(md.debts||[]),d]};
-    setMD(nm); addDebtMode=false; pushData(); renderDebts(); renderStats(); toast('✅ '+name);
+    setMD(nm); addDebtMode=false; pushData(); renderDebts(); renderStats(); toast(t('creditAdded') + ' ' + name);
   });
   document.querySelectorAll('[data-hm]').forEach(r => { r.addEventListener('click', () => { selMonth=r.dataset.hm; buildSel(); renderStats(); renderDebts(); }); });
 }
@@ -1061,10 +1420,15 @@ document.getElementById('addMonthBtn').addEventListener('click', () => {
   const data=getBudgetData(), ms=sortK(Object.keys(data)), latest=ms[ms.length-1];
   const {m,y}=pk(latest); let nm=m+1,ny=y; if(nm>12){nm=1;ny++;}
   const key=String(nm).padStart(2,'0')+'_'+String(ny-2000).padStart(2,'0');
-  if(data[key]){toast('⚠ Уже существует');return;}
+  if(data[key]){toast(t('monthExists'));return;}
   const base=data[latest];
-  data[key]={income:{...base.income},fixed:{...base.fixed},variable:Object.fromEntries(Object.keys(base.variable).map(k=>[k,0])),debts:[],edp_target:15000};
-  selMonth=key; pushData(); buildSel(); renderView(); toast('✅ '+fmtK(key));
+  const newMonth={debts:[],edp_target:15000};
+  // Copy all sections — income keeps values, expense sections zero out
+  getSections().forEach(s=>{
+    if(s.type==='income') newMonth[s.id]={...base[s.id]||{}};
+    else newMonth[s.id]=Object.fromEntries(Object.keys(base[s.id]||{}).map(k=>[k,0]));
+  });
+  selMonth=key; pushData(); buildSel(); renderView(); toast(t('monthCreated')+' '+fmtK(key));
 });
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
@@ -1098,6 +1462,12 @@ function getInitialData() {
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 setupPWA();
 
+// Apply lang immediately on boot (before any screen shows)
+document.body.style.direction = CURLANG === 'he' ? 'rtl' : 'ltr';
+document.body.style.textAlign = CURLANG === 'he' ? 'right' : 'left';
+document.documentElement.setAttribute('lang', CURLANG === 'he' ? 'he' : CURLANG === 'en' ? 'en' : 'ru');
+applyI18n();
+
 // Check if already set up
 const savedConfig = LS.get('bgt_config');
 const savedData = LS.get('bgt_data');
@@ -1105,16 +1475,12 @@ const savedData = LS.get('bgt_data');
 if (savedConfig && savedData) {
   CONFIG = savedConfig;
   GIST_DATA = savedData;
-  // Update family code display
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
-  // Switch to app screen
   document.getElementById('screenSetup').classList.remove('active');
   document.getElementById('screenApp').classList.add('active');
   initApp();
-  // Sync with GitHub on load
   setTimeout(syncNow, 1500);
 } else {
-  // Show setup
   document.getElementById('screenSetup').classList.add('active');
 }
 </script>
