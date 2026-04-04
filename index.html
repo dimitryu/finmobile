@@ -110,6 +110,9 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .iright{display:flex;align-items:center;gap:2px}
 .iamt{font-size:calc(16px * var(--fs));font-family:monospace;cursor:pointer;padding:3px 5px;border-radius:4px;transition:background .1s;white-space:nowrap}
 .iamt:hover{background:#374151;color:white}
+.pin-btn{background:none;border:none;font-size:11px;cursor:pointer;padding:0 3px;opacity:.25;transition:opacity .15s,transform .1s;flex-shrink:0;line-height:1}
+.pin-btn:hover{opacity:.7}
+.pin-btn.pinned{opacity:1;transform:rotate(-20deg)}
 .del2{color:#f87171;font-size:9px;cursor:pointer;background:none;border:none;opacity:0;padding:0 2px}
 .item2:hover .del2{opacity:1}
 .ein{width:68px;background:#374151;color:white;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;font-family:monospace;outline:none;text-align:right}
@@ -423,7 +426,16 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VER = '2.6.2';
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
+// ╠══════════════════════════════════════════════════════════════════╣
+const APP_VER = '2.7.0';  // Версия приложения
+
+// JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
+// Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
+const JB_KEY = '$2a$10$/zs.s/Wqx8QkniG0b3DvmufXWf29tzG4NnkeSgT3qZ0Yc6pvZgMyO'; // ← ЗАМЕНИТЕ на свой ключ
+// ╚══════════════════════════════════════════════════════════════════╝
+
 const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const MN_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const CC = {income:'#4ade80',fixed:'#f87171',variable:'#fb923c',balance:'#60a5fa',debt:'#a78bfa'};
@@ -473,6 +485,7 @@ const LANGS = {
     monthExists:'⚠ Уже существует', monthCreated:'✅ Создан:',
     addItem:'+ Добавить', itemName:'Название', itemAmount:'Сумма',
     pay:'платёж', pays:'платежа', manyPays:'платежей',
+    pinOn:'📌 Постоянная', pinOff:'Сделать постоянной',
   },
   he: {
     appName:'תקציב משפחתי', financialTracker:'מעקב פיננסי',
@@ -517,6 +530,7 @@ const LANGS = {
     monthExists:'⚠ כבר קיים', monthCreated:'✅ נוצר:',
     addItem:'+ הוסף', itemName:'שם', itemAmount:'סכום',
     pay:'תשלום', pays:'תשלומים', manyPays:'תשלומים',
+    pinOn:'📌 קבוע', pinOff:'סמן כקבוע',
   },
   en: {
     appName:'Family Budget', financialTracker:'Financial Tracker',
@@ -561,6 +575,7 @@ const LANGS = {
     monthExists:'⚠ Already exists', monthCreated:'✅ Created:',
     addItem:'+ Add', itemName:'Name', itemAmount:'Amount',
     pay:'payment', pays:'payments', manyPays:'payments',
+    pinOn:'📌 Recurring', pinOff:'Mark as recurring',
   }
 };
 
@@ -570,13 +585,16 @@ function t(k) { return LANGS[CURLANG]?.[k] || LANGS.ru[k] || k; }
 function setLang(lk) {
   CURLANG = lk;
   try { localStorage.setItem('bgt_lang', lk); } catch(e) {}
-  // RTL for Hebrew
   document.documentElement.setAttribute('lang', lk === 'he' ? 'he' : lk === 'en' ? 'en' : 'ru');
   document.body.style.direction = lk === 'he' ? 'rtl' : 'ltr';
   document.body.style.textAlign = lk === 'he' ? 'right' : 'left';
   document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === lk));
   applyI18n();
   renderView();
+  // Re-render settings panel if open
+  if (document.getElementById('settingsModal')?.classList.contains('open')) {
+    renderSettingsSections();
+  }
 }
 
 function applyI18n() {
@@ -669,6 +687,21 @@ function getSectionStatLabel(s) {
   return s.label;
 }
 
+// ─── RECURRING ITEMS ─────────────────────────────────────────────────────────
+// GIST_DATA.recurring = { sectionId: { "ItemName": true } }
+function isItemRecurring(sec, key) {
+  return GIST_DATA?.recurring?.[sec]?.[key] === true;
+}
+function toggleItemRecurring(sec, key) {
+  if (!GIST_DATA.recurring) GIST_DATA.recurring = {};
+  if (!GIST_DATA.recurring[sec]) GIST_DATA.recurring[sec] = {};
+  const cur = GIST_DATA.recurring[sec][key];
+  if (cur) delete GIST_DATA.recurring[sec][key];
+  else GIST_DATA.recurring[sec][key] = true;
+  pushData();
+  renderMonth(); renderStats();
+}
+
 function ensureSectionInMonths(secId) {
   // Make sure all existing months have an entry for this section
   const data = getBudgetData();
@@ -746,7 +779,7 @@ function renderSettingsSections() {
   el.innerHTML = secs.map(s => `
     <div style="background:var(--card2);border-radius:9px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
       <span style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0;display:inline-block"></span>
-      <span style="font-size:12px;color:var(--white);flex:1">${s.icon} ${s.label}</span>
+      <span style="font-size:12px;color:var(--white);flex:1">${getSectionLabel(s)}</span>
       <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${s.type==='income'?'rgba(74,222,128,.15)':'rgba(248,113,113,.15)'};color:${s.type==='income'?'#4ade80':'#f87171'}">${s.type==='income'?t('secTypeIncome'):t('secTypeExpense')}</span>
       <button onclick="renameSection('${s.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 3px" title="${t('editSection')}">✏</button>
       ${!['income','fixed','variable'].includes(s.id)?`<button onclick="deleteSection('${s.id}')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;padding:0 3px" title="${t('deleteSection')}">🗑</button>`:''}
@@ -870,10 +903,6 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
 }
 
 // ─── JSONBIN STORAGE ──────────────────────────────────────────────────────────
-// JSONBin.io — free cloud storage, zero setup for end users.
-// To use your own JSONBin account: replace the key below with your own from jsonbin.io
-// Free account: 10,000 requests/month, unlimited bins, no credit card needed.
-const JB_KEY = '$2a$10$/zs.s/Wqx8QkniG0b3DvmufXWf29tzG4NnkeSgT3qZ0Yc6pvZgMyO'; // ← REPLACE with your own key from jsonbin.io
 const JB_URL = 'https://api.jsonbin.io/v3/b';
 
 async function jbCreate(data) {
@@ -1269,7 +1298,9 @@ function secHTML(sec, title, color, items, total) {
   const rows = entries.map(([k,v]) => {
     const isEd = editing?.sec===sec && editing?.key===k;
     const sk = encodeURIComponent(k);
+    const pinned = isItemRecurring(sec, k);
     return `<div class="item2">
+      <button class="pin-btn${pinned?' pinned':''}" onclick="toggleItemRecurring('${sec}','${decodeURIComponent(sk)}')" title="${pinned?t('pinOn'):t('pinOff')}">📌</button>
       <span class="iname" title="${k}">${k}</span>
       <div class="iright">
         ${isEd ? `<input class="ein" id="editIn" type="number" value="${v||0}"/>`
@@ -1596,12 +1627,18 @@ document.getElementById('addMonthBtn').addEventListener('click', () => {
   const key=String(nm).padStart(2,'0')+'_'+String(ny-2000).padStart(2,'0');
   if(data[key]){toast(t('monthExists'));return;}
   const base=data[latest];
+  const rec=GIST_DATA?.recurring||{};
   const newMonth={debts:[],edp_target:15000};
-  // Copy all sections — income keeps values, expense sections zero out
+  // Recurring items keep their value; non-recurring items get 0
   getSections().forEach(s=>{
-    if(s.type==='income') newMonth[s.id]={...base[s.id]||{}};
-    else newMonth[s.id]=Object.fromEntries(Object.keys(base[s.id]||{}).map(k=>[k,0]));
+    const secRec=rec[s.id]||{};
+    const srcItems=base[s.id]||{};
+    newMonth[s.id]=Object.fromEntries(
+      Object.keys(srcItems).map(k=>[k, secRec[k]===true ? (srcItems[k]||0) : 0])
+    );
   });
+  // Ensure all items from previous month are present (as keys), recurring or not
+  data[key]=newMonth;
   selMonth=key; pushData(); buildSel(); renderView(); toast(t('monthCreated')+' '+fmtK(key));
 });
 document.querySelectorAll('.tab').forEach(t => {
