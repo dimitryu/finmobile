@@ -1338,7 +1338,6 @@ function renderTrends() {
   const avg=a=>Math.round(a.reduce((s,v)=>s+v,0)/a.length);
   const avgs=[[t('avgIncome'),avg(td.map(d=>d.income)),CC.income],[t('avgFixed'),avg(td.map(d=>d.fixed)),CC.fixed],[t('avgVar'),avg(td.map(d=>d.variable)),CC.variable],[t('avgBalance'),avg(td.map(d=>d.balance)),CC.balance]];
   // Build dynamic section legend for bar chart
-  const secs = getSections();
   const barLegend = secs.map(s=>`<span><span class="dot" style="background:${s.color}"></span>${s.label.split(' ')[0]}</span>`).join('');
 
   document.getElementById('mainContent').innerHTML = `
