@@ -179,7 +179,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.4.0</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:400;color:var(--muted);background:#1f2937;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.5.0</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <!-- sub: welcome -->
@@ -199,15 +199,11 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <button class="back-btn" id="backFromCreate" onclick="showSub('subWelcome')">← Назад</button>
       <h3 id="scTitle">➕ Создать семью</h3>
       <div class="hint-box" id="tokenHintBox">
-        Для синхронизации через GitHub нужен <b>Personal Access Token</b>
-        с правами на <b>Gist</b>.<br/>
-        Создайте на: <b>github.com → Settings → Developer settings → Tokens (classic)</b>
-        → выберите scope <b>gist</b>.
+        📦 Данные семьи будут сохранены онлайн — автоматически, без дополнительных настроек.
+        Все члены семьи могут синхронизироваться с помощью семейного кода.
       </div>
       <input class="sinp" id="cFamilyName" placeholder="Название семьи (напр. Наша семья)" maxlength="40"/>
       <input class="sinp" id="cUserName" placeholder="Ваше имя (напр. Дима)" maxlength="30"/>
-      <input class="sinp" id="cToken" placeholder="GitHub Token (ghp_...)" type="password" autocomplete="off"/>
-      <div class="sinp-hint" id="tokenHintText">Токен будет зашифрован и сохранён только на вашем устройстве</div>
       <button class="sbtn sbtn-green" id="btnCreate" onclick="createFamily()">🚀 Создать семью</button>
     </div>
 
@@ -342,7 +338,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VER = '2.4.0';
+const APP_VER = '2.5.0';
 const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const MN_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const CC = {income:'#4ade80',fixed:'#f87171',variable:'#fb923c',balance:'#60a5fa',debt:'#a78bfa'};
@@ -538,7 +534,7 @@ function applyI18n() {
   Object.entries(setupEls).forEach(([id, txt]) => { const el = document.getElementById(id); if(el) el.textContent = txt; });
   // Input placeholders
   const phMap = {
-    cFamilyName: t('familyName'), cUserName: t('yourName'), cToken: t('githubToken'),
+    cFamilyName: t('familyName'), cUserName: t('yourName'),
     jCode: t('familyCode'), jUserName: t('yourName'),
   };
   Object.entries(phMap).forEach(([id, ph]) => { const el = document.getElementById(id); if(el) el.placeholder = ph; });
@@ -764,57 +760,59 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
   });
 }
 
-// ─── GITHUB GIST API ──────────────────────────────────────────────────────────
-const GH_API = 'https://api.github.com';
-const GH_FNAME = 'family_budget.json';
+// ─── JSONBIN STORAGE ──────────────────────────────────────────────────────────
+// JSONBin.io — free cloud storage, zero setup for end users.
+// To use your own JSONBin account: replace the key below with your own from jsonbin.io
+// Free account: 10,000 requests/month, unlimited bins, no credit card needed.
+const JB_KEY = '$2a$10$/zs.s/Wqx8QkniG0b3DvmufXWf29tzG4NnkeSgT3qZ0Yc6pvZgMyO'; // ← REPLACE with your own key from jsonbin.io
+const JB_URL = 'https://api.jsonbin.io/v3/b';
 
-async function ghCreateGist(token, description, data) {
-  const r = await fetch(`${GH_API}/gists`, {
+async function jbCreate(data) {
+  const r = await fetch(JB_URL, {
     method: 'POST',
-    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      description, public: false,
-      files: { [GH_FNAME]: { content: JSON.stringify(data, null, 2) } }
-    })
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JB_KEY,
+      'X-Bin-Private': 'true',
+      'X-Bin-Name': 'family_budget'
+    },
+    body: JSON.stringify(data)
   });
-  if (!r.ok) throw new Error(`GitHub error ${r.status}: ${await r.text()}`);
-  return r.json();
+  if (!r.ok) {
+    const err = await r.text();
+    throw new Error(`Storage error ${r.status}: ${err}`);
+  }
+  const j = await r.json();
+  return j.metadata.id; // returns bin ID
 }
 
-async function ghReadGist(token, gistId) {
-  const r = await fetch(`${GH_API}/gists/${gistId}`, {
-    headers: { 'Authorization': `token ${token}` }
+async function jbRead(binId) {
+  const r = await fetch(`${JB_URL}/${binId}/latest`, {
+    headers: { 'X-Master-Key': JB_KEY }
   });
   if (!r.ok) throw new Error(`Read error ${r.status}`);
-  const gist = await r.json();
-  const content = gist.files[GH_FNAME]?.content;
-  if (!content) throw new Error('No data file in Gist');
-  return JSON.parse(content);
+  const j = await r.json();
+  return j.record;
 }
 
-async function ghUpdateGist(token, gistId, data) {
-  const r = await fetch(`${GH_API}/gists/${gistId}`, {
-    method: 'PATCH',
-    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      files: { [GH_FNAME]: { content: JSON.stringify(data, null, 2) } }
-    })
+async function jbUpdate(binId, data) {
+  const r = await fetch(`${JB_URL}/${binId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JB_KEY
+    },
+    body: JSON.stringify(data)
   });
   if (!r.ok) throw new Error(`Update error ${r.status}`);
   return r.json();
 }
 
-// ─── FAMILY CODE ENCODING ─────────────────────────────────────────────────────
-function encodeCode(gistId, token) {
-  return btoa(JSON.stringify({ g: gistId, t: token })).replace(/=/g, '');
-}
-function decodeCode(code) {
-  try {
-    // Add padding back
-    const padded = code + '==='.slice(0, (4 - code.length % 4) % 4);
-    return JSON.parse(atob(padded));
-  } catch(e) { return null; }
-}
+// ─── FAMILY CODE ──────────────────────────────────────────────────────────────
+// Family code is simply the JSONBin bin ID (random 24-char string from JSONBin)
+// No tokens needed in the code — privacy through private bins + secret bin ID
+function encodeCode(binId) { return binId; }
+function decodeCode(code) { return code?.trim() || null; }
 
 // ─── LOCAL STATE ──────────────────────────────────────────────────────────────
 const LS = {
@@ -845,15 +843,9 @@ function genColor() {
 
 async function createFamily() {
   const familyName = document.getElementById('cFamilyName').value.trim();
-  const userName = document.getElementById('cUserName').value.trim();
-  const token = document.getElementById('cToken').value.trim();
+  const userName   = document.getElementById('cUserName').value.trim();
 
-  if (!familyName || !userName || !token) {
-    toast(t('fillAll')); return;
-  }
-  if (!token.startsWith('ghp_') && !token.startsWith('github_pat_') && token.length < 20) {
-    toast(t('badToken')); return;
-  }
+  if (!familyName || !userName) { toast(t('fillAll')); return; }
 
   setSyncStatus('spin', t('creating'));
   try {
@@ -867,17 +859,16 @@ async function createFamily() {
       updated_by: userName
     };
 
-    const gist = await ghCreateGist(token, `Семейный Бюджет — ${familyName}`, initData);
-    const gistId = gist.id;
+    const binId = await jbCreate(initData);
+    const code  = encodeCode(binId);
 
-    CONFIG = { gistId, token, familyName, userId, userName };
+    CONFIG = { binId, familyName, userId, userName };
     LS.set('bgt_config', CONFIG);
     GIST_DATA = initData;
     LS.set('bgt_data', GIST_DATA);
-
-    const code = encodeCode(gistId, token);
-    document.getElementById('familyCodeText').textContent = code;
     LS.set('bgt_family_code', code);
+
+    document.getElementById('familyCodeText').textContent = code;
     showSub('subCreated');
     setSyncStatus('ok', t('syncOk'));
   } catch(e) {
@@ -887,34 +878,32 @@ async function createFamily() {
 }
 
 async function joinFamily() {
-  const code = document.getElementById('jCode').value.trim();
+  const code     = document.getElementById('jCode').value.trim();
   const userName = document.getElementById('jUserName').value.trim();
 
   if (!code || !userName) { toast(t('fillAll')); return; }
 
-  const decoded = decodeCode(code);
-  if (!decoded || !decoded.g || !decoded.t) {
-    toast('❌ ' + (t('familyCode') || 'Invalid code')); return;
+  const binId = decodeCode(code);
+  if (!binId || binId.length < 10) {
+    toast('❌ Неверный семейный код'); return;
   }
 
   setSyncStatus('spin', t('connecting'));
   try {
-    const { g: gistId, t: token } = decoded;
-    const data = await ghReadGist(token, gistId);
+    const data = await jbRead(binId);
 
     const userId = genUID();
     const member = { id: userId, name: userName, color: genColor(), joined: new Date().toISOString() };
 
-    // Add member if not already there
     if (!data.members.find(m => m.name.toLowerCase() === userName.toLowerCase())) {
       data.members.push(member);
-      await ghUpdateGist(token, gistId, { ...data, last_updated: new Date().toISOString(), updated_by: userName });
+      await jbUpdate(binId, { ...data, last_updated: new Date().toISOString(), updated_by: userName });
     } else {
       const existing = data.members.find(m => m.name.toLowerCase() === userName.toLowerCase());
       member.id = existing.id;
     }
 
-    CONFIG = { gistId, token, familyName: data.family_name, userId: member.id, userName };
+    CONFIG = { binId, familyName: data.family_name, userId: member.id, userName };
     LS.set('bgt_config', CONFIG);
     LS.set('bgt_family_code', code);
     GIST_DATA = data;
@@ -987,12 +976,12 @@ function setSyncStatus(state, text) {
 }
 
 async function syncNow() {
-  if (!CONFIG) return;
+  if (!CONFIG?.binId) return;
   setSyncStatus('spin', t('syncing'));
   try {
-    const remote = await ghReadGist(CONFIG.token, CONFIG.gistId);
-    const localTs = GIST_DATA?.last_updated || '0';
-    const remoteTs = remote?.last_updated || '0';
+    const remote = await jbRead(CONFIG.binId);
+    const localTs  = GIST_DATA?.last_updated || '0';
+    const remoteTs = remote?.last_updated   || '0';
     if (remoteTs > localTs) {
       GIST_DATA = remote;
       LS.set('bgt_data', GIST_DATA);
@@ -1006,13 +995,13 @@ async function syncNow() {
 }
 
 async function pushData() {
-  if (!CONFIG || !GIST_DATA) return;
+  if (!CONFIG?.binId || !GIST_DATA) return;
   GIST_DATA.last_updated = new Date().toISOString();
-  GIST_DATA.updated_by = CONFIG.userName;
+  GIST_DATA.updated_by   = CONFIG.userName;
   LS.set('bgt_data', GIST_DATA);
   setSyncStatus('spin', t('saving'));
   try {
-    await ghUpdateGist(CONFIG.token, CONFIG.gistId, GIST_DATA);
+    await jbUpdate(CONFIG.binId, GIST_DATA);
     setSyncStatus('ok', t('syncOk'));
     updateSubTitle();
   } catch(e) {
