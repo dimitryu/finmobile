@@ -77,6 +77,11 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .udot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
 .install-btn{background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;display:none;align-items:center;gap:3px;white-space:nowrap}
 .install-btn.vis{display:flex}
+.update-banner{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#1e3a5f,#0c1f3f);border-top:2px solid #3b82f6;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:500;transform:translateY(100%);transition:transform .3s}
+.update-banner.vis{transform:translateY(0)}
+.update-banner-txt{flex:1;font-size:13px;color:#93c5fd}
+.update-btn{background:#3b82f6;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer}
+.update-btn:hover{background:#2563eb}
 .ios-hint{background:#1e3a5f;border:1px solid #3b82f6;border-radius:8px;padding:8px 12px;margin:8px 12px 0;font-size:11px;color:#93c5fd;display:none}
 .ios-hint.vis{display:block}
 
@@ -278,6 +283,13 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     📱 <b>iOS:</b> Нажмите «Поделиться» (□↑) → «На экран Домой» для установки
   </div>
 
+  <!-- Update banner -->
+  <div class="update-banner" id="updateBanner">
+    <span class="update-banner-txt">🆕 Доступна новая версия приложения!</span>
+    <button class="update-btn" onclick="applyUpdate()">⬆ Обновить</button>
+    <button style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:18px;padding:0 4px" onclick="document.getElementById('updateBanner').classList.remove('vis')">×</button>
+  </div>
+
   <div class="header">
     <div class="header-inner">
       <div class="logo">₪</div>
@@ -474,7 +486,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.8.3';  // Версия приложения
+const APP_VER = '2.8.4';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -963,53 +975,106 @@ function makeIcon(size) {
 function setupPWA() {
   const icon192 = makeIcon(192);
   const icon512 = makeIcon(512);
+  const icon64  = makeIcon(64);
 
-  // Set favicon for Chrome tab (no Google badge)
-  const icon32 = makeIcon(32);
-  const icon64 = makeIcon(64);
+  // Favicon + apple-touch-icon
   const fav = document.getElementById('favicon');
   if (fav) fav.href = icon64;
-
-  // Set apple-touch-icon to proper PNG (no Google badge on iOS)
   document.getElementById('ati').href = icon192;
 
-  // Set favicon for Chrome tab
-  const favicon32 = makeIcon(32);
-  document.getElementById('favicon').href = favicon32;
-
-  // Build manifest with maskable icons (removes badge on Android)
+  // Manifest
   const manifest = {
-    name: 'Семейный Бюджет',
-    short_name: 'Бюджет',
-    description: 'Семейный финансовый трекер',
-    start_url: './',
-    display: 'standalone',
-    background_color: '#0b0f1a',
-    theme_color: '#0b0f1a',
-    orientation: 'any',
-    lang: 'ru',
-    icons: [
-      { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-      { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    name:'Семейный Бюджет', short_name:'Бюджет',
+    description:'Семейный финансовый трекер',
+    start_url:'./', display:'standalone',
+    background_color:'#0b0f1a', theme_color:'#0b0f1a',
+    orientation:'any', lang:'ru',
+    icons:[
+      {src:icon192,sizes:'192x192',type:'image/png',purpose:'any maskable'},
+      {src:icon512,sizes:'512x512',type:'image/png',purpose:'any maskable'}
     ]
   };
   try {
-    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    const blob = new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
     document.getElementById('mlink').href = URL.createObjectURL(blob);
-  } catch(e) {}
+  } catch(e){}
 
-  // Service Worker
+  // ── Service Worker: network-first with version-aware cache ──────────────────
+  // The SW stores APP_VER in cache name. On update, old caches are purged.
+  // When a new SW is waiting, we show the update banner.
   const swCode = `
-const CV='budget-${APP_VER}';
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CV).then(c=>c.addAll(['./']).catch(()=>{})));});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CV).map(k=>caches.delete(k)))));self.clients.claim();});
-self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});
+const VER = 'budget-v${APP_VER}';
+const CACHE = ['/'];
+
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(VER).then(c => c.addAll(CACHE).catch(()=>{})));
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== VER).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Network-first: try network, fall back to cache
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  e.respondWith(
+    fetch(e.request)
+      .then(resp => {
+        if (resp.ok) {
+          const clone = resp.clone();
+          caches.open(VER).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      })
+      .catch(() => caches.match(e.request))
+  );
+});
+
+// Notify clients when a new version is available
+self.addEventListener('message', e => {
+  if (e.data === 'CHECK_UPDATE') {
+    self.clients.matchAll().then(clients => {
+      clients.forEach(c => c.postMessage({type:'VERSION', ver:'${APP_VER}'}));
+    });
+  }
+});
   `;
-  try {
-    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-    const swURL = URL.createObjectURL(swBlob);
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register(swURL, { scope: './' }).catch(() => {});
-  } catch(e) {}
+
+  if ('serviceWorker' in navigator) {
+    try {
+      const swBlob = new Blob([swCode], {type:'application/javascript'});
+      const swURL  = URL.createObjectURL(swBlob);
+
+      navigator.serviceWorker.register(swURL, {scope:'./'})
+        .then(reg => {
+          // Check for updates every 30 minutes
+          setInterval(() => reg.update(), 30 * 60 * 1000);
+
+          // New SW waiting → show update banner
+          reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            newSW.addEventListener('statechange', () => {
+              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                document.getElementById('updateBanner')?.classList.add('vis');
+              }
+            });
+          });
+        })
+        .catch(()=>{});
+
+      // Listen for version messages from SW
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'VERSION' && e.data.ver !== APP_VER) {
+          document.getElementById('updateBanner')?.classList.add('vis');
+        }
+      });
+    } catch(e){}
+  }
 
   // iOS hint
   if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone) {
@@ -1030,6 +1095,25 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
       document.getElementById('installBtn').classList.remove('vis');
     }
   });
+}
+
+// Apply update: clear ALL caches + SW registrations, then hard reload
+async function applyUpdate() {
+  toast('🔄 Обновление...');
+  try {
+    // Unregister all service workers
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    // Clear all caches
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch(e) {}
+  // Hard reload to fetch fresh version from server
+  location.reload(true);
 }
 
 // ─── JSONBIN STORAGE ──────────────────────────────────────────────────────────
@@ -1146,12 +1230,21 @@ async function createFamily() {
 }
 
 async function joinFamily() {
-  const code     = document.getElementById('jCode').value.trim();
+  const rawCode  = document.getElementById('jCode').value.trim();
   const userName = document.getElementById('jUserName').value.trim();
 
-  if (!code || !userName) { toast(t('fillAll')); return; }
+  if (!rawCode || !userName) { toast(t('fillAll')); return; }
 
-  const binId = decodeCode(code);
+  // Strip all whitespace/newlines that might sneak in when pasting on mobile
+  const code = rawCode.replace(/\s+/g, '');
+
+  // Detect old v2.0.0 base64+JSON format (starts with 'ey' which is base64 of '{')
+  if (code.startsWith('ey')) {
+    toast('❌ Старый код (v2.0.0). Попросите владельца семьи скопировать новый код из настроек ⚙.');
+    return;
+  }
+
+  const binId = code;
   if (!binId || binId.length < 10) {
     toast('❌ Неверный семейный код'); return;
   }
@@ -1159,28 +1252,40 @@ async function joinFamily() {
   setSyncStatus('spin', t('connecting'));
   try {
     const data = await jbRead(binId);
+    if (!data || !data.family_name) throw new Error('Данные семьи не найдены');
 
     const userId = genUID();
     const member = { id: userId, name: userName, color: genColor(), joined: new Date().toISOString() };
 
-    if (!data.members.find(m => m.name.toLowerCase() === userName.toLowerCase())) {
+    const existing = data.members?.find(m => m.name.toLowerCase() === userName.toLowerCase());
+    if (!existing) {
+      if (!data.members) data.members = [];
       data.members.push(member);
       await jbUpdate(binId, { ...data, last_updated: new Date().toISOString(), updated_by: userName });
     } else {
-      const existing = data.members.find(m => m.name.toLowerCase() === userName.toLowerCase());
       member.id = existing.id;
     }
 
     CONFIG = { binId, familyName: data.family_name, userId: member.id, userName };
     LS.set('bgt_config', CONFIG);
-    LS.set('bgt_family_code', code);
+    LS.set('bgt_family_code', binId);
     GIST_DATA = data;
     LS.set('bgt_data', GIST_DATA);
 
     setSyncStatus('ok', t('syncOk'));
     enterApp();
   } catch(e) {
-    toast('❌ ' + e.message);
+    const msg = e.message || String(e);
+    // Give user-friendly hints for common errors
+    if (msg.includes('400')) {
+      toast('❌ Ошибка 400: неверный код или API-ключ не настроен');
+    } else if (msg.includes('401') || msg.includes('403')) {
+      toast('❌ Нет доступа. Проверьте JB_KEY в файле');
+    } else if (msg.includes('404')) {
+      toast('❌ Семья не найдена. Проверьте код');
+    } else {
+      toast('❌ ' + msg);
+    }
     setSyncStatus('err', t('syncErr'));
   }
 }
