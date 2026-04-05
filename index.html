@@ -222,7 +222,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.4</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.5</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.4</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.5</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -489,7 +489,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.4';  // Версия приложения
+const APP_VER = '2.9.5';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1329,6 +1329,8 @@ function initApp() {
   updateSubTitle();
   applyI18n();
   buildSel();
+  // Auto-create current calendar month with recurring items if it doesn't exist yet
+  checkAutoMonth();
   renderView();
   if (syncTimer) clearInterval(syncTimer);
   syncTimer = setInterval(syncNow, 300000);
@@ -1366,15 +1368,18 @@ async function syncNow() {
   setSyncStatus('spin', t('syncing'));
   try {
     const remote = await jbRead(CONFIG.binId);
-    const localTs  = GIST_DATA?.last_updated || '0';
-    const remoteTs = remote?.last_updated   || '0';
+    const localTs    = GIST_DATA?.last_updated || '0';
+    const remoteTs   = remote?.last_updated   || '0';
     const lastChange = getLastLocalChange();
     if (remoteTs > localTs && remoteTs > lastChange) {
       GIST_DATA = remote;
       LS.set('bgt_data', GIST_DATA);
-      buildSel(); renderView(); updateSubTitle();
-      toast('🔄 ' + (remote.updated_by || '?'));
+      buildSel();
+      updateSubTitle();
     }
+    // After every sync: check if current calendar month needs to be auto-created
+    checkAutoMonth();
+    renderView();
     setSyncStatus('ok', t('syncOk'));
   } catch(e) {
     setSyncStatus('err', t('syncErr'));
@@ -1821,7 +1826,97 @@ function bindDebts(md) {
   document.querySelectorAll('[data-hm]').forEach(r => { r.addEventListener('click', () => { selMonth=r.dataset.hm; buildSel(); renderStats(); renderDebts(); }); });
 }
 
-// ─── RENDER VIEW ──────────────────────────────────────────────────────────────
+// ─── BUILD MONTH WITH RECURRING ITEMS ────────────────────────────────────────
+// Helper shared by: confirmAddMonth (manual) + checkAutoMonth (automatic).
+// Builds a new month object pre-filled with all 📌 pinned items from ALL sections
+// (including user-created ones), copying amounts from sourceMonthKey.
+// Amount priority: sourceMonthKey → most recent non-zero value → 0.
+function buildMonthWithRecurring(sourceMonthKey) {
+  const secs      = getSections();
+  const rec       = GIST_DATA?.recurring || {};
+  const allMonths = sortK(Object.keys(GIST_DATA.budget_data || {}));
+  const srcData   = GIST_DATA.budget_data?.[sourceMonthKey] || {};
+
+  const newMonth = { debts: [], edp_target: 15000 };
+  // Create entry for EVERY section (default + user-created)
+  secs.forEach(s => { newMonth[s.id] = {}; });
+
+  secs.forEach(s => {
+    const secRec = rec[s.id] || {};
+    Object.keys(secRec).forEach(itemName => {
+      if (!secRec[itemName]) return; // not pinned
+
+      // 1st priority: amount from the source month
+      const srcAmt = srcData[s.id]?.[itemName];
+      if (srcAmt !== undefined) {
+        newMonth[s.id][itemName] = srcAmt;
+        return;
+      }
+
+      // 2nd priority: most recent non-zero value across all months
+      let found = 0;
+      for (let i = allMonths.length - 1; i >= 0; i--) {
+        const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
+        if (amt !== undefined && amt !== 0) { found = amt; break; }
+      }
+      newMonth[s.id][itemName] = found;
+    });
+  });
+
+  return newMonth;
+}
+
+// ─── AUTO MONTH CHECK ─────────────────────────────────────────────────────────
+// Called on every app open. If the current calendar month doesn't exist yet,
+// creates it automatically with all pinned recurring items (+ their amounts).
+// Silently saves to localStorage and pushes to remote in background.
+function checkAutoMonth() {
+  if (!GIST_DATA?.budget_data) return;
+
+  const now   = new Date();
+  const m     = String(now.getMonth() + 1).padStart(2, '0');
+  const y     = String(now.getFullYear() - 2000).padStart(2, '0');
+  const key   = `${m}_${y}`;
+
+  // Month already exists — nothing to do
+  if (GIST_DATA.budget_data[key]) return;
+
+  // Find the most recent existing month to use as amount source
+  const allMonths  = sortK(Object.keys(GIST_DATA.budget_data));
+  const srcKey     = allMonths.length ? allMonths[allMonths.length - 1] : null;
+
+  const newMonth   = srcKey
+    ? buildMonthWithRecurring(srcKey)
+    : (() => {
+        const m = { debts: [], edp_target: 15000 };
+        getSections().forEach(s => { m[s.id] = {}; });
+        return m;
+      })();
+
+  GIST_DATA.budget_data[key] = newMonth;
+  LS.set('bgt_data', GIST_DATA);
+
+  // Count pinned items that were copied (for toast message)
+  const pinnedCount = getSections().reduce((sum, s) => {
+    return sum + Object.keys(newMonth[s.id] || {}).length;
+  }, 0);
+
+  // Navigate to new month and re-render
+  selMonth = key;
+  buildSel();
+  renderView();
+
+  if (pinnedCount > 0) {
+    toast(`🗓 ${fmtK(key)} — создан автоматически (${pinnedCount} 📌)`, 4000);
+  } else {
+    toast(`🗓 ${fmtK(key)} — создан автоматически`, 3000);
+  }
+
+  // Push to remote silently
+  pushData();
+}
+
+
 function renderView() {
   renderStats();
   if (curView==='month') renderMonth();
@@ -1885,34 +1980,9 @@ async function confirmAddMonth() {
   secs.forEach(s => { newMonth[s.id] = {}; });
 
   if (mode === 'recurring') {
-    const rec  = GIST_DATA?.recurring || {};
-    const allMonths = sortK(Object.keys(GIST_DATA.budget_data));
-
-    // For each pinned item, find the best source amount:
-    // 1st priority: currently selected month (selMonth)
-    // 2nd priority: most recent month that has a non-zero value for this item
-    // This ensures amounts are always up-to-date and not lost when they were 0 in latest month
-    secs.forEach(s => {
-      const secRec = rec[s.id] || {};
-      Object.keys(secRec).forEach(itemName => {
-        if (!secRec[itemName]) return; // not pinned
-
-        // Try selMonth first
-        const selAmt = GIST_DATA.budget_data[selMonth]?.[s.id]?.[itemName];
-        if (selAmt !== undefined) {
-          newMonth[s.id][itemName] = selAmt;
-          return;
-        }
-
-        // Walk back from most recent month to find last non-zero value
-        let foundAmt = 0;
-        for (let i = allMonths.length - 1; i >= 0; i--) {
-          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
-          if (amt !== undefined && amt !== 0) { foundAmt = amt; break; }
-        }
-        newMonth[s.id][itemName] = foundAmt;
-      });
-    });
+    // Use shared helper — copies ALL pinned items from ALL sections (incl. user-created)
+    // Source = selMonth (currently viewed month), amounts walk-back if missing
+    Object.assign(newMonth, buildMonthWithRecurring(selMonth));
   } else if (mode === 'copy') {
     const srcKey = document.getElementById('newMonthCopySrc').value;
     const src = GIST_DATA.budget_data[srcKey] || {};
