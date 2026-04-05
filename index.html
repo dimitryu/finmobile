@@ -222,7 +222,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.3</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.4</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.3</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.4</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -489,7 +489,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.3';  // Версия приложения
+const APP_VER = '2.9.4';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -989,39 +989,36 @@ function makeIcon(size) {
 }
 
 // ─── PWA SETUP ────────────────────────────────────────────────────────────────
-// v2.9.2 — Service Worker via Blob URL
+// v2.9.4 — Service Worker registered from ./sw.js (same directory as index.html)
 //
-// WHY BLOB URL:
-//   The old "?sw=1" trick registered index.html as a SW script.
-//   Chrome tried to execute <!DOCTYPE html> as JavaScript → SyntaxError →
-//   SW was silently failing, meaning: no offline cache, no icon serving,
-//   Chrome badge on icon, app disappearing after phone restart.
+// ПОЧЕМУ sw.js, а не blob или ?sw=1:
+//   • blob: URL не переживает перезапуск телефона — браузер не может восстановить
+//     blob: URL после закрытия → SW слетает → иконка исчезает → приложение не в оффлайне
+//   • ?sw=1 (старый трюк) — Chrome пытался выполнить <!DOCTYPE html> как JS → SyntaxError
+//     → SW никогда не работал вообще
+//   • ./sw.js — стандарт: реальный файл, тот же origin, переживает рестарт навсегда
 //
-// HOW BLOB URL SW WORKS:
-//   1. SW code is a pure JS string → Blob → URL.createObjectURL()
-//   2. Chrome registers it as a proper same-origin SW (blob: inherits page origin)
-//   3. SW intercepts ./icon-192.png, ./icon-512.png, ./manifest.json from CacheStorage
-//   4. Manifest uses PATH-based icons → Chrome sees real maskable icons → NO badge
-//   5. SW caches main HTML for offline support → app survives phone restart
-//
-// MANIFEST STRATEGY:
-//   - If SW already controlling page (repeat visit): use ./manifest.json immediately
-//   - Otherwise: data: URL manifest so install prompt fires right away
-//   - On controllerchange: switch to ./manifest.json automatically
+// КАК РАБОТАЕТ ИКОНКА БЕЗ BADGE:
+//   1. Страница генерирует иконки через canvas → Blob → сохраняет в CacheStorage
+//   2. sw.js перехватывает запросы к ./icon-192.png, ./icon-512.png, ./manifest.json
+//      и отдаёт их из CacheStorage
+//   3. manifest.json ссылается на пути (не data: URL) → Chrome видит настоящие maskable
+//      иконки → НЕТ Chrome badge
 function setupPWA() {
   const icon64  = makeIcon(64);
   const icon192 = makeIcon(192);
   const icon512 = makeIcon(512);
 
-  // Favicon + Apple touch icon (data: URLs — stable, no SW needed)
+  // Favicon + Apple touch icon (data: URL — стабильны, не требуют SW)
   const fav = document.getElementById('favicon');
   if (fav) fav.href = icon64;
   const ati = document.getElementById('ati');
   if (ati) ati.href = icon192;
 
-  // ── Build manifest object with path-based icons ──────────────────────────
+  // ── Manifest ──────────────────────────────────────────────────────────────
   const basePath = location.pathname;
   const swScope  = location.pathname.replace(/\/[^/]*$/, '/') || '/';
+
   const manifestObj = {
     name: 'Семейный Бюджет', short_name: 'Бюджет',
     description: 'Семейный финансовый трекер',
@@ -1035,20 +1032,19 @@ function setupPWA() {
     ],
   };
 
-  // Helper: set the manifest <link> to proper URL (SW-served path)
-  function usePathManifest() {
+  const setManifestPath = () => {
     const ml = document.getElementById('mlink');
     if (ml) ml.href = './manifest.json';
-  }
+  };
 
-  // ── Step 1: Set manifest link ─────────────────────────────────────────────
   if (navigator.serviceWorker?.controller) {
-    // SW already active from a previous visit → use proper path manifest immediately
-    // → Chrome fetches ./icon-*.png via SW → real maskable icons → NO badge
-    usePathManifest();
+    // SW уже активен (повторный визит) → сразу используем path-based manifest
+    // → Chrome запрашивает ./icon-*.png через SW → настоящие maskable иконки → нет badge
+    setManifestPath();
   } else {
-    // First visit (no SW yet) → use data: URL so install prompt CAN fire now
-    const mImmediate = { ...manifestObj,
+    // Первый визит (SW ещё не установлен) → data: URL чтобы install prompt сработал сразу
+    const mFirst = {
+      ...manifestObj,
       icons: [
         { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
         { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
@@ -1057,14 +1053,15 @@ function setupPWA() {
     try {
       document.getElementById('mlink').href =
         'data:application/manifest+json;charset=utf-8,' +
-        encodeURIComponent(JSON.stringify(mImmediate));
+        encodeURIComponent(JSON.stringify(mFirst));
     } catch(e) {}
-
-    // Switch to path manifest as soon as SW takes control
-    navigator.serviceWorker?.addEventListener('controllerchange', usePathManifest);
+    // Переключаемся на path manifest как только SW взял контроль
+    navigator.serviceWorker?.addEventListener('controllerchange', setManifestPath);
   }
 
-  // ── Step 2: Cache icons + manifest (for SW to serve) ─────────────────────
+  // ── Кэш иконок и manifest для SW ─────────────────────────────────────────
+  // CacheStorage доступен из SW (в отличие от localStorage).
+  // Страница кладёт иконки сюда → SW их отдаёт по запросу.
   if ('caches' in window) {
     (async () => {
       try {
@@ -1088,100 +1085,35 @@ function setupPWA() {
     })();
   }
 
-  // ── Step 3: Register Service Worker via Blob URL ─────────────────────────
-  // Blob URL SW = pure JavaScript, no HTML parsing issue, proper same-origin SW
+  // ── Service Worker — регистрация из ./sw.js ───────────────────────────────
+  // ./sw.js лежит рядом с index.html на GitHub Pages.
+  // Реальный файл на том же origin → переживает перезапуск телефона навсегда.
   if ('serviceWorker' in navigator) {
-    try {
-      // SW code as a JavaScript string — no HTML, no <!DOCTYPE>, no parsing errors
-      const SW_CODE = `
-const SW_VER    = '${APP_VER}';
-const APP_CACHE = 'budget-${APP_VER}';
-const PWA_CACHE = 'pwa-assets';  // shared with page thread
-
-self.addEventListener('install', () => self.skipWaiting());
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(ks => Promise.all(
-        ks.filter(k => k !== APP_CACHE && k !== PWA_CACHE).map(k => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
-  );
-});
-
-// Let page ask for our version → show update banner when mismatch
-self.addEventListener('message', e => {
-  if (e.data === 'CHECK_VER') e.source?.postMessage({ type: 'VERSION', ver: SW_VER });
-});
-
-self.addEventListener('fetch', e => {
-  const url = e.request.url;
-  if (!url.startsWith('http') || e.request.method !== 'GET') return;
-
-  // Serve PWA assets (icons + manifest) from pwa-assets cache
-  if (url.includes('/icon-192.png')) {
-    e.respondWith(
-      caches.open(PWA_CACHE).then(c => c.match('_icon192'))
-        .then(r => r || new Response('', { status: 404 }))
-    ); return;
-  }
-  if (url.includes('/icon-512.png')) {
-    e.respondWith(
-      caches.open(PWA_CACHE).then(c => c.match('_icon512'))
-        .then(r => r || new Response('', { status: 404 }))
-    ); return;
-  }
-  if (url.includes('/manifest.json')) {
-    e.respondWith(
-      caches.open(PWA_CACHE).then(c => c.match('_manifest'))
-        .then(r => r || new Response('{}', {
-          status: 200, headers: { 'Content-Type': 'application/manifest+json' }
-        }))
-    ); return;
-  }
-
-  // Main app HTML — network-first, cache fallback (offline / restart support)
-  e.respondWith(
-    caches.open(APP_CACHE).then(cache =>
-      fetch(e.request)
-        .then(resp => { if (resp?.ok) cache.put(e.request, resp.clone()); return resp; })
-        .catch(() => cache.match(e.request))
-    )
-  );
-});
-`;
-      const swBlob = new Blob([SW_CODE], { type: 'application/javascript' });
-      const swUrl  = URL.createObjectURL(swBlob);
-
-      navigator.serviceWorker.register(swUrl, { scope: swScope })
-        .then(reg => {
-          // Periodic update check (will re-register with fresh blob on next applyUpdate)
-          setInterval(() => reg.update(), 30 * 60 * 1000);
-
-          // Detect new SW installed → show update banner
-          reg.addEventListener('updatefound', () => {
-            const nw = reg.installing;
-            nw?.addEventListener('statechange', () => {
-              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                document.getElementById('updateBanner')?.classList.add('vis');
-              }
-            });
+    navigator.serviceWorker.register('./sw.js', { scope: swScope })
+      .then(reg => {
+        // Проверка обновлений каждые 30 минут
+        setInterval(() => reg.update(), 30 * 60 * 1000);
+        // Новый SW установлен → показываем баннер обновления
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          nw?.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              document.getElementById('updateBanner')?.classList.add('vis');
+            }
           });
-        })
-        .catch(() => {});
+        });
+      })
+      .catch(() => {});
 
-      // Ask active SW for its version; if different → show update banner
-      navigator.serviceWorker.addEventListener('message', e => {
-        if (e.data?.type === 'VERSION' && e.data.ver !== APP_VER) {
-          document.getElementById('updateBanner')?.classList.add('vis');
-        }
-      });
-      navigator.serviceWorker.ready
-        .then(reg => reg.active?.postMessage('CHECK_VER'))
-        .catch(() => {});
-
-    } catch(e) {}
+    // Версия SW не совпадает с APP_VER → показываем баннер обновления
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'VERSION' && e.data.ver !== APP_VER) {
+        document.getElementById('updateBanner')?.classList.add('vis');
+      }
+    });
+    navigator.serviceWorker.ready
+      .then(reg => reg.active?.postMessage('CHECK_VER'))
+      .catch(() => {});
   }
 
   // ── iOS hint ──────────────────────────────────────────────────────────────
@@ -1189,7 +1121,7 @@ self.addEventListener('fetch', e => {
     document.getElementById('iosHint')?.classList.add('vis');
   }
 
-  // ── Install button ────────────────────────────────────────────────────────
+  // ── Кнопка установки (Android / desktop Chrome) ───────────────────────────
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
@@ -1198,10 +1130,7 @@ self.addEventListener('fetch', e => {
   });
   document.getElementById('installBtn').addEventListener('click', async () => {
     if (!deferredPrompt) return;
-    try {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-    } catch(e) {}
+    try { deferredPrompt.prompt(); await deferredPrompt.userChoice; } catch(e) {}
     deferredPrompt = null;
     document.getElementById('installBtn').classList.remove('vis');
   });
