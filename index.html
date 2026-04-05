@@ -290,7 +290,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
         <select class="msel" id="monthSel"></select>
         <button class="nav-arr" id="nextBtn">›</button>
         <button class="add-m" id="addMonthBtn" onclick="openAddMonthModal()">+ Мес.</button>
-        <button class="add-m" id="copyMonthBtn" onclick="openCopyMonth()" title="Копировать данные из другого месяца" style="background:var(--card2);color:#60a5fa;border-color:#3b82f6">📋</button>
       </div>
       <div class="tabs">
         <button class="tab active" data-view="month">📊</button>
@@ -413,26 +412,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   </div>
 </div>
 
-<!-- Copy Month modal -->
-<div class="modal-bg" id="copyMonthModal">
-  <div class="modal">
-    <button class="mclose" onclick="closeCopyMonth()">×</button>
-    <h3 id="copyMonthTitle">📋 Копировать данные из другого месяца</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5" id="copyMonthDesc">
-      Выберите месяц, данные которого будут скопированы в <b id="copyMonthTarget">—</b>
-    </p>
-    <select class="month-src-sel" id="copyMonthSel"></select>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <button class="sbtn sbtn-green" style="font-size:13px" onclick="confirmCopyMonth(false)">📋 Скопировать</button>
-      <button class="sbtn sbtn-purple" style="font-size:13px" onclick="confirmCopyMonth(true)">🔀 Объединить</button>
-    </div>
-    <p style="font-size:10px;color:var(--muted);line-height:1.5">
-      <b>Скопировать</b> — заменит все данные текущего месяца.<br/>
-      <b>Объединить</b> — добавит только отсутствующие статьи (не перезапишет существующие).
-    </p>
-  </div>
-</div>
-
 <!-- Settings modal -->
 <div class="modal-bg" id="settingsModal">
   <div class="modal">
@@ -495,7 +474,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.8.1';  // Версия приложения
+const APP_VER = '2.8.2';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1222,7 +1201,14 @@ function enterApp() {
 function initApp() {
   if (!CONFIG || !GIST_DATA) return;
   // Ensure sections are initialized (migrate old data without sections)
+  // If sections weren't in the remote data, save them now so ordering persists
+  const hadSections = !!GIST_DATA.sections;
   if (!GIST_DATA.sections) GIST_DATA.sections = [...DEFAULT_SECTIONS];
+  if (!hadSections) {
+    // Save initialized sections to remote silently
+    saveLocal();
+    pushData();
+  }
 
   // Apply saved language
   document.body.style.direction = CURLANG === 'he' ? 'rtl' : 'ltr';
@@ -1237,9 +1223,9 @@ function initApp() {
   buildSel();
   renderView();
 
-  // Auto sync every 60 seconds
+  // Auto sync every 5 minutes (was 60s — reduced to avoid JSONBin rate limits)
   if (syncTimer) clearInterval(syncTimer);
-  syncTimer = setInterval(syncNow, 60000);
+  syncTimer = setInterval(syncNow, 300000);
 
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
 }
@@ -1247,7 +1233,6 @@ function initApp() {
 function updateSubTitle() {
   if (!GIST_DATA) return;
   const updated = GIST_DATA.last_updated ? new Date(GIST_DATA.last_updated).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-  document.getElementById('hSubTitle').textContent =
   document.getElementById('hSubTitle').textContent =
     `${GIST_DATA.members?.length || 0} ${t('people')} · ${t('updatedBy')} ${GIST_DATA.updated_by || '?'} ${updated}`;
 }
@@ -1269,7 +1254,8 @@ async function syncNow() {
     const remote = await jbRead(CONFIG.binId);
     const localTs  = GIST_DATA?.last_updated || '0';
     const remoteTs = remote?.last_updated   || '0';
-    if (remoteTs > localTs) {
+    // Only update if remote is strictly newer AND we don't have pending local changes
+    if (remoteTs > localTs && !_pendingPush) {
       GIST_DATA = remote;
       LS.set('bgt_data', GIST_DATA);
       buildSel(); renderView(); updateSubTitle();
@@ -1281,18 +1267,32 @@ async function syncNow() {
   }
 }
 
+// Track whether we have unsaved local changes that haven't made it to remote yet
+let _pendingPush = false;
+
+// Save to localStorage immediately (sync), then push to remote async
+function saveLocal() {
+  LS.set('bgt_data', GIST_DATA);
+}
+
 async function pushData() {
   if (!CONFIG?.binId || !GIST_DATA) return;
+  _pendingPush = true;
   GIST_DATA.last_updated = new Date().toISOString();
   GIST_DATA.updated_by   = CONFIG.userName;
-  LS.set('bgt_data', GIST_DATA);
+  // Save to localStorage FIRST (always succeeds)
+  saveLocal();
   setSyncStatus('spin', t('saving'));
   try {
     await jbUpdate(CONFIG.binId, GIST_DATA);
     setSyncStatus('ok', t('syncOk'));
     updateSubTitle();
+    _pendingPush = false;
   } catch(e) {
     setSyncStatus('err', t('syncErr'));
+    // Data saved locally — will retry on next manual sync
+    // _pendingPush stays true to protect local data from being overwritten by syncNow
+    setTimeout(() => { _pendingPush = false; }, 30000); // allow overwrite after 30s
   }
 }
 
@@ -1561,22 +1561,22 @@ function bindMonth() {
   });
   const ei = document.getElementById('editIn');
   if (ei) {
-    const commit = () => {
+    const commit = async () => {
       if (!editing) return;
       const md = getMD();
       md[editing.sec][editing.key] = parseFloat(ei.value)||0;
       setMD(md); editing = null;
-      pushData(); renderMonth(); renderStats();
+      await pushData(); renderMonth(); renderStats();
     };
     ei.addEventListener('blur', commit);
     ei.addEventListener('keydown', e => { if(e.key==='Enter') commit(); if(e.key==='Escape'){editing=null;renderMonth();} });
   }
   document.querySelectorAll('[data-ds]').forEach(b => {
-    b.addEventListener('click', e => {
+    b.addEventListener('click', async e => {
       e.stopPropagation();
       const sec=b.dataset.ds, key=decodeURIComponent(b.dataset.dk);
       const md=getMD(); delete md[sec][key]; setMD(md);
-      pushData(); renderMonth(); renderStats(); toast(t('deleted') + key);
+      await pushData(); renderMonth(); renderStats(); toast(t('deleted') + key);
     });
   });
   document.querySelectorAll('[data-asec]').forEach(b => {
@@ -1584,11 +1584,12 @@ function bindMonth() {
   });
   document.getElementById('aiCnl')?.addEventListener('click', () => { addSec=null; renderMonth(); });
   document.querySelectorAll('[data-aok]').forEach(b => {
-    b.addEventListener('click', () => {
+    b.addEventListener('click', async () => {
       const sec=b.dataset.aok, name=document.getElementById('aiN')?.value.trim(), val=parseFloat(document.getElementById('aiV')?.value)||0;
       if (!name) return;
       const md=getMD(); md[sec][name]=val; setMD(md);
-      addSec=null; pushData(); renderMonth(); renderStats(); toast(t('added') + name);
+      addSec=null;
+      await pushData(); renderMonth(); renderStats(); toast(t('added') + name);
     });
   });
 }
@@ -1876,58 +1877,6 @@ function getInitialData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ─── COPY MONTH ───────────────────────────────────────────────────────────────
-function openCopyMonth() {
-  const data = getBudgetData();
-  const months = sortK(Object.keys(data)).filter(k => k !== selMonth);
-  if (!months.length) { toast('⚠ Нет других месяцев для копирования'); return; }
-
-  const sel = document.getElementById('copyMonthSel');
-  sel.innerHTML = [...months].reverse().map(k =>
-    `<option value="${k}">${fmtK(k)}</option>`
-  ).join('');
-
-  document.getElementById('copyMonthTarget').textContent = fmtK(selMonth);
-  document.getElementById('copyMonthModal').classList.add('open');
-}
-
-function closeCopyMonth() {
-  document.getElementById('copyMonthModal').classList.remove('open');
-}
-
-async function confirmCopyMonth(merge) {
-  const srcKey = document.getElementById('copyMonthSel').value;
-  if (!srcKey) return;
-  const data = getBudgetData();
-  const src = data[srcKey];
-  const dst = getMD();
-  const secs = getSections();
-
-  if (merge) {
-    // Merge: add items from src that don't exist in dst
-    secs.forEach(s => {
-      Object.entries(src[s.id]||{}).forEach(([k,v]) => {
-        if (dst[s.id][k] === undefined) dst[s.id][k] = v;
-      });
-    });
-    // Merge debts: add debts not already named in dst
-    const existingNames = (dst.debts||[]).map(d=>d.name);
-    (src.debts||[]).forEach(d => {
-      if (!existingNames.includes(d.name)) dst.debts.push({...d});
-    });
-  } else {
-    // Full copy: replace all sections and debts from src
-    secs.forEach(s => { dst[s.id] = {...(src[s.id]||{})}; });
-    dst.debts = (src.debts||[]).map(d=>({...d}));
-  }
-
-  setMD(dst);
-  closeCopyMonth();
-  await pushData();
-  renderView();
-  toast(merge ? `🔀 Объединено из ${fmtK(srcKey)}` : `📋 Скопировано из ${fmtK(srcKey)}`);
-}
-
 // ─── IMPORT / EXPORT ──────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
