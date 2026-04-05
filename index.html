@@ -222,7 +222,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.1</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.2</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.1</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.2</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -427,6 +427,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       </div>
     </div>
     <button class="sbtn sbtn-green" style="font-size:13px" onclick="confirmAddMonth()">✅ Создать месяц</button>
+    <div id="addMonthErr" style="display:none;margin-top:10px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:10px 12px;font-size:12px;color:#f87171"></div>
   </div>
 </div>
 
@@ -480,95 +481,15 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
-// SERVICE WORKER CONTEXT — runs when this page is loaded as ?sw=1
-// NOTE: localStorage is NOT available in SW context — all logic is inline here.
+// APP v2.9.2 — Service Worker registered via Blob URL (see setupPWA)
+// The old ?sw=1 trick was broken: Chrome rejects <!DOCTYPE html> as JS syntax.
+// Now SW code is a pure JS string → Blob → registered properly.
 // ══════════════════════════════════════════════════════════════════════════════
-var _isSW = false;
-try { _isSW = (typeof ServiceWorkerGlobalScope !== 'undefined') && (self instanceof ServiceWorkerGlobalScope); } catch(e) {}
-
-if (_isSW) {
-  // ── SW constants ────────────────────────────────────────────────────────────
-  var SW_CACHE   = 'budget-2.9.1';   // bump with APP_VER
-  var SW_ASSETS  = 'pwa-assets';     // shared cache for icons + manifest
-
-  self.addEventListener('install', function(e) {
-    self.skipWaiting();
-  });
-
-  self.addEventListener('activate', function(e) {
-    e.waitUntil(
-      caches.keys().then(function(keys) {
-        return Promise.all(
-          keys
-            .filter(function(k) { return k !== SW_CACHE && k !== SW_ASSETS; })
-            .map(function(k) { return caches.delete(k); })
-        );
-      }).then(function() { return self.clients.claim(); })
-    );
-  });
-
-  self.addEventListener('fetch', function(e) {
-    var url = e.request.url;
-    if (!url.startsWith('http') || e.request.method !== 'GET') return;
-
-    // ── Serve icon-192.png from pwa-assets cache ─────────────────────────────
-    if (/\/icon-192\.png(\?|$)/.test(url)) {
-      e.respondWith(
-        caches.open(SW_ASSETS).then(function(c) { return c.match('_icon192'); })
-          .then(function(r) { return r || new Response('', {status: 404}); })
-      );
-      return;
-    }
-
-    // ── Serve icon-512.png from pwa-assets cache ─────────────────────────────
-    if (/\/icon-512\.png(\?|$)/.test(url)) {
-      e.respondWith(
-        caches.open(SW_ASSETS).then(function(c) { return c.match('_icon512'); })
-          .then(function(r) { return r || new Response('', {status: 404}); })
-      );
-      return;
-    }
-
-    // ── Serve manifest.json from pwa-assets cache ─────────────────────────────
-    if (/\/manifest\.json(\?|$)/.test(url)) {
-      e.respondWith(
-        caches.open(SW_ASSETS).then(function(c) { return c.match('_manifest'); })
-          .then(function(r) {
-            return r || new Response('{}', {
-              status: 200,
-              headers: {'Content-Type': 'application/manifest+json'}
-            });
-          })
-      );
-      return;
-    }
-
-    // ── Main app HTML — network-first, cache fallback (offline support) ───────
-    e.respondWith(
-      caches.open(SW_CACHE).then(function(appCache) {
-        return fetch(e.request)
-          .then(function(resp) {
-            if (resp && resp.ok) {
-              appCache.put(e.request, resp.clone());
-            }
-            return resp;
-          })
-          .catch(function() {
-            return appCache.match(e.request);
-          });
-      })
-    );
-  });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// NORMAL APP CONTEXT
-// ══════════════════════════════════════════════════════════════════════════════
-} else {
 
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.1';  // Версия приложения
+const APP_VER = '2.9.2';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -900,23 +821,33 @@ function renderSettingsSections() {
   const el = document.getElementById('sectionsManager');
   if (!el) return;
   const secs = getSections();
-  el.innerHTML = secs.map((s, i) => `
+
+  // ── Render WITHOUT inline ontouchXXX (they can't be {passive:false}) ─────
+  el.innerHTML = secs.map((s) => `
     <div class="sec-drag-row" data-sid="${s.id}" draggable="true"
          ondragstart="secDragStart(event,'${s.id}')"
          ondragover="secDragOver(event)"
          ondragleave="secDragLeave(event)"
          ondrop="secDrop(event,'${s.id}')"
-         ontouchstart="secTouchStart(event,'${s.id}')"
-         ontouchmove="secTouchMove(event)"
-         ontouchend="secTouchEnd(event)"
-         style="touch-action:none">
-      <span class="drag-handle" title="Перетащить для сортировки">⠿</span>
+         style="touch-action:none;user-select:none">
+      <span class="drag-handle">⠿</span>
       <span style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0;display:inline-block"></span>
       <span style="font-size:12px;color:var(--white);flex:1">${getSectionLabel(s)}</span>
       <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${s.type==='income'?'rgba(74,222,128,.15)':'rgba(248,113,113,.15)'};color:${s.type==='income'?'#4ade80':'#f87171'}">${s.type==='income'?t('secTypeIncome'):t('secTypeExpense')}</span>
       <button onclick="renameSection('${s.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 3px" title="${t('editSection')}">✏</button>
       ${!['income','fixed','variable'].includes(s.id)?`<button onclick="deleteSection('${s.id}')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;padding:0 3px" title="${t('deleteSection')}">🗑</button>`:''}
     </div>`).join('');
+
+  // ── Attach touch events with {passive:false} ──────────────────────────────
+  // REQUIRED on iOS Safari: inline ontouchmove is treated as passive → preventDefault()
+  // is silently ignored → page scrolls during drag → drag target detection breaks.
+  el.querySelectorAll('.sec-drag-row').forEach(row => {
+    const sid = row.dataset.sid;
+    row.addEventListener('touchstart',  e => secTouchStart(e, sid), { passive: true });
+    row.addEventListener('touchmove',   e => secTouchMove(e),       { passive: false }); // must be false
+    row.addEventListener('touchend',    e => secTouchEnd(e),        { passive: true });
+    row.addEventListener('touchcancel', e => secTouchCancel(),      { passive: true });
+  });
 }
 
 // ─── SECTION DRAG-AND-DROP ────────────────────────────────────────────────────
@@ -949,28 +880,53 @@ function secTouchStart(e, id) {
   _touchStartY = e.touches[0].clientY;
   _touchDragEl = e.currentTarget;
   _touchDragEl.classList.add('dragging');
+  // Clone floats above the list to show what's being dragged
+  const rect = _touchDragEl.getBoundingClientRect();
   _touchClone = _touchDragEl.cloneNode(true);
-  _touchClone.style.cssText = `position:fixed;left:${_touchDragEl.getBoundingClientRect().left}px;top:${_touchDragEl.getBoundingClientRect().top}px;width:${_touchDragEl.offsetWidth}px;opacity:0.85;pointer-events:none;z-index:9999;background:#1a2236;border-radius:9px;border:1px solid #3b82f6`;
+  _touchClone.style.cssText = [
+    'position:fixed',
+    `left:${rect.left}px`,
+    `top:${rect.top}px`,
+    `width:${rect.width}px`,
+    'opacity:0.9',
+    'pointer-events:none',
+    'z-index:9999',
+    'background:#1a2236',
+    'border-radius:9px',
+    'border:1px solid #3b82f6',
+    'box-shadow:0 8px 24px rgba(0,0,0,.5)',
+    'transition:none'
+  ].join(';');
   document.body.appendChild(_touchClone);
 }
 function secTouchMove(e) {
-  e.preventDefault();
-  if (!_touchClone) return;
+  e.preventDefault(); // Requires {passive:false} — prevents page scroll during drag
+  if (!_touchClone || !_touchDragEl) return;
   const dy = e.touches[0].clientY - _touchStartY;
-  _touchClone.style.top = (_touchDragEl.getBoundingClientRect().top + dy) + 'px';
+  const rect = _touchDragEl.getBoundingClientRect();
+  _touchClone.style.top = (rect.top + dy) + 'px';
+  // Find which row is under the finger (clone has pointer-events:none so it's transparent)
   document.querySelectorAll('.sec-drag-row').forEach(r => r.classList.remove('drag-over'));
   const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-  el?.closest('.sec-drag-row')?.classList.add('drag-over');
+  const target = el?.closest('.sec-drag-row');
+  if (target && target !== _touchDragEl) target.classList.add('drag-over');
 }
 async function secTouchEnd(e) {
+  const touch = e.changedTouches[0];
+  // Remove clone FIRST so elementFromPoint sees the real rows underneath
   if (_touchClone) { _touchClone.remove(); _touchClone = null; }
   if (_touchDragEl) _touchDragEl.classList.remove('dragging');
   document.querySelectorAll('.sec-drag-row').forEach(r => r.classList.remove('drag-over'));
-  const touch = e.changedTouches[0];
+  // Find drop target
   const el = document.elementFromPoint(touch.clientX, touch.clientY);
-  const targetRow = el?.closest('.sec-drag-row');
-  const targetId = targetRow?.dataset.sid;
+  const targetId = el?.closest('.sec-drag-row')?.dataset.sid;
   if (targetId && targetId !== _dragSecId) await _doReorder(_dragSecId, targetId);
+  _dragSecId = null; _touchDragEl = null;
+}
+function secTouchCancel() {
+  if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+  if (_touchDragEl) _touchDragEl.classList.remove('dragging');
+  document.querySelectorAll('.sec-drag-row').forEach(r => r.classList.remove('drag-over'));
   _dragSecId = null; _touchDragEl = null;
 }
 
@@ -1033,112 +989,199 @@ function makeIcon(size) {
 }
 
 // ─── PWA SETUP ────────────────────────────────────────────────────────────────
-// Fix summary (v2.9.0):
-//   1. Icons are cached in CacheStorage (shared between page + SW)
-//   2. SW serves ./icon-192.png, ./icon-512.png, ./manifest.json from that cache
-//   3. Manifest uses PATH-based icons (not embedded data: URLs) → NO Chrome badge
-//   4. SW code is hardcoded at top of file (no localStorage dependency)
+// v2.9.2 — Service Worker via Blob URL
+//
+// WHY BLOB URL:
+//   The old "?sw=1" trick registered index.html as a SW script.
+//   Chrome tried to execute <!DOCTYPE html> as JavaScript → SyntaxError →
+//   SW was silently failing, meaning: no offline cache, no icon serving,
+//   Chrome badge on icon, app disappearing after phone restart.
+//
+// HOW BLOB URL SW WORKS:
+//   1. SW code is a pure JS string → Blob → URL.createObjectURL()
+//   2. Chrome registers it as a proper same-origin SW (blob: inherits page origin)
+//   3. SW intercepts ./icon-192.png, ./icon-512.png, ./manifest.json from CacheStorage
+//   4. Manifest uses PATH-based icons → Chrome sees real maskable icons → NO badge
+//   5. SW caches main HTML for offline support → app survives phone restart
+//
+// MANIFEST STRATEGY:
+//   - If SW already controlling page (repeat visit): use ./manifest.json immediately
+//   - Otherwise: data: URL manifest so install prompt fires right away
+//   - On controllerchange: switch to ./manifest.json automatically
 function setupPWA() {
   const icon64  = makeIcon(64);
   const icon192 = makeIcon(192);
   const icon512 = makeIcon(512);
 
-  // Favicon & Apple touch icon (data URLs — stable, no SW needed)
+  // Favicon + Apple touch icon (data: URLs — stable, no SW needed)
   const fav = document.getElementById('favicon');
   if (fav) fav.href = icon64;
   const ati = document.getElementById('ati');
   if (ati) ati.href = icon192;
 
-  // ── Step 1: Store icons + manifest in CacheStorage so the SW can serve them ─
-  // CacheStorage IS accessible from SW (unlike localStorage). This is the bridge
-  // between the page (which generates canvas icons) and the SW (which serves them).
-  if ('caches' in window) {
-    (async () => {
-      try {
-        const cache = await caches.open('pwa-assets');
-
-        // Convert data URL → Blob → Response
-        const toResp = async (dataUrl, type) => {
-          const blob = await (await fetch(dataUrl)).blob();
-          return new Response(blob, { headers: { 'Content-Type': type } });
-        };
-
-        const [r192, r512] = await Promise.all([
-          toResp(icon192, 'image/png'),
-          toResp(icon512, 'image/png'),
-        ]);
-        await cache.put('_icon192', r192);
-        await cache.put('_icon512', r512);
-
-        // Manifest with PATH-based icons (not embedded data: URLs).
-        // Chrome treats these as real resources → proper maskable icon → no badge!
-        const basePath = location.pathname;
-        const scope    = location.pathname.replace(/\/[^/]*$/, '/') || '/';
-        const mObj = {
-          name: 'Семейный Бюджет', short_name: 'Бюджет',
-          description: 'Семейный финансовый трекер',
-          start_url: basePath, scope,
-          display: 'standalone',
-          background_color: '#0b0f1a', theme_color: '#0b0f1a',
-          orientation: 'any',
-          icons: [
-            { src: './icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-            { src: './icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
-          ],
-        };
-        await cache.put('_manifest', new Response(JSON.stringify(mObj), {
-          headers: { 'Content-Type': 'application/manifest+json' },
-        }));
-        // NOTE: We do NOT switch the <link rel="manifest"> to './manifest.json' here.
-        // Changing the manifest URL after beforeinstallprompt fires invalidates
-        // deferredPrompt → install button stops working. Keep data: URL always.
-
-      } catch (e) { /* CacheStorage unavailable (private mode, etc.) */ }
-    })();
-  }
-
-  // ── Step 2: Immediate manifest with embedded icons ────────────────────────
-  // While the async cache population above runs, give Chrome a manifest NOW via
-  // data: URL so beforeinstallprompt fires on the very first page visit.
-  const mImmediate = {
+  // ── Build manifest object with path-based icons ──────────────────────────
+  const basePath = location.pathname;
+  const swScope  = location.pathname.replace(/\/[^/]*$/, '/') || '/';
+  const manifestObj = {
     name: 'Семейный Бюджет', short_name: 'Бюджет',
-    start_url: location.pathname,
+    description: 'Семейный финансовый трекер',
+    start_url: basePath, scope: swScope,
     display: 'standalone',
     background_color: '#0b0f1a', theme_color: '#0b0f1a',
     orientation: 'any',
     icons: [
-      { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-      { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+      { src: './icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: './icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
     ],
   };
-  try {
-    document.getElementById('mlink').href =
-      'data:application/manifest+json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify(mImmediate));
-  } catch (e) {}
 
-  // ── Step 3: Register Service Worker ──────────────────────────────────────
-  // The page itself is loaded as a SW via ?sw=1 parameter.
-  // SW detection + all SW logic is at the very TOP of this file.
+  // Helper: set the manifest <link> to proper URL (SW-served path)
+  function usePathManifest() {
+    const ml = document.getElementById('mlink');
+    if (ml) ml.href = './manifest.json';
+  }
+
+  // ── Step 1: Set manifest link ─────────────────────────────────────────────
+  if (navigator.serviceWorker?.controller) {
+    // SW already active from a previous visit → use proper path manifest immediately
+    // → Chrome fetches ./icon-*.png via SW → real maskable icons → NO badge
+    usePathManifest();
+  } else {
+    // First visit (no SW yet) → use data: URL so install prompt CAN fire now
+    const mImmediate = { ...manifestObj,
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+      ],
+    };
+    try {
+      document.getElementById('mlink').href =
+        'data:application/manifest+json;charset=utf-8,' +
+        encodeURIComponent(JSON.stringify(mImmediate));
+    } catch(e) {}
+
+    // Switch to path manifest as soon as SW takes control
+    navigator.serviceWorker?.addEventListener('controllerchange', usePathManifest);
+  }
+
+  // ── Step 2: Cache icons + manifest (for SW to serve) ─────────────────────
+  if ('caches' in window) {
+    (async () => {
+      try {
+        const cache = await caches.open('pwa-assets');
+        const toResp = async (dataUrl, ct) => {
+          const blob = await (await fetch(dataUrl)).blob();
+          return new Response(blob, { headers: { 'Content-Type': ct } });
+        };
+        const [r192, r512] = await Promise.all([
+          toResp(icon192, 'image/png'),
+          toResp(icon512, 'image/png'),
+        ]);
+        await Promise.all([
+          cache.put('_icon192', r192),
+          cache.put('_icon512', r512),
+          cache.put('_manifest', new Response(JSON.stringify(manifestObj), {
+            headers: { 'Content-Type': 'application/manifest+json' },
+          })),
+        ]);
+      } catch(e) {}
+    })();
+  }
+
+  // ── Step 3: Register Service Worker via Blob URL ─────────────────────────
+  // Blob URL SW = pure JavaScript, no HTML parsing issue, proper same-origin SW
   if ('serviceWorker' in navigator) {
     try {
-      const swURL   = location.pathname + '?sw=1&v=' + APP_VER;
-      const swScope = location.pathname.replace(/\/[^/]*$/, '/') || '/';
+      // SW code as a JavaScript string — no HTML, no <!DOCTYPE>, no parsing errors
+      const SW_CODE = `
+const SW_VER    = '${APP_VER}';
+const APP_CACHE = 'budget-${APP_VER}';
+const PWA_CACHE = 'pwa-assets';  // shared with page thread
 
-      navigator.serviceWorker.register(swURL, { scope: swScope })
+self.addEventListener('install', () => self.skipWaiting());
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(ks => Promise.all(
+        ks.filter(k => k !== APP_CACHE && k !== PWA_CACHE).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Let page ask for our version → show update banner when mismatch
+self.addEventListener('message', e => {
+  if (e.data === 'CHECK_VER') e.source?.postMessage({ type: 'VERSION', ver: SW_VER });
+});
+
+self.addEventListener('fetch', e => {
+  const url = e.request.url;
+  if (!url.startsWith('http') || e.request.method !== 'GET') return;
+
+  // Serve PWA assets (icons + manifest) from pwa-assets cache
+  if (url.includes('/icon-192.png')) {
+    e.respondWith(
+      caches.open(PWA_CACHE).then(c => c.match('_icon192'))
+        .then(r => r || new Response('', { status: 404 }))
+    ); return;
+  }
+  if (url.includes('/icon-512.png')) {
+    e.respondWith(
+      caches.open(PWA_CACHE).then(c => c.match('_icon512'))
+        .then(r => r || new Response('', { status: 404 }))
+    ); return;
+  }
+  if (url.includes('/manifest.json')) {
+    e.respondWith(
+      caches.open(PWA_CACHE).then(c => c.match('_manifest'))
+        .then(r => r || new Response('{}', {
+          status: 200, headers: { 'Content-Type': 'application/manifest+json' }
+        }))
+    ); return;
+  }
+
+  // Main app HTML — network-first, cache fallback (offline / restart support)
+  e.respondWith(
+    caches.open(APP_CACHE).then(cache =>
+      fetch(e.request)
+        .then(resp => { if (resp?.ok) cache.put(e.request, resp.clone()); return resp; })
+        .catch(() => cache.match(e.request))
+    )
+  );
+});
+`;
+      const swBlob = new Blob([SW_CODE], { type: 'application/javascript' });
+      const swUrl  = URL.createObjectURL(swBlob);
+
+      navigator.serviceWorker.register(swUrl, { scope: swScope })
         .then(reg => {
+          // Periodic update check (will re-register with fresh blob on next applyUpdate)
           setInterval(() => reg.update(), 30 * 60 * 1000);
+
+          // Detect new SW installed → show update banner
           reg.addEventListener('updatefound', () => {
-            const newSW = reg.installing;
-            newSW?.addEventListener('statechange', () => {
-              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            const nw = reg.installing;
+            nw?.addEventListener('statechange', () => {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
                 document.getElementById('updateBanner')?.classList.add('vis');
               }
             });
           });
         })
         .catch(() => {});
-    } catch (e) {}
+
+      // Ask active SW for its version; if different → show update banner
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'VERSION' && e.data.ver !== APP_VER) {
+          document.getElementById('updateBanner')?.classList.add('vis');
+        }
+      });
+      navigator.serviceWorker.ready
+        .then(reg => reg.active?.postMessage('CHECK_VER'))
+        .catch(() => {});
+
+    } catch(e) {}
   }
 
   // ── iOS hint ──────────────────────────────────────────────────────────────
@@ -1146,7 +1189,7 @@ function setupPWA() {
     document.getElementById('iosHint')?.classList.add('vis');
   }
 
-  // ── Install button (Android / desktop Chrome) ─────────────────────────────
+  // ── Install button ────────────────────────────────────────────────────────
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
@@ -1154,12 +1197,13 @@ function setupPWA() {
     document.getElementById('installBtn').classList.add('vis');
   });
   document.getElementById('installBtn').addEventListener('click', async () => {
-    if (deferredPrompt) {
+    if (!deferredPrompt) return;
+    try {
       deferredPrompt.prompt();
       await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      document.getElementById('installBtn').classList.remove('vis');
-    }
+    } catch(e) {}
+    deferredPrompt = null;
+    document.getElementById('installBtn').classList.remove('vis');
   });
 }
 
@@ -1890,16 +1934,31 @@ async function confirmAddMonth() {
   const m = String(document.getElementById('newMonthMon').value).padStart(2,'0');
   const y = String(+document.getElementById('newMonthYear').value - 2000).padStart(2,'0');
   const key = `${m}_${y}`;
-  const data = getBudgetData();
+  const errEl = document.getElementById('addMonthErr');
+
+  // ── Ensure budget_data exists ─────────────────────────────────────────────
+  if (!GIST_DATA.budget_data) GIST_DATA.budget_data = {};
+
+  if (GIST_DATA.budget_data[key]) {
+    // Show error INSIDE the modal (toast is invisible behind the modal overlay)
+    if (errEl) {
+      errEl.textContent = '⚠ ' + fmtK(key) + ' уже существует. Выберите другой месяц.';
+      errEl.style.display = '';
+      setTimeout(() => { errEl.style.display = 'none'; }, 4000);
+    }
+    return;
+  }
+  if (errEl) errEl.style.display = 'none';
+
   const secs = getSections();
-  if (data[key]) { toast(t('monthExists') + ' — ' + fmtK(key)); return; }
   const mode = document.querySelector('input[name="newMonthMode"]:checked')?.value || 'empty';
   const newMonth = { debts:[], edp_target:15000 };
   secs.forEach(s => { newMonth[s.id] = {}; });
+
   if (mode === 'recurring') {
     const rec = GIST_DATA?.recurring || {};
-    const ms = sortK(Object.keys(data));
-    const latest = ms.length ? data[ms[ms.length-1]] : null;
+    const ms = sortK(Object.keys(GIST_DATA.budget_data));
+    const latest = ms.length ? GIST_DATA.budget_data[ms[ms.length-1]] : null;
     secs.forEach(s => {
       const secRec = rec[s.id] || {};
       const src = latest?.[s.id] || {};
@@ -1907,16 +1966,20 @@ async function confirmAddMonth() {
     });
   } else if (mode === 'copy') {
     const srcKey = document.getElementById('newMonthCopySrc').value;
-    const src = data[srcKey] || {};
+    const src = GIST_DATA.budget_data[srcKey] || {};
     secs.forEach(s => { newMonth[s.id] = {...(src[s.id]||{})}; });
     newMonth.debts = (src.debts||[]).map(d=>({...d}));
   }
-  data[key] = newMonth;
+
+  // Assign directly to GIST_DATA (not via getBudgetData() which can return a copy)
+  GIST_DATA.budget_data[key] = newMonth;
+  LS.set('bgt_data', GIST_DATA);
+
   document.getElementById('addMonthModal').classList.remove('open');
   selMonth = key;
-  await pushData();
   buildSel(); renderView();
   toast(t('monthCreated') + ' ' + fmtK(key));
+  pushData(); // background sync
 }
 
 document.querySelectorAll('.tab').forEach(t => {
@@ -2274,7 +2337,6 @@ if (savedConfig && savedData) {
   document.getElementById('screenSetup').classList.add('active');
 }
 
-} // end normal app context
 </script>
 </body>
 </html>
