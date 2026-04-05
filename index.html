@@ -222,7 +222,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.5</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.6</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.5</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.6</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -489,7 +489,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.5';  // Версия приложения
+const APP_VER = '2.9.6';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -958,33 +958,119 @@ function setFont(key) { applyFontScale(key); }
 applyFontScale((() => { try { return localStorage.getItem('bgt_font') || 'm'; } catch(e) { return 'm'; } })());
 
 // ─── ICON GENERATION ──────────────────────────────────────────────────────────
-// Full-bleed background (no rounded corners) so the maskable safe zone is respected.
-// Android/iOS mask the icon to a circle/squircle automatically.
+// Full-bleed background required for maskable icons (Android/iOS masks to circle).
+// Design: deep navy-to-indigo gradient + stylized upward chart bars with a
+// rising-trend arc — clean, modern, instantly recognisable as a finance app.
 function makeIcon(size) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
-  // Full-bleed gradient background (required for maskable icons — no padding/borders)
-  const g = ctx.createLinearGradient(0, 0, size, size);
-  g.addColorStop(0, '#16a34a');
-  g.addColorStop(0.5, '#1d4ed8');
-  g.addColorStop(1, '#7c3aed');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-  // Subtle inner glow
-  const g2 = ctx.createRadialGradient(size*0.4, size*0.35, 0, size/2, size/2, size*0.6);
-  g2.addColorStop(0, 'rgba(255,255,255,0.15)');
-  g2.addColorStop(1, 'rgba(0,0,0,0.1)');
-  ctx.fillStyle = g2;
-  ctx.fillRect(0, 0, size, size);
-  // ₪ symbol — bold, centered, white
-  ctx.fillStyle = 'white';
-  ctx.shadowColor = 'rgba(0,0,0,0.4)';
-  ctx.shadowBlur = size * 0.06;
-  ctx.font = `900 ${Math.round(size * 0.54)}px Arial, 'Segoe UI'`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('₪', size / 2, size / 2 + size * 0.03);
+  const s = size;
+
+  // ── Background: deep navy → indigo ──────────────────────────────────────
+  const bg = ctx.createLinearGradient(0, 0, s, s);
+  bg.addColorStop(0,   '#0f172a');  // slate-900
+  bg.addColorStop(0.6, '#1e1b4b');  // indigo-950
+  bg.addColorStop(1,   '#312e81');  // indigo-900
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, s, s);
+
+  // ── Subtle radial glow top-left ──────────────────────────────────────────
+  const glow = ctx.createRadialGradient(s*0.3, s*0.25, 0, s*0.3, s*0.25, s*0.65);
+  glow.addColorStop(0, 'rgba(99,102,241,0.35)');  // indigo-500
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, s, s);
+
+  // ── Helper: rounded rectangle ────────────────────────────────────────────
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y,     x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x,     y + h, x,     y + h - r);
+    ctx.lineTo(x,     y + r);
+    ctx.quadraticCurveTo(x,     y,     x + r, y);
+    ctx.closePath();
+  }
+
+  // ── 4 ascending chart bars ───────────────────────────────────────────────
+  // Layout: centered block, bars grow left-to-right
+  const barW    = s * 0.10;
+  const gap     = s * 0.055;
+  const totalW  = 4 * barW + 3 * gap;
+  const startX  = (s - totalW) / 2;
+  const baseY   = s * 0.74;
+  const maxH    = s * 0.42;
+  const heights = [0.38, 0.58, 0.78, 1.0];  // relative heights
+  const radius  = barW * 0.38;
+
+  heights.forEach((ratio, i) => {
+    const bh  = maxH * ratio;
+    const bx  = startX + i * (barW + gap);
+    const by  = baseY - bh;
+
+    // Bar gradient: bright top → dimmer bottom
+    const barG = ctx.createLinearGradient(bx, by, bx, baseY);
+    if (i === 3) {
+      // Tallest bar — accent teal/cyan
+      barG.addColorStop(0, '#22d3ee');   // cyan-400
+      barG.addColorStop(1, '#0891b2');   // cyan-600
+    } else {
+      barG.addColorStop(0, '#818cf8');   // indigo-400
+      barG.addColorStop(1, '#4f46e5');   // indigo-600
+    }
+
+    ctx.shadowColor = i === 3 ? 'rgba(34,211,238,0.5)' : 'rgba(99,102,241,0.4)';
+    ctx.shadowBlur  = s * 0.05;
+    ctx.fillStyle   = barG;
+    roundRect(bx, by, barW, bh, radius);
+    ctx.fill();
+  });
+
+  ctx.shadowBlur = 0;
+
+  // ── Rising trend line over the bars ──────────────────────────────────────
+  const dotX = [0, 1, 2, 3].map(i => startX + i * (barW + gap) + barW / 2);
+  const dotY = heights.map(r => baseY - maxH * r - s * 0.045);
+
+  ctx.beginPath();
+  ctx.moveTo(dotX[0], dotY[0]);
+  // Smooth bezier curve through all 4 points
+  for (let i = 0; i < dotX.length - 1; i++) {
+    const mx = (dotX[i] + dotX[i+1]) / 2;
+    ctx.bezierCurveTo(mx, dotY[i], mx, dotY[i+1], dotX[i+1], dotY[i+1]);
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth   = s * 0.025;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  ctx.stroke();
+
+  // ── Dots on trend line ───────────────────────────────────────────────────
+  dotX.forEach((x, i) => {
+    ctx.beginPath();
+    ctx.arc(x, dotY[i], s * 0.028, 0, Math.PI * 2);
+    ctx.fillStyle   = i === 3 ? '#22d3ee' : 'white';
+    ctx.shadowColor = i === 3 ? 'rgba(34,211,238,0.8)' : 'rgba(255,255,255,0.6)';
+    ctx.shadowBlur  = s * 0.04;
+    ctx.fill();
+  });
+
+  ctx.shadowBlur = 0;
+
+  // ── Baseline ─────────────────────────────────────────────────────────────
+  ctx.beginPath();
+  ctx.moveTo(s * 0.13, baseY + s * 0.025);
+  ctx.lineTo(s * 0.87, baseY + s * 0.025);
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth   = s * 0.018;
+  ctx.lineCap     = 'round';
+  ctx.stroke();
+
   return c.toDataURL('image/png');
 }
 
