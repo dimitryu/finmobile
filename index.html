@@ -222,7 +222,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.0</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.1</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.0</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.1</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -488,7 +488,7 @@ try { _isSW = (typeof ServiceWorkerGlobalScope !== 'undefined') && (self instanc
 
 if (_isSW) {
   // ── SW constants ────────────────────────────────────────────────────────────
-  var SW_CACHE   = 'budget-2.9.0';   // bump with APP_VER
+  var SW_CACHE   = 'budget-2.9.1';   // bump with APP_VER
   var SW_ASSETS  = 'pwa-assets';     // shared cache for icons + manifest
 
   self.addEventListener('install', function(e) {
@@ -568,7 +568,7 @@ if (_isSW) {
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.0';  // Версия приложения
+const APP_VER = '2.9.1';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1089,11 +1089,9 @@ function setupPWA() {
         await cache.put('_manifest', new Response(JSON.stringify(mObj), {
           headers: { 'Content-Type': 'application/manifest+json' },
         }));
-
-        // Once the cache is ready, switch the manifest link to the SW-served URL.
-        // Future installs / reinstalls will use proper path-based icons.
-        const ml = document.getElementById('mlink');
-        if (ml) ml.href = './manifest.json';
+        // NOTE: We do NOT switch the <link rel="manifest"> to './manifest.json' here.
+        // Changing the manifest URL after beforeinstallprompt fires invalidates
+        // deferredPrompt → install button stops working. Keep data: URL always.
 
       } catch (e) { /* CacheStorage unavailable (private mode, etc.) */ }
     })();
