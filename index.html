@@ -222,10 +222,9 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.6.0</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.0</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
-    <!-- sub: welcome -->
     <div id="subWelcome" class="scard">
       <h3 id="swTitle">👋 Добро пожаловать!</h3>
       <button class="sbtn sbtn-green" id="btnCreateFamily" onclick="showSub('subCreate')">
@@ -237,7 +236,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       </button>
     </div>
 
-    <!-- sub: create -->
     <div id="subCreate" class="scard" style="display:none">
       <button class="back-btn" id="backFromCreate" onclick="showSub('subWelcome')">← Назад</button>
       <h3 id="scTitle">➕ Создать семью</h3>
@@ -250,7 +248,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <button class="sbtn sbtn-green" id="btnCreate" onclick="createFamily()">🚀 Создать семью</button>
     </div>
 
-    <!-- sub: created -->
     <div id="subCreated" class="scard" style="display:none">
       <div class="success-icon">🎉</div>
       <h3 id="createdTitle">Семья создана!</h3>
@@ -264,7 +261,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <button class="sbtn sbtn-green" id="btnStart" onclick="enterApp()">✅ Начать работу</button>
     </div>
 
-    <!-- sub: join -->
     <div id="subJoin" class="scard" style="display:none">
       <button class="back-btn" id="backFromJoin" onclick="showSub('subWelcome')">← Назад</button>
       <h3 id="sjTitle">🔗 Присоединиться к семье</h3>
@@ -272,7 +268,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <input class="sinp" id="jUserName" placeholder="Ваше имя (напр. Оксана)" maxlength="30"/>
       <button class="sbtn sbtn-purple" id="btnJoin" onclick="joinFamily()">🔗 Присоединиться</button>
     </div>
-
   </div>
 </div>
 
@@ -283,7 +278,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     📱 <b>iOS:</b> Нажмите «Поделиться» (□↑) → «На экран Домой» для установки
   </div>
 
-  <!-- Update banner -->
   <div class="update-banner" id="updateBanner">
     <span class="update-banner-txt">🆕 Доступна новая версия приложения!</span>
     <button class="update-btn" onclick="applyUpdate()">⬆ Обновить</button>
@@ -294,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.0.0</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.0</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -330,7 +324,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   </div>
 </div>
 
-<!-- Migration modal (v2.0.0 → v2.8+) -->
+<!-- Migration modal -->
 <div class="modal-bg open" id="migrateModal" style="display:none">
   <div class="modal">
     <h3>🔄 Переход на новую версию</h3>
@@ -358,23 +352,16 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   <div class="modal modal-wide">
     <button class="mclose" onclick="closeImportExport()">×</button>
     <h3>📊 Импорт / Экспорт Excel</h3>
-
-    <!-- EXPORT -->
     <div class="mlabel">⬇ Экспорт данных в Excel</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Скачать все месяцы в файл <b>.xlsx</b> — каждый месяц на отдельном листе с разделами Доходы, Расходы, Кредиты.
     </p>
     <button class="sbtn sbtn-green" style="font-size:13px" onclick="exportToExcel()">⬇ Скачать Excel файл</button>
-
     <hr class="ie-divider"/>
-
-    <!-- IMPORT -->
     <div class="mlabel">⬆ Импорт из Excel (AI-анализ)</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Загрузите файл <b>.xlsx</b> или <b>.xls</b> — ИИ автоматически распознает структуру и заполнит все месяцы.
     </p>
-
-    <!-- Drop zone -->
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('excelFileIn').click()"
          ondragover="event.preventDefault();this.classList.add('drag-over')"
          ondragleave="this.classList.remove('drag-over')"
@@ -384,15 +371,11 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <div class="drop-text">Перетащите файл сюда или нажмите для выбора</div>
       <div class="drop-hint">.xlsx · .xls · .ods</div>
     </div>
-
-    <!-- AI Progress -->
     <div class="ai-progress" id="aiProgress" style="display:none">
       <div class="ai-spin">🤖</div>
       <div class="ai-msg" id="aiMsg">ИИ анализирует файл...</div>
       <div class="ai-sub" id="aiSub">Это займёт несколько секунд</div>
     </div>
-
-    <!-- Preview -->
     <div id="importPreview" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:13px;font-weight:700;color:var(--white)">📋 Найдено месяцев: <span id="previewCount">0</span></span>
@@ -452,16 +435,12 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   <div class="modal">
     <button class="mclose" onclick="closeSettings()">×</button>
     <h3 id="stgTitle">⚙ Настройки</h3>
-
-    <!-- Language -->
     <div class="mlabel" id="lbLang">Язык интерфейса</div>
     <div class="font-row">
       <button class="font-btn" data-lk="ru" onclick="setLang('ru')" style="font-size:14px">RU</button>
       <button class="font-btn" data-lk="he" onclick="setLang('he')" style="font-size:14px">עב</button>
       <button class="font-btn" data-lk="en" onclick="setLang('en')" style="font-size:14px">EN</button>
     </div>
-
-    <!-- Font size -->
     <div class="mlabel" id="lbFont">Размер шрифта</div>
     <div class="font-row" id="fontRow">
       <button class="font-btn" data-fk="s" onclick="setFont('s')" style="font-size:12px">А<br><span style="font-size:9px;font-weight:400">S</span></button>
@@ -469,8 +448,6 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       <button class="font-btn" data-fk="l" onclick="setFont('l')" style="font-size:18px">А<br><span style="font-size:9px;font-weight:400">L</span></button>
       <button class="font-btn" data-fk="xl" onclick="setFont('xl')" style="font-size:21px">А<br><span style="font-size:9px;font-weight:400">XL</span></button>
     </div>
-
-    <!-- Sections management -->
     <div class="mlabel" id="lbSections">Категории (разделы)</div>
     <div id="sectionsManager"></div>
     <button class="sbtn sbtn-purple" style="margin-top:8px;font-size:12px" onclick="openAddSection()">+ Добавить категорию</button>
@@ -485,15 +462,11 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
         <button class="sbtn sbtn-gray" style="font-size:12px;padding:9px" onclick="cancelAddSection()">✕</button>
       </div>
     </div>
-
-    <!-- Family code -->
     <div class="mlabel" id="lbFamCode">Семейный код (для приглашения)</div>
     <div class="fcode-box" onclick="copyFamilyCode()" id="settingsFamilyCode">
       <code id="settingsFamilyCodeText">—</code>
       <small id="lbCopyCode">📋 Нажмите, чтобы скопировать</small>
     </div>
-
-    <!-- Members -->
     <div class="mlabel" id="lbMembers">Члены семьи</div>
     <div id="membersList"></div>
     <div class="mlabel" id="lbYourName">Ваше имя</div>
@@ -506,27 +479,96 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Service Worker self-registration trick ─────────────────────────────────
-// When loaded as a SW (via ?sw=1), run SW code from localStorage and stop.
-// This avoids blob: URLs which don't survive phone restarts.
-if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope ||
-    typeof ServiceWorkerGlobalScope !== 'undefined') {
-  // Running as Service Worker
-  try {
-    const code = (typeof localStorage !== 'undefined') ? localStorage.getItem('_swCode') : null;
-    if (code) eval(code);
-  } catch(e) {}
-  // Stop — don't execute rest of app code inside SW context
-} else if (location.search.includes('?sw=')) {
-  // This page was loaded as SW candidate — just respond to SW APIs via stored code
-  // (Fallback: SW registration will fail gracefully)
+// ══════════════════════════════════════════════════════════════════════════════
+// SERVICE WORKER CONTEXT — runs when this page is loaded as ?sw=1
+// NOTE: localStorage is NOT available in SW context — all logic is inline here.
+// ══════════════════════════════════════════════════════════════════════════════
+var _isSW = false;
+try { _isSW = (typeof ServiceWorkerGlobalScope !== 'undefined') && (self instanceof ServiceWorkerGlobalScope); } catch(e) {}
+
+if (_isSW) {
+  // ── SW constants ────────────────────────────────────────────────────────────
+  var SW_CACHE   = 'budget-2.9.0';   // bump with APP_VER
+  var SW_ASSETS  = 'pwa-assets';     // shared cache for icons + manifest
+
+  self.addEventListener('install', function(e) {
+    self.skipWaiting();
+  });
+
+  self.addEventListener('activate', function(e) {
+    e.waitUntil(
+      caches.keys().then(function(keys) {
+        return Promise.all(
+          keys
+            .filter(function(k) { return k !== SW_CACHE && k !== SW_ASSETS; })
+            .map(function(k) { return caches.delete(k); })
+        );
+      }).then(function() { return self.clients.claim(); })
+    );
+  });
+
+  self.addEventListener('fetch', function(e) {
+    var url = e.request.url;
+    if (!url.startsWith('http') || e.request.method !== 'GET') return;
+
+    // ── Serve icon-192.png from pwa-assets cache ─────────────────────────────
+    if (/\/icon-192\.png(\?|$)/.test(url)) {
+      e.respondWith(
+        caches.open(SW_ASSETS).then(function(c) { return c.match('_icon192'); })
+          .then(function(r) { return r || new Response('', {status: 404}); })
+      );
+      return;
+    }
+
+    // ── Serve icon-512.png from pwa-assets cache ─────────────────────────────
+    if (/\/icon-512\.png(\?|$)/.test(url)) {
+      e.respondWith(
+        caches.open(SW_ASSETS).then(function(c) { return c.match('_icon512'); })
+          .then(function(r) { return r || new Response('', {status: 404}); })
+      );
+      return;
+    }
+
+    // ── Serve manifest.json from pwa-assets cache ─────────────────────────────
+    if (/\/manifest\.json(\?|$)/.test(url)) {
+      e.respondWith(
+        caches.open(SW_ASSETS).then(function(c) { return c.match('_manifest'); })
+          .then(function(r) {
+            return r || new Response('{}', {
+              status: 200,
+              headers: {'Content-Type': 'application/manifest+json'}
+            });
+          })
+      );
+      return;
+    }
+
+    // ── Main app HTML — network-first, cache fallback (offline support) ───────
+    e.respondWith(
+      caches.open(SW_CACHE).then(function(appCache) {
+        return fetch(e.request)
+          .then(function(resp) {
+            if (resp && resp.ok) {
+              appCache.put(e.request, resp.clone());
+            }
+            return resp;
+          })
+          .catch(function() {
+            return appCache.match(e.request);
+          });
+      })
+    );
+  });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NORMAL APP CONTEXT
+// ══════════════════════════════════════════════════════════════════════════════
 } else {
-// ──── Normal app execution starts here ───────────────────────────────────────
 
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.8.6';  // Версия приложения
+const APP_VER = '2.9.0';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -688,28 +730,22 @@ function setLang(lk) {
   document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === lk));
   applyI18n();
   renderView();
-  // Re-render settings panel if open
   if (document.getElementById('settingsModal')?.classList.contains('open')) {
     renderSettingsSections();
   }
 }
 
 function applyI18n() {
-  // Header
   const fn = document.getElementById('hFamilyName');
   if (fn && CONFIG) fn.innerHTML = `${CONFIG.familyName} <span class="ver-badge">v${APP_VER}</span>`;
-  // Tabs
   document.querySelectorAll('.tab[data-view]').forEach(tab => {
     const map = {month:t('tabMonth'), trends:t('tabTrends'), debts:t('tabDebts')};
     tab.textContent = map[tab.dataset.view] || tab.textContent;
   });
-  // Buttons
   const ab = document.getElementById('addMonthBtn'); if(ab) ab.textContent = t('addMonth');
   const ib = document.getElementById('installBtn'); if(ib) ib.textContent = t('install');
   const st = document.getElementById('syncText'); if(st) st.textContent = t('syncOk');
-  // iOS hint
   const ih = document.getElementById('iosHint'); if(ih) ih.innerHTML = t('iosHint');
-  // Settings modal labels
   const ids = {
     stgTitle: t('settingsTitle'), lbLang: t('langLabel'), lbFont: t('fontLabel'),
     lbSections: t('sectionsLabel'), lbFamCode: t('familyCodeLabel'),
@@ -717,9 +753,7 @@ function applyI18n() {
     lbCopyCode: t('clickToCopy'), btnSaveName: t('saveName'), btnLeave: t('leaveFamily'),
   };
   Object.entries(ids).forEach(([id, txt]) => { const el = document.getElementById(id); if(el) el.textContent = txt; });
-  // Name input placeholder
   const ni = document.getElementById('changeNameInp'); if(ni) ni.placeholder = t('yourNameLabel') + '...';
-  // Setup screen
   const setupSub = document.getElementById('setupSub'); if(setupSub) setupSub.textContent = t('financialTracker');
   const setupTitle = document.getElementById('setupTitle');
   if(setupTitle) setupTitle.innerHTML = `${t('appName')} <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v${APP_VER}</span>`;
@@ -732,17 +766,14 @@ function applyI18n() {
     backFromCreate: t('back'), backFromJoin: t('back'),
   };
   Object.entries(setupEls).forEach(([id, txt]) => { const el = document.getElementById(id); if(el) el.textContent = txt; });
-  // Input placeholders
   const phMap = {
     cFamilyName: t('familyName'), cUserName: t('yourName'),
     jCode: t('familyCode'), jUserName: t('yourName'),
   };
   Object.entries(phMap).forEach(([id, ph]) => { const el = document.getElementById(id); if(el) el.placeholder = ph; });
-  // Lang btn active
   document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === CURLANG));
 }
 
-// Month name helper (language-aware)
 function fmtK(k) {
   const {m,y}=pk(k);
   const names = CURLANG === 'he' ? MN_HE : MN;
@@ -760,7 +791,6 @@ function getSections() {
   return GIST_DATA?.sections || DEFAULT_SECTIONS;
 }
 
-// Translated label for section cards (full, with icon)
 function getSectionLabel(s) {
   if (s.id === 'income')   return t('incomeSection');
   if (s.id === 'fixed')    return t('fixedSection');
@@ -768,7 +798,6 @@ function getSectionLabel(s) {
   return `${s.icon} ${s.label}`;
 }
 
-// Short label for legends, tooltips (no icon, first word)
 function getSectionShort(s) {
   if (s.id === 'income')   return t('incLabel');
   if (s.id === 'fixed')    return t('expLabel');
@@ -776,7 +805,6 @@ function getSectionShort(s) {
   return s.label.split(' ')[0];
 }
 
-// Stat label (no icon)
 function getSectionStatLabel(s) {
   if (s.id === 'income')   return t('statsIncome');
   if (s.id === 'fixed')    return t('statsFixed');
@@ -784,8 +812,7 @@ function getSectionStatLabel(s) {
   return s.label;
 }
 
-// ─── RECURRING ITEMS ─────────────────────────────────────────────────────────
-// GIST_DATA.recurring = { sectionId: { "ItemName": true } }
+// ─── RECURRING ITEMS ──────────────────────────────────────────────────────────
 function isItemRecurring(sec, key) {
   return GIST_DATA?.recurring?.[sec]?.[key] === true;
 }
@@ -796,22 +823,19 @@ async function toggleItemRecurring(sec, key) {
   const cur = GIST_DATA.recurring[sec][key];
   if (cur) delete GIST_DATA.recurring[sec][key];
   else GIST_DATA.recurring[sec][key] = true;
-  // ★ Save to localStorage immediately BEFORE any async operation
   LS.set('bgt_data', GIST_DATA);
-  renderMonth(); renderStats();  // show updated state right away
-  // Then push to remote in the background
+  renderMonth(); renderStats();
   pushData();
 }
 
 function ensureSectionInMonths(secId) {
-  // Make sure all existing months have an entry for this section
   const data = getBudgetData();
   Object.keys(data).forEach(k => {
     if (!data[k][secId]) data[k][secId] = {};
   });
 }
 
-// ─── SECTIONS MANAGER STATE ───────────────────────────────────────────────────
+// ─── SECTIONS MANAGER ─────────────────────────────────────────────────────────
 let newSecType = 'expense';
 let editingSecId = null;
 
@@ -864,7 +888,6 @@ async function deleteSection(id) {
   }
   if (!confirm(t('confirmDeleteSec').replace('{n}', sec.label))) return;
   GIST_DATA.sections = secs.filter(s=>s.id!==id);
-  // Remove from all months
   const data = getBudgetData();
   Object.values(data).forEach(md => { delete md[id]; });
   await pushData();
@@ -896,7 +919,7 @@ function renderSettingsSections() {
     </div>`).join('');
 }
 
-// ─── SECTION DRAG-AND-DROP SORT (touch + mouse, works on iOS/Android/Desktop) ─
+// ─── SECTION DRAG-AND-DROP ────────────────────────────────────────────────────
 let _dragSecId = null;
 let _touchDragEl = null;
 let _touchClone = null;
@@ -921,13 +944,11 @@ async function secDrop(e, targetId) {
   _dragSecId = null;
 }
 
-// Touch events for iOS Safari
 function secTouchStart(e, id) {
   _dragSecId = id;
   _touchStartY = e.touches[0].clientY;
   _touchDragEl = e.currentTarget;
   _touchDragEl.classList.add('dragging');
-  // Create floating clone
   _touchClone = _touchDragEl.cloneNode(true);
   _touchClone.style.cssText = `position:fixed;left:${_touchDragEl.getBoundingClientRect().left}px;top:${_touchDragEl.getBoundingClientRect().top}px;width:${_touchDragEl.offsetWidth}px;opacity:0.85;pointer-events:none;z-index:9999;background:#1a2236;border-radius:9px;border:1px solid #3b82f6`;
   document.body.appendChild(_touchClone);
@@ -937,7 +958,6 @@ function secTouchMove(e) {
   if (!_touchClone) return;
   const dy = e.touches[0].clientY - _touchStartY;
   _touchClone.style.top = (_touchDragEl.getBoundingClientRect().top + dy) + 'px';
-  // Highlight target
   document.querySelectorAll('.sec-drag-row').forEach(r => r.classList.remove('drag-over'));
   const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
   el?.closest('.sec-drag-row')?.classList.add('drag-over');
@@ -979,15 +999,16 @@ function applyFontScale(key) {
   );
 }
 function setFont(key) { applyFontScale(key); }
-// Apply saved font immediately (before rendering)
 applyFontScale((() => { try { return localStorage.getItem('bgt_font') || 'm'; } catch(e) { return 'm'; } })());
 
-// ─── ICON GENERATION (no Google badge - proper maskable PNG) ──────────────────
+// ─── ICON GENERATION ──────────────────────────────────────────────────────────
+// Full-bleed background (no rounded corners) so the maskable safe zone is respected.
+// Android/iOS mask the icon to a circle/squircle automatically.
 function makeIcon(size) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
-  // Full bleed background for maskable icon (no rounded corners - mask handles it)
+  // Full-bleed gradient background (required for maskable icons — no padding/borders)
   const g = ctx.createLinearGradient(0, 0, size, size);
   g.addColorStop(0, '#16a34a');
   g.addColorStop(0.5, '#1d4ed8');
@@ -1012,72 +1033,101 @@ function makeIcon(size) {
 }
 
 // ─── PWA SETUP ────────────────────────────────────────────────────────────────
+// Fix summary (v2.9.0):
+//   1. Icons are cached in CacheStorage (shared between page + SW)
+//   2. SW serves ./icon-192.png, ./icon-512.png, ./manifest.json from that cache
+//   3. Manifest uses PATH-based icons (not embedded data: URLs) → NO Chrome badge
+//   4. SW code is hardcoded at top of file (no localStorage dependency)
 function setupPWA() {
+  const icon64  = makeIcon(64);
   const icon192 = makeIcon(192);
   const icon512 = makeIcon(512);
-  const icon64  = makeIcon(64);
 
-  // Favicon + apple-touch-icon — makeIcon() returns data: URL (stable, survives restart)
+  // Favicon & Apple touch icon (data URLs — stable, no SW needed)
   const fav = document.getElementById('favicon');
   if (fav) fav.href = icon64;
-  document.getElementById('ati').href = icon192;
+  const ati = document.getElementById('ati');
+  if (ati) ati.href = icon192;
 
-  // ── Manifest using data: URL (NOT blob:) ──────────────────────────────────
-  // blob: URLs are ephemeral and die on phone restart → use data: URL instead
-  const manifest = {
-    name:'Семейный Бюджет', short_name:'Бюджет',
-    description:'Семейный финансовый трекер',
-    start_url:'./', display:'standalone',
-    background_color:'#0b0f1a', theme_color:'#0b0f1a',
-    orientation:'any', lang:'ru',
-    icons:[
-      {src:icon192,sizes:'192x192',type:'image/png',purpose:'any maskable'},
-      {src:icon512,sizes:'512x512',type:'image/png',purpose:'any maskable'}
-    ]
+  // ── Step 1: Store icons + manifest in CacheStorage so the SW can serve them ─
+  // CacheStorage IS accessible from SW (unlike localStorage). This is the bridge
+  // between the page (which generates canvas icons) and the SW (which serves them).
+  if ('caches' in window) {
+    (async () => {
+      try {
+        const cache = await caches.open('pwa-assets');
+
+        // Convert data URL → Blob → Response
+        const toResp = async (dataUrl, type) => {
+          const blob = await (await fetch(dataUrl)).blob();
+          return new Response(blob, { headers: { 'Content-Type': type } });
+        };
+
+        const [r192, r512] = await Promise.all([
+          toResp(icon192, 'image/png'),
+          toResp(icon512, 'image/png'),
+        ]);
+        await cache.put('_icon192', r192);
+        await cache.put('_icon512', r512);
+
+        // Manifest with PATH-based icons (not embedded data: URLs).
+        // Chrome treats these as real resources → proper maskable icon → no badge!
+        const basePath = location.pathname;
+        const scope    = location.pathname.replace(/\/[^/]*$/, '/') || '/';
+        const mObj = {
+          name: 'Семейный Бюджет', short_name: 'Бюджет',
+          description: 'Семейный финансовый трекер',
+          start_url: basePath, scope,
+          display: 'standalone',
+          background_color: '#0b0f1a', theme_color: '#0b0f1a',
+          orientation: 'any',
+          icons: [
+            { src: './icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+            { src: './icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          ],
+        };
+        await cache.put('_manifest', new Response(JSON.stringify(mObj), {
+          headers: { 'Content-Type': 'application/manifest+json' },
+        }));
+
+        // Once the cache is ready, switch the manifest link to the SW-served URL.
+        // Future installs / reinstalls will use proper path-based icons.
+        const ml = document.getElementById('mlink');
+        if (ml) ml.href = './manifest.json';
+
+      } catch (e) { /* CacheStorage unavailable (private mode, etc.) */ }
+    })();
+  }
+
+  // ── Step 2: Immediate manifest with embedded icons ────────────────────────
+  // While the async cache population above runs, give Chrome a manifest NOW via
+  // data: URL so beforeinstallprompt fires on the very first page visit.
+  const mImmediate = {
+    name: 'Семейный Бюджет', short_name: 'Бюджет',
+    start_url: location.pathname,
+    display: 'standalone',
+    background_color: '#0b0f1a', theme_color: '#0b0f1a',
+    orientation: 'any',
+    icons: [
+      { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+    ],
   };
   try {
-    // data: URL is stable across restarts (unlike blob:)
-    const manifestData = 'data:application/manifest+json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify(manifest));
-    document.getElementById('mlink').href = manifestData;
-  } catch(e){}
+    document.getElementById('mlink').href =
+      'data:application/manifest+json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(mImmediate));
+  } catch (e) {}
 
-  // ── Service Worker: Injected as <script> tag trick ─────────────────────────
-  // blob: and data: SW URLs don't persist after phone restart on iOS/Android.
-  // Solution: write SW code to sessionStorage and register from same-origin URL.
-  // Falls back gracefully if SW not supported.
-  const swCode = `
-const VER='budget-v${APP_VER}';
-self.addEventListener('install',e=>{
-  self.skipWaiting();
-  e.waitUntil(
-    fetch(self.location.origin+(self.location.pathname.replace(/\\?.*$/,'')))
-      .then(r=>caches.open(VER).then(c=>c.put('app',r)))
-      .catch(()=>{})
-  );
-});
-self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VER).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
-});
-self.addEventListener('fetch',e=>{
-  if(!e.request.url.startsWith('http'))return;
-  if(e.request.method!=='GET')return;
-  // Network-first for the app HTML; cache-first not needed since data is in localStorage
-  e.respondWith(
-    fetch(e.request).catch(()=>caches.match('app').then(r=>r||caches.match(e.request)))
-  );
-});
-`;
-
+  // ── Step 3: Register Service Worker ──────────────────────────────────────
+  // The page itself is loaded as a SW via ?sw=1 parameter.
+  // SW detection + all SW logic is at the very TOP of this file.
   if ('serviceWorker' in navigator) {
     try {
-      // Store SW code in localStorage so the SW URL (a query param on same page) can read it
-      localStorage.setItem('_swCode', swCode);
+      const swURL   = location.pathname + '?sw=1&v=' + APP_VER;
+      const swScope = location.pathname.replace(/\/[^/]*$/, '/') || '/';
 
-      // Register using the page itself with ?sw query param
-      // The page detects this at the very top and runs SW code
-      const swURL = location.pathname + '?sw=1&v=' + APP_VER;
-      navigator.serviceWorker.register(swURL, {scope: location.pathname.replace(/\/[^/]*$/, '/') || '/'})
+      navigator.serviceWorker.register(swURL, { scope: swScope })
         .then(reg => {
           setInterval(() => reg.update(), 30 * 60 * 1000);
           reg.addEventListener('updatefound', () => {
@@ -1090,31 +1140,19 @@ self.addEventListener('fetch',e=>{
           });
         })
         .catch(() => {});
-
-      // Version check: if cached SW is older, show update banner
-      navigator.serviceWorker.addEventListener('message', e => {
-        if (e.data?.type === 'VERSION' && e.data.ver !== APP_VER) {
-          document.getElementById('updateBanner')?.classList.add('vis');
-        }
-      });
-
-      // Ask SW for its version after controller loads
-      navigator.serviceWorker.ready.then(reg => {
-        reg.active?.postMessage('CHECK_VER');
-      }).catch(()=>{});
-
-    } catch(e){}
+    } catch (e) {}
   }
 
-  // iOS hint
+  // ── iOS hint ──────────────────────────────────────────────────────────────
   if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone) {
-    document.getElementById('iosHint').classList.add('vis');
+    document.getElementById('iosHint')?.classList.add('vis');
   }
 
-  // Install button
+  // ── Install button (Android / desktop Chrome) ─────────────────────────────
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault(); deferredPrompt = e;
+    e.preventDefault();
+    deferredPrompt = e;
     document.getElementById('installBtn').classList.add('vis');
   });
   document.getElementById('installBtn').addEventListener('click', async () => {
@@ -1127,22 +1165,19 @@ self.addEventListener('fetch',e=>{
   });
 }
 
-// Apply update: clear ALL caches + SW registrations, then hard reload
+// Apply update: clear caches + SW, then hard reload
 async function applyUpdate() {
   toast('🔄 Обновление...');
   try {
-    // Unregister all service workers
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(r => r.unregister()));
     }
-    // Clear all caches
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map(k => caches.delete(k)));
     }
   } catch(e) {}
-  // Hard reload to fetch fresh version from server
   location.reload(true);
 }
 
@@ -1165,7 +1200,7 @@ async function jbCreate(data) {
     throw new Error(`Storage error ${r.status}: ${err}`);
   }
   const j = await r.json();
-  return j.metadata.id; // returns bin ID
+  return j.metadata.id;
 }
 
 async function jbRead(binId) {
@@ -1190,9 +1225,6 @@ async function jbUpdate(binId, data) {
   return r.json();
 }
 
-// ─── FAMILY CODE ──────────────────────────────────────────────────────────────
-// Family code is simply the JSONBin bin ID (random 24-char string from JSONBin)
-// No tokens needed in the code — privacy through private bins + secret bin ID
 function encodeCode(binId) { return binId; }
 function decodeCode(code) { return code?.trim() || null; }
 
@@ -1203,8 +1235,8 @@ const LS = {
   del(k) { try { localStorage.removeItem(k); } catch(e) {} }
 };
 
-let CONFIG = null; // { gistId, token, familyName, userId, userName }
-let GIST_DATA = null; // { family_name, members, budget_data, last_updated, updated_by }
+let CONFIG = null;
+let GIST_DATA = null;
 let syncTimer = null;
 
 // ─── SETUP FLOWS ──────────────────────────────────────────────────────────────
@@ -1226,9 +1258,7 @@ function genColor() {
 async function createFamily() {
   const familyName = document.getElementById('cFamilyName').value.trim();
   const userName   = document.getElementById('cUserName').value.trim();
-
   if (!familyName || !userName) { toast(t('fillAll')); return; }
-
   setSyncStatus('spin', t('creating'));
   try {
     const userId = genUID();
@@ -1240,16 +1270,13 @@ async function createFamily() {
       last_updated: new Date().toISOString(),
       updated_by: userName
     };
-
     const binId = await jbCreate(initData);
     const code  = encodeCode(binId);
-
     CONFIG = { binId, familyName, userId, userName };
     LS.set('bgt_config', CONFIG);
     GIST_DATA = initData;
     LS.set('bgt_data', GIST_DATA);
     LS.set('bgt_family_code', code);
-
     document.getElementById('familyCodeText').textContent = code;
     showSub('subCreated');
     setSyncStatus('ok', t('syncOk'));
@@ -1262,31 +1289,22 @@ async function createFamily() {
 async function joinFamily() {
   const rawCode  = document.getElementById('jCode').value.trim();
   const userName = document.getElementById('jUserName').value.trim();
-
   if (!rawCode || !userName) { toast(t('fillAll')); return; }
-
-  // Strip all whitespace/newlines that might sneak in when pasting on mobile
   const code = rawCode.replace(/\s+/g, '');
-
-  // Detect old v2.0.0 base64+JSON format (starts with 'ey' which is base64 of '{')
   if (code.startsWith('ey')) {
     toast('❌ Старый код (v2.0.0). Попросите владельца семьи скопировать новый код из настроек ⚙.');
     return;
   }
-
   const binId = code;
   if (!binId || binId.length < 10) {
     toast('❌ Неверный семейный код'); return;
   }
-
   setSyncStatus('spin', t('connecting'));
   try {
     const data = await jbRead(binId);
     if (!data || !data.family_name) throw new Error('Данные семьи не найдены');
-
     const userId = genUID();
     const member = { id: userId, name: userName, color: genColor(), joined: new Date().toISOString() };
-
     const existing = data.members?.find(m => m.name.toLowerCase() === userName.toLowerCase());
     if (!existing) {
       if (!data.members) data.members = [];
@@ -1295,27 +1313,19 @@ async function joinFamily() {
     } else {
       member.id = existing.id;
     }
-
     CONFIG = { binId, familyName: data.family_name, userId: member.id, userName };
     LS.set('bgt_config', CONFIG);
     LS.set('bgt_family_code', binId);
     GIST_DATA = data;
     LS.set('bgt_data', GIST_DATA);
-
     setSyncStatus('ok', t('syncOk'));
     enterApp();
   } catch(e) {
     const msg = e.message || String(e);
-    // Give user-friendly hints for common errors
-    if (msg.includes('400')) {
-      toast('❌ Ошибка 400: неверный код или API-ключ не настроен');
-    } else if (msg.includes('401') || msg.includes('403')) {
-      toast('❌ Нет доступа. Проверьте JB_KEY в файле');
-    } else if (msg.includes('404')) {
-      toast('❌ Семья не найдена. Проверьте код');
-    } else {
-      toast('❌ ' + msg);
-    }
+    if (msg.includes('400')) toast('❌ Ошибка 400: неверный код или API-ключ не настроен');
+    else if (msg.includes('401') || msg.includes('403')) toast('❌ Нет доступа. Проверьте JB_KEY в файле');
+    else if (msg.includes('404')) toast('❌ Семья не найдена. Проверьте код');
+    else toast('❌ ' + msg);
     setSyncStatus('err', t('syncErr'));
   }
 }
@@ -1337,35 +1347,24 @@ function enterApp() {
 // ─── APP INIT ─────────────────────────────────────────────────────────────────
 function initApp() {
   if (!CONFIG || !GIST_DATA) return;
-  // Ensure sections are initialized (migrate old data without sections)
-  // If sections weren't in the remote data, save them now so ordering persists
   const hadSections = !!GIST_DATA.sections;
   if (!GIST_DATA.sections) GIST_DATA.sections = [...DEFAULT_SECTIONS];
-  if (!hadSections) {
-    // Save initialized sections to remote silently
-    saveLocal();
-    pushData();
-  }
-
-  // Apply saved language
+  if (!hadSections) { saveLocal(); pushData(); }
   document.body.style.direction = CURLANG === 'he' ? 'rtl' : 'ltr';
   document.body.style.textAlign = CURLANG === 'he' ? 'right' : 'left';
   document.documentElement.setAttribute('lang', CURLANG === 'he' ? 'he' : CURLANG === 'en' ? 'en' : 'ru');
-
   document.getElementById('hFamilyName').innerHTML = `${CONFIG.familyName} <span class="ver-badge">v${APP_VER}</span>`;
   document.getElementById('userNameBadge').textContent = CONFIG.userName;
   updateSubTitle();
   applyI18n();
-
   buildSel();
   renderView();
-
-  // Auto sync every 5 minutes (was 60s — reduced to avoid JSONBin rate limits)
   if (syncTimer) clearInterval(syncTimer);
   syncTimer = setInterval(syncNow, 300000);
-
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
 }
+
+function saveLocal() { LS.set('bgt_data', GIST_DATA); }
 
 function updateSubTitle() {
   if (!GIST_DATA) return;
@@ -1384,7 +1383,6 @@ function setSyncStatus(state, text) {
   txt.textContent = text;
 }
 
-// ★ _lastLocalChange persists in localStorage so it survives page reloads
 function getLastLocalChange() {
   try { return localStorage.getItem('bgt_lastchange') || '0'; } catch(e) { return '0'; }
 }
@@ -1400,10 +1398,6 @@ async function syncNow() {
     const localTs  = GIST_DATA?.last_updated || '0';
     const remoteTs = remote?.last_updated   || '0';
     const lastChange = getLastLocalChange();
-
-    // Only pull from remote if:
-    // 1. Remote is strictly newer than local
-    // 2. AND we haven't made local changes more recently than the remote update
     if (remoteTs > localTs && remoteTs > lastChange) {
       GIST_DATA = remote;
       LS.set('bgt_data', GIST_DATA);
@@ -1416,14 +1410,11 @@ async function syncNow() {
   }
 }
 
-// ★ pushData: remote sync only — localStorage is already saved by setMD/toggleItemRecurring
 async function pushData() {
   if (!CONFIG?.binId || !GIST_DATA) return;
   GIST_DATA.last_updated = new Date().toISOString();
   GIST_DATA.updated_by   = CONFIG.userName;
-  // Mark when we last changed data locally (survives page reload)
   markLocalChange();
-  // Always save to localStorage (belt + suspenders — setMD already does this for budget_data)
   LS.set('bgt_data', GIST_DATA);
   setSyncStatus('spin', t('saving'));
   try {
@@ -1432,16 +1423,13 @@ async function pushData() {
     updateSubTitle();
   } catch(e) {
     setSyncStatus('err', t('syncErr'));
-    // Data is safely in localStorage — will be pushed on next manual sync
   }
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
 function openSettings() {
   if (!GIST_DATA) return;
-  // Apply i18n to modal labels
   applyI18n();
-  // Members
   const el = document.getElementById('membersList');
   el.innerHTML = (GIST_DATA.members || []).map(m => `
     <div class="member-chip">
@@ -1454,12 +1442,9 @@ function openSettings() {
     </div>`).join('');
   document.getElementById('changeNameInp').value = CONFIG.userName;
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
-  // Font selector
   const savedFont = (() => { try { return localStorage.getItem('bgt_font') || 'm'; } catch(e) { return 'm'; } })();
   document.querySelectorAll('.font-btn[data-fk]').forEach(b => b.classList.toggle('factive', b.dataset.fk === savedFont));
-  // Lang selector
   document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === CURLANG));
-  // Sections
   renderSettingsSections();
   document.getElementById('addSectionForm').style.display = 'none';
   document.getElementById('settingsModal').classList.add('open');
@@ -1472,7 +1457,6 @@ function closeSettings() {
 async function changeName() {
   const name = document.getElementById('changeNameInp').value.trim();
   if (!name) return;
-  const oldName = CONFIG.userName;
   CONFIG.userName = name;
   LS.set('bgt_config', CONFIG);
   if (GIST_DATA) {
@@ -1491,7 +1475,7 @@ function leaveFamily() {
   location.reload();
 }
 
-async function resetFromExcel() {}  // removed — kept stub to avoid errors if called
+async function resetFromExcel() {}
 
 // ─── BUDGET STATE ─────────────────────────────────────────────────────────────
 let selMonth = '04_26';
@@ -1500,7 +1484,6 @@ let editing = null;
 let addSec = null;
 let addDebtMode = false;
 
-// Persist collapsed state across sessions
 function loadCollapsed() {
   try { return new Set(JSON.parse(localStorage.getItem('bgt_collapsed') || '[]')); }
   catch(e) { return new Set(); }
@@ -1514,9 +1497,7 @@ function getBudgetData() { return GIST_DATA?.budget_data || {}; }
 function getMD() {
   const d = getBudgetData();
   const md = d[selMonth] || { income:{}, fixed:{}, variable:{}, debts:[], edp_target:15000 };
-  // Ensure all defined sections exist in this month
   getSections().forEach(s => { if (!md[s.id]) md[s.id] = {}; });
-  // If this is a new month object (not yet in budget_data), register it now
   if (!d[selMonth]) {
     if (!GIST_DATA.budget_data) GIST_DATA.budget_data = {};
     GIST_DATA.budget_data[selMonth] = md;
@@ -1527,14 +1508,12 @@ function setMD(monthData) {
   if (!GIST_DATA) return;
   if (!GIST_DATA.budget_data) GIST_DATA.budget_data = {};
   GIST_DATA.budget_data[selMonth] = monthData;
-  // ★ Always save to localStorage immediately — the remote push is best-effort
   LS.set('bgt_data', GIST_DATA);
 }
 
 function pk(k) { const [m,y]=k.split('_'); return {m:+m, y:2000+(+y)}; }
 function sortK(ks) { return [...ks].sort((a,b)=>{ const pa=pk(a),pb=pk(b); return pa.y!==pb.y?pa.y-pb.y:pa.m-pb.m; }); }
 function fmtN(n) {
-  // Format without thousands separator spaces (ru-RU uses non-breaking space U+00A0 or U+202F)
   return Math.round(n||0).toLocaleString('ru-RU').replace(/[\u00A0\u202F\u2009\u0020]/g, '') + '₪';
 }
 function S(o) { return Object.values(o||{}).reduce((s,v)=>s+(+v||0),0); }
@@ -1567,21 +1546,13 @@ function renderStats() {
   const bal = totalIncome - totalExpenses - tD;
   const el = document.getElementById('statsGrid');
   if (!el) return;
-
-  // Build one card per income section + one combined expense card + debts + balance
-  const incCards = secs.filter(s=>s.type==='income').map(s=>
-    [getSectionStatLabel(s), S(md[s.id]), s.color, s.icon]
-  );
-  const expCards = secs.filter(s=>s.type==='expense').map(s=>
-    [getSectionStatLabel(s), S(md[s.id]), s.color, s.icon]
-  );
+  const incCards = secs.filter(s=>s.type==='income').map(s=> [getSectionStatLabel(s), S(md[s.id]), s.color, s.icon]);
+  const expCards = secs.filter(s=>s.type==='expense').map(s=> [getSectionStatLabel(s), S(md[s.id]), s.color, s.icon]);
   const allCards = [
-    ...incCards,
-    ...expCards,
+    ...incCards, ...expCards,
     [t('statsDebt'),  tD,  CC.debt,   '💳'],
     [t('statsBalance'), bal, bal>=0?CC.balance:'#ef4444', bal>=0?'✓':'⚠']
   ];
-
   el.innerHTML = allCards.map(([l,v,c,i])=>`<div class="stat" style="border-left-color:${c}">
     <div class="stat-lbl">${i} ${l}</div><div class="stat-val" style="color:${c}">${fmtN(v)}</div>
   </div>`).join('');
@@ -1642,17 +1613,10 @@ function renderMonth() {
         </div>`;
       }).join('');
 
-  // Build progress bar segments for all expense sections + debt
   const expSegments = secs.filter(s=>s.type==='expense').map(s=>`<div class="pseg" style="width:${pct(S(md[s.id]),totalIncome)}%;background:${s.color}"></div>`).join('');
   const debtSeg = `<div class="pseg" style="width:${pct(tD,totalIncome)}%;background:${CC.debt}"></div>`;
-
-  // Build legend
   const expLegend = secs.filter(s=>s.type==='expense').map(s=>`<span><span class="dot" style="background:${s.color}"></span>${getSectionShort(s)}: ${fmtN(S(md[s.id]))}</span>`).join('');
-
-  // Build section cards in user-defined order (exactly as in GIST_DATA.sections)
-  const allSecCards = secs.map(s =>
-    secHTML(s.id, getSectionLabel(s), s.color, md[s.id]||{}, S(md[s.id]))
-  ).join('');
+  const allSecCards = secs.map(s => secHTML(s.id, getSectionLabel(s), s.color, md[s.id]||{}, S(md[s.id]))).join('');
 
   const el = document.getElementById('mainContent');
   if (!el) return;
@@ -1710,10 +1674,10 @@ function bindMonth() {
       if (!editing) return;
       const md = getMD();
       md[editing.sec][editing.key] = parseFloat(ei.value)||0;
-      setMD(md); editing = null; // setMD saves to LS
+      setMD(md); editing = null;
       markLocalChange();
       renderMonth(); renderStats();
-      pushData(); // background remote sync
+      pushData();
     };
     ei.addEventListener('blur', commit);
     ei.addEventListener('keydown', e => { if(e.key==='Enter') commit(); if(e.key==='Escape'){editing=null;renderMonth();} });
@@ -1722,10 +1686,10 @@ function bindMonth() {
     b.addEventListener('click', async e => {
       e.stopPropagation();
       const sec=b.dataset.ds, key=decodeURIComponent(b.dataset.dk);
-      const md=getMD(); delete md[sec][key]; setMD(md); // setMD saves to LS
+      const md=getMD(); delete md[sec][key]; setMD(md);
       markLocalChange();
       renderMonth(); renderStats(); toast(t('deleted') + key);
-      pushData(); // background remote sync
+      pushData();
     });
   });
   document.querySelectorAll('[data-asec]').forEach(b => {
@@ -1736,15 +1700,15 @@ function bindMonth() {
     b.addEventListener('click', () => {
       const sec=b.dataset.aok, name=document.getElementById('aiN')?.value.trim(), val=parseFloat(document.getElementById('aiV')?.value)||0;
       if (!name) return;
-      const md=getMD(); md[sec][name]=val; setMD(md); // setMD saves to LS
+      const md=getMD(); md[sec][name]=val; setMD(md);
       markLocalChange();
       addSec=null; renderMonth(); renderStats(); toast(t('added') + name);
-      pushData(); // background remote sync
+      pushData();
     });
   });
 }
 
-// ─── RENDER TRENDS ─────────────────────────────────────────────────────────────
+// ─── RENDER TRENDS ────────────────────────────────────────────────────────────
 function renderTrends() {
   const data = getBudgetData();
   const keys = sortK(Object.keys(data)).slice(-12);
@@ -1763,10 +1727,8 @@ function renderTrends() {
   const maxV = Math.max(...td.map(d=>d.income+d.debt), 1);
   const bars = td.map(d => {
     const h=v=>Math.max(2,Math.round((v/maxV)*108));
-    // All expense sections + debt segment
     const segs = secs.map(s=>`<div class="bcol" style="height:${h(d[s.id]||0)}px;background:${s.color}" title="${getSectionShort(s)}: ${fmtN(d[s.id]||0)}"></div>`).join('');
     const debtSeg = d.debt>0 ? `<div class="bcol" style="height:${h(d.debt)}px;background:${CC.debt}" title="${t('tabDebts')}: ${fmtN(d.debt)}"></div>` : '';
-    // Format numbers: trim thousands (show k)
     const incStr = d.income >= 1000 ? Math.round(d.income/1000)+'k' : fmtN(d.income);
     const balColor = d.balance >= 0 ? '#4ade80' : '#ef4444';
     const balStr = (d.balance >= 0 ? '+' : '') + (Math.abs(d.balance) >= 1000 ? Math.round(d.balance/1000)+'k' : String(Math.round(d.balance)));
@@ -1779,20 +1741,16 @@ function renderTrends() {
   }).join('');
   const bals=td.map(d=>d.balance), minB=Math.min(...bals), maxB=Math.max(...bals), rng=maxB-minB||1;
 
-  // ── Proper proportional line chart ──────────────────────────────────────────
   const N = td.length;
-  const SVG_W = Math.max(480, N * 60);   // minimum 480px, 60px per month
+  const SVG_W = Math.max(480, N * 60);
   const SVG_H = 150;
-  const PAD = { t:28, b:26, l:48, r:16 }; // room for axis labels
+  const PAD = { t:28, b:26, l:48, r:16 };
   const cW = SVG_W - PAD.l - PAD.r;
   const cH = SVG_H - PAD.t - PAD.b;
-
-  // scale helpers
   const xp = i => PAD.l + (N > 1 ? (i / (N-1)) * cW : cW/2);
   const yp = v => PAD.t + cH - ((v - minB) / rng) * cH;
   const zeroY = Math.min(Math.max(yp(0), PAD.t), PAD.t + cH);
 
-  // Y-axis guide lines (3 guides)
   const yGuides = [0, 0.5, 1].map(f => {
     const val = minB + f * rng;
     const y = yp(val);
@@ -1801,28 +1759,14 @@ function renderTrends() {
       <text x="${PAD.l-4}" y="${y+3.5}" text-anchor="end" font-size="9" fill="#4b5563" font-family="'Courier New',monospace">${lbl}</text>`;
   }).join('');
 
-  // Zero line (if in range)
   const zeroLine = (minB < 0 && maxB > 0) ? `<line x1="${PAD.l}" y1="${zeroY}" x2="${SVG_W-PAD.r}" y2="${zeroY}" stroke="#374151" stroke-width="1" stroke-dasharray="4,3"/>` : '';
-
-  // Polyline path
   const linePts = td.map((d,i) => `${xp(i)},${yp(d.balance)}`).join(' ');
-
-  // Area fill
-  const areaPath = `M ${xp(0)},${zeroY} ` +
-    td.map((d,i) => `L ${xp(i)},${yp(d.balance)}`).join(' ') +
-    ` L ${xp(N-1)},${zeroY} Z`;
-
-  // Dots + value labels + month labels
+  const areaPath = `M ${xp(0)},${zeroY} ` + td.map((d,i) => `L ${xp(i)},${yp(d.balance)}`).join(' ') + ` L ${xp(N-1)},${zeroY} Z`;
   const dots = td.map((d,i) => {
-    const cx = xp(i);
-    const cy = yp(d.balance);
+    const cx = xp(i), cy = yp(d.balance);
     const col = d.balance >= 0 ? CC.balance : '#ef4444';
-    // Format value: show as k if ≥1000
     const absV = Math.abs(d.balance);
-    const valStr = absV >= 1000
-      ? (d.balance < 0 ? '-' : '+') + Math.round(absV/1000) + 'k'
-      : (d.balance >= 0 ? '+' : '') + Math.round(d.balance);
-    // Position label above dot, flip if too close to top
+    const valStr = absV >= 1000 ? (d.balance < 0 ? '-' : '+') + Math.round(absV/1000) + 'k' : (d.balance >= 0 ? '+' : '') + Math.round(d.balance);
     const labelY = cy > PAD.t + 18 ? cy - 9 : cy + 18;
     return `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${col}" stroke="#0b0f1a" stroke-width="1.5"/>
       <text x="${cx}" y="${labelY}" text-anchor="middle" font-size="9" font-weight="700" fill="${col}" font-family="'Courier New',monospace">${valStr}</text>
@@ -1830,18 +1774,16 @@ function renderTrends() {
   }).join('');
 
   const lineSvg = `<svg width="${SVG_W}" height="${SVG_H}" viewBox="0 0 ${SVG_W} ${SVG_H}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${CC.balance}" stop-opacity="0.18"/>
-        <stop offset="100%" stop-color="${CC.balance}" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
-    ${yGuides}
-    ${zeroLine}
+    <defs><linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${CC.balance}" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="${CC.balance}" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${yGuides}${zeroLine}
     <path d="${areaPath}" fill="url(#balGrad)"/>
     <polyline points="${linePts}" fill="none" stroke="${CC.balance}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     ${dots}
   </svg>`;
+
   const avg=a=>Math.round(a.reduce((s,v)=>s+v,0)/a.length);
   const avgDebt = avg(td.map(d=>d.debt));
   const avgs=[
@@ -1851,7 +1793,6 @@ function renderTrends() {
     [t('statsDebt'),avgDebt,CC.debt],
     [t('avgBalance'),avg(td.map(d=>d.balance)),CC.balance]
   ];
-  // Legend: all sections + credits
   const barLegend = [
     ...secs.map(s=>`<span><span class="dot" style="background:${s.color}"></span>${getSectionShort(s)}</span>`),
     `<span><span class="dot" style="background:${CC.debt}"></span>${t('tabDebts')}</span>`
@@ -1909,7 +1850,7 @@ function bindDebts(md) {
   document.querySelectorAll('[data-hm]').forEach(r => { r.addEventListener('click', () => { selMonth=r.dataset.hm; buildSel(); renderStats(); renderDebts(); }); });
 }
 
-// ─── RENDER VIEW ─────────────────────────────────────────────────────────────
+// ─── RENDER VIEW ──────────────────────────────────────────────────────────────
 function renderView() {
   renderStats();
   if (curView==='month') renderMonth();
@@ -1927,30 +1868,23 @@ document.getElementById('nextBtn').addEventListener('click', () => {
   if(i<ms.length-1){selMonth=ms[i+1];editing=null;buildSel();renderView();}
 });
 document.getElementById('monthSel').addEventListener('change', e => { selMonth=e.target.value; editing=null; renderView(); });
+
 // ─── ADD MONTH MODAL ──────────────────────────────────────────────────────────
 function openAddMonthModal() {
   const now = new Date();
   const data = getBudgetData();
-  const existing = new Set(Object.keys(data));
-
-  // Populate month selector
   const monSel = document.getElementById('newMonthMon');
   const yearSel = document.getElementById('newMonthYear');
   const copySrc = document.getElementById('newMonthCopySrc');
-
   monSel.innerHTML = MN.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
   monSel.value = now.getMonth() + 1;
-
   const thisYear = now.getFullYear();
   yearSel.innerHTML = '';
   for (let y = thisYear - 5; y <= thisYear + 2; y++) {
     yearSel.innerHTML += `<option value="${y}"${y===thisYear?' selected':''}>${y}</option>`;
   }
-
-  // Copy source months
   const months = sortK(Object.keys(data)).reverse();
   copySrc.innerHTML = months.map(k=>`<option value="${k}">${fmtK(k)}</option>`).join('');
-
   document.getElementById('addMonthModal').classList.add('open');
 }
 
@@ -1960,25 +1894,18 @@ async function confirmAddMonth() {
   const key = `${m}_${y}`;
   const data = getBudgetData();
   const secs = getSections();
-
   if (data[key]) { toast(t('monthExists') + ' — ' + fmtK(key)); return; }
-
   const mode = document.querySelector('input[name="newMonthMode"]:checked')?.value || 'empty';
   const newMonth = { debts:[], edp_target:15000 };
   secs.forEach(s => { newMonth[s.id] = {}; });
-
   if (mode === 'recurring') {
-    // Keep only recurring items with their values
     const rec = GIST_DATA?.recurring || {};
-    // Find latest month's data for values
     const ms = sortK(Object.keys(data));
     const latest = ms.length ? data[ms[ms.length-1]] : null;
     secs.forEach(s => {
       const secRec = rec[s.id] || {};
       const src = latest?.[s.id] || {};
-      Object.keys(secRec).forEach(k => {
-        if (secRec[k]) newMonth[s.id][k] = src[k] || 0;
-      });
+      Object.keys(secRec).forEach(k => { if (secRec[k]) newMonth[s.id][k] = src[k] || 0; });
     });
   } else if (mode === 'copy') {
     const srcKey = document.getElementById('newMonthCopySrc').value;
@@ -1986,7 +1913,6 @@ async function confirmAddMonth() {
     secs.forEach(s => { newMonth[s.id] = {...(src[s.id]||{})}; });
     newMonth.debts = (src.debts||[]).map(d=>({...d}));
   }
-
   data[key] = newMonth;
   document.getElementById('addMonthModal').classList.remove('open');
   selMonth = key;
@@ -1994,6 +1920,7 @@ async function confirmAddMonth() {
   buildSel(); renderView();
   toast(t('monthCreated') + ' ' + fmtK(key));
 }
+
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
     curView=t.dataset.view; editing=null; addSec=null; addDebtMode=false;
@@ -2002,8 +1929,7 @@ document.querySelectorAll('.tab').forEach(t => {
   });
 });
 
-// ─── INITIAL DATA ─────────────────────────────────────────────────────────────
-// ─── EMPTY DATA (for new families) ───────────────────────────────────────────
+// ─── INITIAL / EMPTY DATA ─────────────────────────────────────────────────────
 function getEmptyData() {
   const now = new Date();
   const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -2014,58 +1940,38 @@ function getEmptyData() {
   return { [key]: entry };
 }
 
-// ─── INITIAL DATA (kept for reference only — not used for new families) ───────
-// Creates an empty starting dataset for a brand-new family (current month only)
 function getInitialData() {
   const now = new Date();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const y = String(now.getFullYear() - 2000).padStart(2, '0');
   const key = `${m}_${y}`;
-  return {
-    [key]: { income: {}, fixed: {}, variable: {}, debts: [] }
-  };
+  return { [key]: { income: {}, fixed: {}, variable: {}, debts: [] } };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // ─── IMPORT / EXPORT ──────────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════════════════
+let importedData = null;
 
-let importedData = null; // holds AI-parsed data before confirmation
+function openImportExport() { resetImport(); document.getElementById('ieModal').classList.add('open'); }
+function closeImportExport() { document.getElementById('ieModal').classList.remove('open'); }
 
-function openImportExport() {
-  resetImport();
-  document.getElementById('ieModal').classList.add('open');
-}
-function closeImportExport() {
-  document.getElementById('ieModal').classList.remove('open');
-}
-
-// ─── EXPORT ───────────────────────────────────────────────────────────────────
 function exportToExcel() {
   if (typeof XLSX === 'undefined') { toast('⚠ Библиотека XLSX не загружена'); return; }
   const budgetData = getBudgetData();
   const months = sortK(Object.keys(budgetData));
   if (!months.length) { toast('⚠ Нет данных для экспорта'); return; }
-
   const wb = XLSX.utils.book_new();
-
   months.forEach(key => {
     const md = budgetData[key];
     const secs = getSections();
     const rows = [];
-
-    // ── Header row ──
     const hdr = [''];
     const secCols = secs.map(s => [s.label, 'Сумма']);
     secCols.forEach(c => hdr.push(...c));
     hdr.push('', 'Кредиты', 'Сумма', '', 'Выплат осталось', 'В месяц');
     rows.push(hdr);
-
-    // ── Section items (max rows) ──
     const secEntries = secs.map(s => Object.entries(md[s.id]||{}).filter(([,v])=>v>0));
     const debtRows = (md.debts||[]);
     const maxRows = Math.max(...secEntries.map(e=>e.length), debtRows.length, 1);
-
     for (let i = 0; i < maxRows; i++) {
       const row = [''];
       secs.forEach((s, si) => {
@@ -2076,8 +1982,6 @@ function exportToExcel() {
       row.push('', d ? d.name : '', d ? d.monthly : '', '', d ? d.payments_left : '', '');
       rows.push(row);
     }
-
-    // ── Totals row ──
     rows.push(['']);
     const totRow = ['ИТОГО'];
     secs.forEach(s => {
@@ -2085,28 +1989,19 @@ function exportToExcel() {
       totRow.push('', total);
     });
     rows.push(totRow);
-
-    // ── Debts total ──
     const debtTotal = debtRows.reduce((s,d)=>s+(d.monthly||0),0);
     rows.push(['', ...Array(secs.length*2).fill(''), '', 'Итого/мес', debtTotal]);
-
     const ws = XLSX.utils.aoa_to_sheet(rows);
-
-    // Column widths
     ws['!cols'] = [{ wch:2 }, ...secs.flatMap(()=>[{wch:24},{wch:10}]), {wch:2},{wch:24},{wch:10},{wch:2},{wch:12},{wch:10}];
-
-    // Style header row (bold simulation via cell type)
     const sheetName = fmtK(key).replace(/[:\\\/\?\*\[\]]/g,'').slice(0,31);
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
-
   const fname = `Семейный_Бюджет_${new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')}.xlsx`;
   XLSX.writeFile(wb, fname);
   toast('✅ Файл сохранён: ' + fname);
   closeImportExport();
 }
 
-// ─── IMPORT FILE HANDLING ─────────────────────────────────────────────────────
 function handleFileDrop(e) {
   e.preventDefault();
   document.getElementById('dropZone').classList.remove('drag-over');
@@ -2123,25 +2018,16 @@ async function processExcelFile(file) {
   if (!file.name.match(/\.(xlsx|xls|ods)$/i)) {
     toast('⚠ Нужен файл .xlsx, .xls или .ods'); return;
   }
-
-  // Show progress
   document.getElementById('dropZone').style.display = 'none';
   document.getElementById('aiProgress').style.display = '';
   document.getElementById('importPreview').style.display = 'none';
   setAiMsg('📖 Читаю файл...', '');
-
   try {
-    // 1. Parse Excel
     const rawData = await readExcelToText(file);
     setAiMsg('🤖 ИИ анализирует структуру...', 'Claude распознаёт месяцы, доходы и расходы');
-
-    // 2. Send to Claude AI
     const parsed = await analyzeExcelWithAI(rawData);
     if (!parsed || !Object.keys(parsed).length) throw new Error('ИИ не смог распознать структуру файла');
-
     importedData = parsed;
-
-    // 3. Show preview
     showImportPreview(parsed);
   } catch(err) {
     document.getElementById('aiProgress').style.display = 'none';
@@ -2156,7 +2042,6 @@ function setAiMsg(msg, sub) {
   document.getElementById('aiSub').textContent = sub;
 }
 
-// ─── READ EXCEL → TEXT ────────────────────────────────────────────────────────
 async function readExcelToText(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -2166,7 +2051,6 @@ async function readExcelToText(file) {
         const sheets = {};
         wb.SheetNames.forEach(name => {
           const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header:1, defval:'' });
-          // Filter empty rows, limit to 50 rows per sheet
           const clean = rows.filter(r => r.some(c => c !== '')).slice(0, 50);
           if (clean.length > 1) sheets[name] = clean;
         });
@@ -2178,9 +2062,7 @@ async function readExcelToText(file) {
   });
 }
 
-// ─── AI ANALYSIS ──────────────────────────────────────────────────────────────
 async function analyzeExcelWithAI(sheetsData) {
-  // Build compact text representation
   const sheetTexts = Object.entries(sheetsData).map(([name, rows]) => {
     const lines = rows.map(r => r.map(c => String(c).trim()).filter(c=>c).join('\t')).filter(l=>l);
     return `=== Лист: ${name} ===\n${lines.join('\n')}`;
@@ -2227,26 +2109,17 @@ ${sheetTexts.slice(0, 8000)}
   if (!resp.ok) throw new Error('API ошибка: ' + resp.status);
   const data = await resp.json();
   const text = data.content?.find(c=>c.type==='text')?.text || '';
-
-  // Extract JSON from response
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('ИИ вернул неверный формат');
-
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch(e) {
-    throw new Error('Ошибка разбора ответа ИИ');
-  }
+  try { return JSON.parse(jsonMatch[0]); }
+  catch(e) { throw new Error('Ошибка разбора ответа ИИ'); }
 }
 
-// ─── PREVIEW ──────────────────────────────────────────────────────────────────
 function showImportPreview(data) {
   document.getElementById('aiProgress').style.display = 'none';
   document.getElementById('importPreview').style.display = '';
-
   const months = sortK(Object.keys(data));
   document.getElementById('previewCount').textContent = months.length;
-
   const list = document.getElementById('previewList');
   list.innerHTML = months.map(key => {
     const md = data[key];
@@ -2254,7 +2127,6 @@ function showImportPreview(data) {
     const tF = Object.values(md.fixed||{}).reduce((s,v)=>s+(+v||0),0);
     const tV = Object.values(md.variable||{}).reduce((s,v)=>s+(+v||0),0);
     const tD = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
-    const bal = tI - tF - tV - tD;
     return `<div class="preview-month" onclick="togglePreviewDetail('${key}')">
       <div>
         <div class="preview-month-name">${fmtK(key)}</div>
@@ -2291,20 +2163,14 @@ function resetImport() {
   document.getElementById('excelFileIn').value = '';
 }
 
-// ─── CONFIRM IMPORT ───────────────────────────────────────────────────────────
 async function confirmImport() {
   if (!importedData || !GIST_DATA) return;
-
-  // Merge imported months into existing data, keeping app sections config
   const existing = getBudgetData();
   const merged = { ...existing };
   const secs = getSections();
-
   Object.entries(importedData).forEach(([key, md]) => {
-    // Build a proper month entry matching current sections
     const entry = { debts: md.debts || [] };
     secs.forEach(s => {
-      // Map income/fixed/variable → section IDs
       if (s.id === 'income') entry[s.id] = md.income || {};
       else if (s.id === 'fixed') entry[s.id] = md.fixed || {};
       else if (s.id === 'variable') entry[s.id] = md.variable || {};
@@ -2312,22 +2178,18 @@ async function confirmImport() {
     });
     merged[key] = entry;
   });
-
   GIST_DATA.budget_data = merged;
   closeImportExport();
-
   setSyncStatus('spin', 'Сохранение...');
   await pushData();
-
   const count = Object.keys(importedData).length;
   buildSel(); renderView(); updateSubTitle();
   toast(`✅ Импортировано ${count} ${count===1?'месяц':count<5?'месяца':'месяцев'}`);
   importedData = null;
 }
 
-// ─── MIGRATION FROM v2.0.0 (GitHub Gist → JSONBin) ───────────────────────────
+// ─── MIGRATION FROM v2.0.0 ────────────────────────────────────────────────────
 function isOldConfig(cfg) {
-  // Old config has gistId+token; new config has binId
   return cfg && (cfg.gistId || cfg.token) && !cfg.binId;
 }
 
@@ -2337,26 +2199,21 @@ function showMigrateModal(oldData, oldConfig) {
   const months = oldData?.budget_data ? Object.keys(oldData.budget_data).length : 0;
   document.getElementById('migrateMonths').textContent =
     `${months} месяцев данных · семья: ${oldConfig.familyName || '?'}`;
-  // Store for migration use
   window._migrateData = { oldData, oldConfig };
 }
 
 async function runMigration() {
   const { oldData, oldConfig } = window._migrateData || {};
   if (!oldData) { migrateSkip(); return; }
-
   const btn = document.getElementById('migrateBtnGo');
   btn.textContent = '⏳ Переносим...';
   btn.disabled = true;
   document.getElementById('migrateStatus').innerHTML =
     '<div class="ai-spin" style="font-size:28px;display:inline-block;animation:spin 1s linear infinite">⏳</div>' +
     '<div style="font-size:13px;color:var(--muted);margin-top:8px">Создаём новое хранилище...</div>';
-
   try {
     const userId = genUID();
     const userName = oldConfig.userName || 'Пользователь';
-
-    // Build new GIST_DATA from old data, preserving everything
     const newData = {
       family_name: oldConfig.familyName || 'Семья',
       members: oldData.members || [{ id: userId, name: userName, color: genColor(), joined: new Date().toISOString() }],
@@ -2366,23 +2223,17 @@ async function runMigration() {
       last_updated: new Date().toISOString(),
       updated_by: userName
     };
-
-    // Create new JSONBin bin
     const binId = await jbCreate(newData);
-    const code  = binId;
-
     CONFIG = { binId, familyName: newData.family_name, userId, userName };
     LS.set('bgt_config', CONFIG);
-    LS.set('bgt_family_code', code);
+    LS.set('bgt_family_code', binId);
     LS.set('bgt_data', newData);
     GIST_DATA = newData;
-
     document.getElementById('migrateModal').style.display = 'none';
     document.getElementById('screenSetup').classList.remove('active');
     document.getElementById('screenApp').classList.add('active');
     initApp();
     toast('✅ Данные перенесены! Новый код семьи — в настройках ⚙');
-
   } catch(e) {
     document.getElementById('migrateStatus').innerHTML =
       `<div style="color:#f87171;font-size:13px">❌ Ошибка: ${e.message}<br/>Проверьте JB_KEY в файле и попробуйте снова.</div>`;
@@ -2392,9 +2243,7 @@ async function runMigration() {
 }
 
 function migrateSkip() {
-  // Clear old data and start fresh
-  LS.del('bgt_config'); LS.del('bgt_data'); LS.del('bgt_family_code');
-  LS.del('bgt_lastchange');
+  LS.del('bgt_config'); LS.del('bgt_data'); LS.del('bgt_family_code'); LS.del('bgt_lastchange');
   document.getElementById('migrateModal').style.display = 'none';
   document.getElementById('screenSetup').classList.add('active');
   toast('Данные очищены. Создайте новую семью.');
@@ -2403,22 +2252,18 @@ function migrateSkip() {
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 setupPWA();
 
-// Apply lang immediately on boot (before any screen shows)
 document.body.style.direction = CURLANG === 'he' ? 'rtl' : 'ltr';
 document.body.style.textAlign = CURLANG === 'he' ? 'right' : 'left';
 document.documentElement.setAttribute('lang', CURLANG === 'he' ? 'he' : CURLANG === 'en' ? 'en' : 'ru');
 applyI18n();
 
-// Check if already set up
 const savedConfig = LS.get('bgt_config');
 const savedData = LS.get('bgt_data');
 
 if (savedConfig && savedData) {
   if (isOldConfig(savedConfig)) {
-    // ── Old v2.0.0 config detected → show migration wizard ──────────────────
     showMigrateModal(savedData, savedConfig);
   } else {
-    // ── Current format (binId) → normal boot ────────────────────────────────
     CONFIG = savedConfig;
     GIST_DATA = savedData;
     document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
@@ -2431,7 +2276,7 @@ if (savedConfig && savedData) {
   document.getElementById('screenSetup').classList.add('active');
 }
 
-} // end normal app execution (else block from SW self-registration trick)
+} // end normal app context
 </script>
 </body>
 </html>
