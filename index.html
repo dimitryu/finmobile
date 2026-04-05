@@ -330,6 +330,29 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   </div>
 </div>
 
+<!-- Migration modal (v2.0.0 → v2.8+) -->
+<div class="modal-bg open" id="migrateModal" style="display:none">
+  <div class="modal">
+    <h3>🔄 Переход на новую версию</h3>
+    <div class="hint-box" style="margin-bottom:14px">
+      Обнаружены данные от <b>старой версии</b> приложения (v2.0.0).<br/>
+      Новая версия использует другую систему хранения (JSONBin).<br/>
+      Ваши данные будут перенесены автоматически.
+    </div>
+    <div id="migrateStatus" style="text-align:center;padding:16px 0">
+      <div style="font-size:28px;margin-bottom:8px">📦</div>
+      <div style="font-size:14px;color:var(--white);margin-bottom:4px">Готово к переносу</div>
+      <div style="font-size:12px;color:var(--muted)" id="migrateMonths"></div>
+    </div>
+    <button class="sbtn sbtn-green" style="font-size:14px" id="migrateBtnGo" onclick="runMigration()">
+      🚀 Перенести данные
+    </button>
+    <button class="sbtn sbtn-gray" style="font-size:13px;margin-top:8px" onclick="migrateSkip()">
+      Начать заново (удалить старые данные)
+    </button>
+  </div>
+</div>
+
 <!-- Import/Export modal -->
 <div class="modal-bg" id="ieModal">
   <div class="modal modal-wide">
@@ -486,7 +509,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.8.4';  // Версия приложения
+const APP_VER = '2.8.5';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -2295,6 +2318,81 @@ async function confirmImport() {
   importedData = null;
 }
 
+// ─── MIGRATION FROM v2.0.0 (GitHub Gist → JSONBin) ───────────────────────────
+function isOldConfig(cfg) {
+  // Old config has gistId+token; new config has binId
+  return cfg && (cfg.gistId || cfg.token) && !cfg.binId;
+}
+
+function showMigrateModal(oldData, oldConfig) {
+  const modal = document.getElementById('migrateModal');
+  modal.style.display = 'flex';
+  const months = oldData?.budget_data ? Object.keys(oldData.budget_data).length : 0;
+  document.getElementById('migrateMonths').textContent =
+    `${months} месяцев данных · семья: ${oldConfig.familyName || '?'}`;
+  // Store for migration use
+  window._migrateData = { oldData, oldConfig };
+}
+
+async function runMigration() {
+  const { oldData, oldConfig } = window._migrateData || {};
+  if (!oldData) { migrateSkip(); return; }
+
+  const btn = document.getElementById('migrateBtnGo');
+  btn.textContent = '⏳ Переносим...';
+  btn.disabled = true;
+  document.getElementById('migrateStatus').innerHTML =
+    '<div class="ai-spin" style="font-size:28px;display:inline-block;animation:spin 1s linear infinite">⏳</div>' +
+    '<div style="font-size:13px;color:var(--muted);margin-top:8px">Создаём новое хранилище...</div>';
+
+  try {
+    const userId = genUID();
+    const userName = oldConfig.userName || 'Пользователь';
+
+    // Build new GIST_DATA from old data, preserving everything
+    const newData = {
+      family_name: oldConfig.familyName || 'Семья',
+      members: oldData.members || [{ id: userId, name: userName, color: genColor(), joined: new Date().toISOString() }],
+      sections: oldData.sections || [...DEFAULT_SECTIONS],
+      budget_data: oldData.budget_data || {},
+      recurring: oldData.recurring || {},
+      last_updated: new Date().toISOString(),
+      updated_by: userName
+    };
+
+    // Create new JSONBin bin
+    const binId = await jbCreate(newData);
+    const code  = binId;
+
+    CONFIG = { binId, familyName: newData.family_name, userId, userName };
+    LS.set('bgt_config', CONFIG);
+    LS.set('bgt_family_code', code);
+    LS.set('bgt_data', newData);
+    GIST_DATA = newData;
+
+    document.getElementById('migrateModal').style.display = 'none';
+    document.getElementById('screenSetup').classList.remove('active');
+    document.getElementById('screenApp').classList.add('active');
+    initApp();
+    toast('✅ Данные перенесены! Новый код семьи — в настройках ⚙');
+
+  } catch(e) {
+    document.getElementById('migrateStatus').innerHTML =
+      `<div style="color:#f87171;font-size:13px">❌ Ошибка: ${e.message}<br/>Проверьте JB_KEY в файле и попробуйте снова.</div>`;
+    btn.textContent = '🔄 Повторить';
+    btn.disabled = false;
+  }
+}
+
+function migrateSkip() {
+  // Clear old data and start fresh
+  LS.del('bgt_config'); LS.del('bgt_data'); LS.del('bgt_family_code');
+  LS.del('bgt_lastchange');
+  document.getElementById('migrateModal').style.display = 'none';
+  document.getElementById('screenSetup').classList.add('active');
+  toast('Данные очищены. Создайте новую семью.');
+}
+
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 setupPWA();
 
@@ -2309,13 +2407,19 @@ const savedConfig = LS.get('bgt_config');
 const savedData = LS.get('bgt_data');
 
 if (savedConfig && savedData) {
-  CONFIG = savedConfig;
-  GIST_DATA = savedData;
-  document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
-  document.getElementById('screenSetup').classList.remove('active');
-  document.getElementById('screenApp').classList.add('active');
-  initApp();
-  setTimeout(syncNow, 1500);
+  if (isOldConfig(savedConfig)) {
+    // ── Old v2.0.0 config detected → show migration wizard ──────────────────
+    showMigrateModal(savedData, savedConfig);
+  } else {
+    // ── Current format (binId) → normal boot ────────────────────────────────
+    CONFIG = savedConfig;
+    GIST_DATA = savedData;
+    document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
+    document.getElementById('screenSetup').classList.remove('active');
+    document.getElementById('screenApp').classList.add('active');
+    initApp();
+    setTimeout(syncNow, 1500);
+  }
 } else {
   document.getElementById('screenSetup').classList.add('active');
 }
