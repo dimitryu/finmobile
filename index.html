@@ -506,10 +506,27 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Service Worker self-registration trick ─────────────────────────────────
+// When loaded as a SW (via ?sw=1), run SW code from localStorage and stop.
+// This avoids blob: URLs which don't survive phone restarts.
+if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope ||
+    typeof ServiceWorkerGlobalScope !== 'undefined') {
+  // Running as Service Worker
+  try {
+    const code = (typeof localStorage !== 'undefined') ? localStorage.getItem('_swCode') : null;
+    if (code) eval(code);
+  } catch(e) {}
+  // Stop — don't execute rest of app code inside SW context
+} else if (location.search.includes('?sw=')) {
+  // This page was loaded as SW candidate — just respond to SW APIs via stored code
+  // (Fallback: SW registration will fail gracefully)
+} else {
+// ──── Normal app execution starts here ───────────────────────────────────────
+
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.8.5';  // Версия приложения
+const APP_VER = '2.8.6';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1000,12 +1017,13 @@ function setupPWA() {
   const icon512 = makeIcon(512);
   const icon64  = makeIcon(64);
 
-  // Favicon + apple-touch-icon
+  // Favicon + apple-touch-icon — makeIcon() returns data: URL (stable, survives restart)
   const fav = document.getElementById('favicon');
   if (fav) fav.href = icon64;
   document.getElementById('ati').href = icon192;
 
-  // Manifest
+  // ── Manifest using data: URL (NOT blob:) ──────────────────────────────────
+  // blob: URLs are ephemeral and die on phone restart → use data: URL instead
   const manifest = {
     name:'Семейный Бюджет', short_name:'Бюджет',
     description:'Семейный финансовый трекер',
@@ -1018,84 +1036,73 @@ function setupPWA() {
     ]
   };
   try {
-    const blob = new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
-    document.getElementById('mlink').href = URL.createObjectURL(blob);
+    // data: URL is stable across restarts (unlike blob:)
+    const manifestData = 'data:application/manifest+json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(manifest));
+    document.getElementById('mlink').href = manifestData;
   } catch(e){}
 
-  // ── Service Worker: network-first with version-aware cache ──────────────────
-  // The SW stores APP_VER in cache name. On update, old caches are purged.
-  // When a new SW is waiting, we show the update banner.
+  // ── Service Worker: Injected as <script> tag trick ─────────────────────────
+  // blob: and data: SW URLs don't persist after phone restart on iOS/Android.
+  // Solution: write SW code to sessionStorage and register from same-origin URL.
+  // Falls back gracefully if SW not supported.
   const swCode = `
-const VER = 'budget-v${APP_VER}';
-const CACHE = ['/'];
-
-self.addEventListener('install', e => {
+const VER='budget-v${APP_VER}';
+self.addEventListener('install',e=>{
   self.skipWaiting();
-  e.waitUntil(caches.open(VER).then(c => c.addAll(CACHE).catch(()=>{})));
-});
-
-self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== VER).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    fetch(self.location.origin+(self.location.pathname.replace(/\\?.*$/,'')))
+      .then(r=>caches.open(VER).then(c=>c.put('app',r)))
+      .catch(()=>{})
   );
 });
-
-// Network-first: try network, fall back to cache
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VER).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('fetch',e=>{
+  if(!e.request.url.startsWith('http'))return;
+  if(e.request.method!=='GET')return;
+  // Network-first for the app HTML; cache-first not needed since data is in localStorage
   e.respondWith(
-    fetch(e.request)
-      .then(resp => {
-        if (resp.ok) {
-          const clone = resp.clone();
-          caches.open(VER).then(c => c.put(e.request, clone));
-        }
-        return resp;
-      })
-      .catch(() => caches.match(e.request))
+    fetch(e.request).catch(()=>caches.match('app').then(r=>r||caches.match(e.request)))
   );
 });
-
-// Notify clients when a new version is available
-self.addEventListener('message', e => {
-  if (e.data === 'CHECK_UPDATE') {
-    self.clients.matchAll().then(clients => {
-      clients.forEach(c => c.postMessage({type:'VERSION', ver:'${APP_VER}'}));
-    });
-  }
-});
-  `;
+`;
 
   if ('serviceWorker' in navigator) {
     try {
-      const swBlob = new Blob([swCode], {type:'application/javascript'});
-      const swURL  = URL.createObjectURL(swBlob);
+      // Store SW code in localStorage so the SW URL (a query param on same page) can read it
+      localStorage.setItem('_swCode', swCode);
 
-      navigator.serviceWorker.register(swURL, {scope:'./'})
+      // Register using the page itself with ?sw query param
+      // The page detects this at the very top and runs SW code
+      const swURL = location.pathname + '?sw=1&v=' + APP_VER;
+      navigator.serviceWorker.register(swURL, {scope: location.pathname.replace(/\/[^/]*$/, '/') || '/'})
         .then(reg => {
-          // Check for updates every 30 minutes
           setInterval(() => reg.update(), 30 * 60 * 1000);
-
-          // New SW waiting → show update banner
           reg.addEventListener('updatefound', () => {
             const newSW = reg.installing;
-            newSW.addEventListener('statechange', () => {
+            newSW?.addEventListener('statechange', () => {
               if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
                 document.getElementById('updateBanner')?.classList.add('vis');
               }
             });
           });
         })
-        .catch(()=>{});
+        .catch(() => {});
 
-      // Listen for version messages from SW
+      // Version check: if cached SW is older, show update banner
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'VERSION' && e.data.ver !== APP_VER) {
           document.getElementById('updateBanner')?.classList.add('vis');
         }
       });
+
+      // Ask SW for its version after controller loads
+      navigator.serviceWorker.ready.then(reg => {
+        reg.active?.postMessage('CHECK_VER');
+      }).catch(()=>{});
+
     } catch(e){}
   }
 
@@ -2423,6 +2430,8 @@ if (savedConfig && savedData) {
 } else {
   document.getElementById('screenSetup').classList.add('active');
 }
+
+} // end normal app execution (else block from SW self-registration trick)
 </script>
 </body>
 </html>
