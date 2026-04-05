@@ -222,7 +222,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.2</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.3</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.2</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.3</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -418,7 +418,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
           <input type="radio" name="newMonthMode" value="empty" checked style="accent-color:#3b82f6"> Пустой месяц
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer">
-          <input type="radio" name="newMonthMode" value="recurring" style="accent-color:#3b82f6"> Только постоянные статьи (📌)
+          <input type="radio" name="newMonthMode" value="recurring" style="accent-color:#3b82f6"> Только постоянные статьи (📌) — с суммами
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer">
           <input type="radio" name="newMonthMode" value="copy" style="accent-color:#3b82f6"> Скопировать из:
@@ -489,7 +489,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.2';  // Версия приложения
+const APP_VER = '2.9.3';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1956,13 +1956,33 @@ async function confirmAddMonth() {
   secs.forEach(s => { newMonth[s.id] = {}; });
 
   if (mode === 'recurring') {
-    const rec = GIST_DATA?.recurring || {};
-    const ms = sortK(Object.keys(GIST_DATA.budget_data));
-    const latest = ms.length ? GIST_DATA.budget_data[ms[ms.length-1]] : null;
+    const rec  = GIST_DATA?.recurring || {};
+    const allMonths = sortK(Object.keys(GIST_DATA.budget_data));
+
+    // For each pinned item, find the best source amount:
+    // 1st priority: currently selected month (selMonth)
+    // 2nd priority: most recent month that has a non-zero value for this item
+    // This ensures amounts are always up-to-date and not lost when they were 0 in latest month
     secs.forEach(s => {
       const secRec = rec[s.id] || {};
-      const src = latest?.[s.id] || {};
-      Object.keys(secRec).forEach(k => { if (secRec[k]) newMonth[s.id][k] = src[k] || 0; });
+      Object.keys(secRec).forEach(itemName => {
+        if (!secRec[itemName]) return; // not pinned
+
+        // Try selMonth first
+        const selAmt = GIST_DATA.budget_data[selMonth]?.[s.id]?.[itemName];
+        if (selAmt !== undefined) {
+          newMonth[s.id][itemName] = selAmt;
+          return;
+        }
+
+        // Walk back from most recent month to find last non-zero value
+        let foundAmt = 0;
+        for (let i = allMonths.length - 1; i >= 0; i--) {
+          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
+          if (amt !== undefined && amt !== 0) { foundAmt = amt; break; }
+        }
+        newMonth[s.id][itemName] = foundAmt;
+      });
     });
   } else if (mode === 'copy') {
     const srcKey = document.getElementById('newMonthCopySrc').value;
