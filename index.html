@@ -289,7 +289,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
         <button class="nav-arr" id="prevBtn">‹</button>
         <select class="msel" id="monthSel"></select>
         <button class="nav-arr" id="nextBtn">›</button>
-        <button class="add-m" id="addMonthBtn">+ Мес.</button>
+        <button class="add-m" id="addMonthBtn" onclick="openAddMonthModal()">+ Мес.</button>
         <button class="add-m" id="copyMonthBtn" onclick="openCopyMonth()" title="Копировать данные из другого месяца" style="background:var(--card2);color:#60a5fa;border-color:#3b82f6">📋</button>
       </div>
       <div class="tabs">
@@ -376,6 +376,43 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   </div>
 </div>
 
+<!-- Add Month modal -->
+<div class="modal-bg" id="addMonthModal">
+  <div class="modal">
+    <button class="mclose" onclick="document.getElementById('addMonthModal').classList.remove('open')">×</button>
+    <h3>📅 Добавить месяц</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+      Выберите любой месяц и год для добавления в бюджет.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <div class="mlabel">Месяц</div>
+        <select class="month-src-sel" id="newMonthMon" style="margin:0"></select>
+      </div>
+      <div>
+        <div class="mlabel">Год</div>
+        <select class="month-src-sel" id="newMonthYear" style="margin:0"></select>
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div class="mlabel">Данные для нового месяца</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer">
+          <input type="radio" name="newMonthMode" value="empty" checked style="accent-color:#3b82f6"> Пустой месяц
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer">
+          <input type="radio" name="newMonthMode" value="recurring" style="accent-color:#3b82f6"> Только постоянные статьи (📌)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer">
+          <input type="radio" name="newMonthMode" value="copy" style="accent-color:#3b82f6"> Скопировать из:
+          <select class="month-src-sel" id="newMonthCopySrc" style="margin:0;flex:1;font-size:12px;padding:5px 8px"></select>
+        </label>
+      </div>
+    </div>
+    <button class="sbtn sbtn-green" style="font-size:13px" onclick="confirmAddMonth()">✅ Создать месяц</button>
+  </div>
+</div>
+
 <!-- Copy Month modal -->
 <div class="modal-bg" id="copyMonthModal">
   <div class="modal">
@@ -458,7 +495,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.8.0';  // Версия приложения
+const APP_VER = '2.8.1';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -721,13 +758,15 @@ function getSectionStatLabel(s) {
 function isItemRecurring(sec, key) {
   return GIST_DATA?.recurring?.[sec]?.[key] === true;
 }
-function toggleItemRecurring(sec, key) {
+async function toggleItemRecurring(sec, key) {
+  if (!GIST_DATA) return;
   if (!GIST_DATA.recurring) GIST_DATA.recurring = {};
   if (!GIST_DATA.recurring[sec]) GIST_DATA.recurring[sec] = {};
   const cur = GIST_DATA.recurring[sec][key];
   if (cur) delete GIST_DATA.recurring[sec][key];
   else GIST_DATA.recurring[sec][key] = true;
-  pushData();
+  // Persist immediately - both localStorage and remote
+  await pushData();
   renderMonth(); renderStats();
 }
 
@@ -810,7 +849,11 @@ function renderSettingsSections() {
          ondragstart="secDragStart(event,'${s.id}')"
          ondragover="secDragOver(event)"
          ondragleave="secDragLeave(event)"
-         ondrop="secDrop(event,'${s.id}')">
+         ondrop="secDrop(event,'${s.id}')"
+         ontouchstart="secTouchStart(event,'${s.id}')"
+         ontouchmove="secTouchMove(event)"
+         ontouchend="secTouchEnd(event)"
+         style="touch-action:none">
       <span class="drag-handle" title="Перетащить для сортировки">⠿</span>
       <span style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0;display:inline-block"></span>
       <span style="font-size:12px;color:var(--white);flex:1">${getSectionLabel(s)}</span>
@@ -820,34 +863,73 @@ function renderSettingsSections() {
     </div>`).join('');
 }
 
-// ─── SECTION DRAG-AND-DROP SORT ───────────────────────────────────────────────
+// ─── SECTION DRAG-AND-DROP SORT (touch + mouse, works on iOS/Android/Desktop) ─
 let _dragSecId = null;
+let _touchDragEl = null;
+let _touchClone = null;
+let _touchStartY = 0;
+
 function secDragStart(e, id) {
   _dragSecId = id;
   e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => e.target.closest('.sec-drag-row')?.classList.add('dragging'), 0);
+  setTimeout(() => document.querySelector(`.sec-drag-row[data-sid="${id}"]`)?.classList.add('dragging'), 0);
 }
 function secDragOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   e.currentTarget.classList.add('drag-over');
 }
-function secDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
+function secDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
 async function secDrop(e, targetId) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  if (!_dragSecId || _dragSecId === targetId) { _dragSecId = null; return; }
+  document.querySelectorAll('.sec-drag-row').forEach(r => r.classList.remove('dragging'));
+  await _doReorder(_dragSecId, targetId);
+  _dragSecId = null;
+}
+
+// Touch events for iOS Safari
+function secTouchStart(e, id) {
+  _dragSecId = id;
+  _touchStartY = e.touches[0].clientY;
+  _touchDragEl = e.currentTarget;
+  _touchDragEl.classList.add('dragging');
+  // Create floating clone
+  _touchClone = _touchDragEl.cloneNode(true);
+  _touchClone.style.cssText = `position:fixed;left:${_touchDragEl.getBoundingClientRect().left}px;top:${_touchDragEl.getBoundingClientRect().top}px;width:${_touchDragEl.offsetWidth}px;opacity:0.85;pointer-events:none;z-index:9999;background:#1a2236;border-radius:9px;border:1px solid #3b82f6`;
+  document.body.appendChild(_touchClone);
+}
+function secTouchMove(e) {
+  e.preventDefault();
+  if (!_touchClone) return;
+  const dy = e.touches[0].clientY - _touchStartY;
+  _touchClone.style.top = (_touchDragEl.getBoundingClientRect().top + dy) + 'px';
+  // Highlight target
+  document.querySelectorAll('.sec-drag-row').forEach(r => r.classList.remove('drag-over'));
+  const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+  el?.closest('.sec-drag-row')?.classList.add('drag-over');
+}
+async function secTouchEnd(e) {
+  if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+  if (_touchDragEl) _touchDragEl.classList.remove('dragging');
+  document.querySelectorAll('.sec-drag-row').forEach(r => r.classList.remove('drag-over'));
+  const touch = e.changedTouches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const targetRow = el?.closest('.sec-drag-row');
+  const targetId = targetRow?.dataset.sid;
+  if (targetId && targetId !== _dragSecId) await _doReorder(_dragSecId, targetId);
+  _dragSecId = null; _touchDragEl = null;
+}
+
+async function _doReorder(fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return;
   const secs = getSections();
-  const fromIdx = secs.findIndex(s => s.id === _dragSecId);
-  const toIdx   = secs.findIndex(s => s.id === targetId);
-  if (fromIdx < 0 || toIdx < 0) { _dragSecId = null; return; }
-  // Reorder
+  const fromIdx = secs.findIndex(s => s.id === fromId);
+  const toIdx   = secs.findIndex(s => s.id === toId);
+  if (fromIdx < 0 || toIdx < 0) return;
   const moved = secs.splice(fromIdx, 1)[0];
   secs.splice(toIdx, 0, moved);
   GIST_DATA.sections = secs;
-  _dragSecId = null;
   await pushData();
   renderSettingsSections();
   renderView();
@@ -1367,7 +1449,7 @@ function secHTML(sec, title, color, items, total) {
     const sk = encodeURIComponent(k);
     const pinned = isItemRecurring(sec, k);
     return `<div class="item2">
-      <button class="pin-btn${pinned?' pinned':''}" onclick="toggleItemRecurring('${sec}','${decodeURIComponent(sk)}')" title="${pinned?t('pinOn'):t('pinOff')}">📌</button>
+      <button class="pin-btn${pinned?' pinned':''}" data-psec="${sec}" data-pkey="${sk}" title="${pinned?t('pinOn'):t('pinOff')}">📌</button>
       <span class="iname" title="${k}">${k}</span>
       <div class="iright">
         ${isEd ? `<input class="ein" id="editIn" type="number" value="${v||0}"/>`
@@ -1461,6 +1543,12 @@ function bindMonth() {
       collapsed.has(s) ? collapsed.delete(s) : collapsed.add(s);
       saveCollapsed();
       renderMonth(); renderStats();
+    });
+  });
+  document.querySelectorAll('.pin-btn[data-psec]').forEach(b => {
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleItemRecurring(b.dataset.psec, decodeURIComponent(b.dataset.pkey));
     });
   });
   document.querySelectorAll('.iamt').forEach(el => {
@@ -1688,26 +1776,73 @@ document.getElementById('nextBtn').addEventListener('click', () => {
   if(i<ms.length-1){selMonth=ms[i+1];editing=null;buildSel();renderView();}
 });
 document.getElementById('monthSel').addEventListener('change', e => { selMonth=e.target.value; editing=null; renderView(); });
-document.getElementById('addMonthBtn').addEventListener('click', () => {
-  const data=getBudgetData(), ms=sortK(Object.keys(data)), latest=ms[ms.length-1];
-  const {m,y}=pk(latest); let nm=m+1,ny=y; if(nm>12){nm=1;ny++;}
-  const key=String(nm).padStart(2,'0')+'_'+String(ny-2000).padStart(2,'0');
-  if(data[key]){toast(t('monthExists'));return;}
-  const base=data[latest];
-  const rec=GIST_DATA?.recurring||{};
-  const newMonth={debts:[],edp_target:15000};
-  // Recurring items keep their value; non-recurring items get 0
-  getSections().forEach(s=>{
-    const secRec=rec[s.id]||{};
-    const srcItems=base[s.id]||{};
-    newMonth[s.id]=Object.fromEntries(
-      Object.keys(srcItems).map(k=>[k, secRec[k]===true ? (srcItems[k]||0) : 0])
-    );
-  });
-  // Ensure all items from previous month are present (as keys), recurring or not
-  data[key]=newMonth;
-  selMonth=key; pushData(); buildSel(); renderView(); toast(t('monthCreated')+' '+fmtK(key));
-});
+// ─── ADD MONTH MODAL ──────────────────────────────────────────────────────────
+function openAddMonthModal() {
+  const now = new Date();
+  const data = getBudgetData();
+  const existing = new Set(Object.keys(data));
+
+  // Populate month selector
+  const monSel = document.getElementById('newMonthMon');
+  const yearSel = document.getElementById('newMonthYear');
+  const copySrc = document.getElementById('newMonthCopySrc');
+
+  monSel.innerHTML = MN.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  monSel.value = now.getMonth() + 1;
+
+  const thisYear = now.getFullYear();
+  yearSel.innerHTML = '';
+  for (let y = thisYear - 5; y <= thisYear + 2; y++) {
+    yearSel.innerHTML += `<option value="${y}"${y===thisYear?' selected':''}>${y}</option>`;
+  }
+
+  // Copy source months
+  const months = sortK(Object.keys(data)).reverse();
+  copySrc.innerHTML = months.map(k=>`<option value="${k}">${fmtK(k)}</option>`).join('');
+
+  document.getElementById('addMonthModal').classList.add('open');
+}
+
+async function confirmAddMonth() {
+  const m = String(document.getElementById('newMonthMon').value).padStart(2,'0');
+  const y = String(+document.getElementById('newMonthYear').value - 2000).padStart(2,'0');
+  const key = `${m}_${y}`;
+  const data = getBudgetData();
+  const secs = getSections();
+
+  if (data[key]) { toast(t('monthExists') + ' — ' + fmtK(key)); return; }
+
+  const mode = document.querySelector('input[name="newMonthMode"]:checked')?.value || 'empty';
+  const newMonth = { debts:[], edp_target:15000 };
+  secs.forEach(s => { newMonth[s.id] = {}; });
+
+  if (mode === 'recurring') {
+    // Keep only recurring items with their values
+    const rec = GIST_DATA?.recurring || {};
+    // Find latest month's data for values
+    const ms = sortK(Object.keys(data));
+    const latest = ms.length ? data[ms[ms.length-1]] : null;
+    secs.forEach(s => {
+      const secRec = rec[s.id] || {};
+      const src = latest?.[s.id] || {};
+      Object.keys(secRec).forEach(k => {
+        if (secRec[k]) newMonth[s.id][k] = src[k] || 0;
+      });
+    });
+  } else if (mode === 'copy') {
+    const srcKey = document.getElementById('newMonthCopySrc').value;
+    const src = data[srcKey] || {};
+    secs.forEach(s => { newMonth[s.id] = {...(src[s.id]||{})}; });
+    newMonth.debts = (src.debts||[]).map(d=>({...d}));
+  }
+
+  data[key] = newMonth;
+  document.getElementById('addMonthModal').classList.remove('open');
+  selMonth = key;
+  await pushData();
+  buildSel(); renderView();
+  toast(t('monthCreated') + ' ' + fmtK(key));
+}
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
     curView=t.dataset.view; editing=null; addSec=null; addDebtMode=false;
