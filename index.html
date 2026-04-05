@@ -474,11 +474,11 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.8.2';  // Версия приложения
+const APP_VER = '2.8.3';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
-const JB_KEY = '$2a$10$/zs.s/Wqx8QkniG0b3DvmufXWf29tzG4NnkeSgT3qZ0Yc6pvZgMyO'; // ← ЗАМЕНИТЕ на свой ключ
+const JB_KEY = '$2b$10$QkJgJrwqFT6vPOcnY5NQKuTZCmPZxL9T3VQfD0BRxKxUjIhE7jUKy'; // ← ЗАМЕНИТЕ на свой ключ
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -744,9 +744,11 @@ async function toggleItemRecurring(sec, key) {
   const cur = GIST_DATA.recurring[sec][key];
   if (cur) delete GIST_DATA.recurring[sec][key];
   else GIST_DATA.recurring[sec][key] = true;
-  // Persist immediately - both localStorage and remote
-  await pushData();
-  renderMonth(); renderStats();
+  // ★ Save to localStorage immediately BEFORE any async operation
+  LS.set('bgt_data', GIST_DATA);
+  renderMonth(); renderStats();  // show updated state right away
+  // Then push to remote in the background
+  pushData();
 }
 
 function ensureSectionInMonths(secId) {
@@ -1247,6 +1249,14 @@ function setSyncStatus(state, text) {
   txt.textContent = text;
 }
 
+// ★ _lastLocalChange persists in localStorage so it survives page reloads
+function getLastLocalChange() {
+  try { return localStorage.getItem('bgt_lastchange') || '0'; } catch(e) { return '0'; }
+}
+function markLocalChange() {
+  try { localStorage.setItem('bgt_lastchange', new Date().toISOString()); } catch(e) {}
+}
+
 async function syncNow() {
   if (!CONFIG?.binId) return;
   setSyncStatus('spin', t('syncing'));
@@ -1254,8 +1264,12 @@ async function syncNow() {
     const remote = await jbRead(CONFIG.binId);
     const localTs  = GIST_DATA?.last_updated || '0';
     const remoteTs = remote?.last_updated   || '0';
-    // Only update if remote is strictly newer AND we don't have pending local changes
-    if (remoteTs > localTs && !_pendingPush) {
+    const lastChange = getLastLocalChange();
+
+    // Only pull from remote if:
+    // 1. Remote is strictly newer than local
+    // 2. AND we haven't made local changes more recently than the remote update
+    if (remoteTs > localTs && remoteTs > lastChange) {
       GIST_DATA = remote;
       LS.set('bgt_data', GIST_DATA);
       buildSel(); renderView(); updateSubTitle();
@@ -1267,32 +1281,23 @@ async function syncNow() {
   }
 }
 
-// Track whether we have unsaved local changes that haven't made it to remote yet
-let _pendingPush = false;
-
-// Save to localStorage immediately (sync), then push to remote async
-function saveLocal() {
-  LS.set('bgt_data', GIST_DATA);
-}
-
+// ★ pushData: remote sync only — localStorage is already saved by setMD/toggleItemRecurring
 async function pushData() {
   if (!CONFIG?.binId || !GIST_DATA) return;
-  _pendingPush = true;
   GIST_DATA.last_updated = new Date().toISOString();
   GIST_DATA.updated_by   = CONFIG.userName;
-  // Save to localStorage FIRST (always succeeds)
-  saveLocal();
+  // Mark when we last changed data locally (survives page reload)
+  markLocalChange();
+  // Always save to localStorage (belt + suspenders — setMD already does this for budget_data)
+  LS.set('bgt_data', GIST_DATA);
   setSyncStatus('spin', t('saving'));
   try {
     await jbUpdate(CONFIG.binId, GIST_DATA);
     setSyncStatus('ok', t('syncOk'));
     updateSubTitle();
-    _pendingPush = false;
   } catch(e) {
     setSyncStatus('err', t('syncErr'));
-    // Data saved locally — will retry on next manual sync
-    // _pendingPush stays true to protect local data from being overwritten by syncNow
-    setTimeout(() => { _pendingPush = false; }, 30000); // allow overwrite after 30s
+    // Data is safely in localStorage — will be pushed on next manual sync
   }
 }
 
@@ -1376,12 +1381,19 @@ function getMD() {
   const md = d[selMonth] || { income:{}, fixed:{}, variable:{}, debts:[], edp_target:15000 };
   // Ensure all defined sections exist in this month
   getSections().forEach(s => { if (!md[s.id]) md[s.id] = {}; });
+  // If this is a new month object (not yet in budget_data), register it now
+  if (!d[selMonth]) {
+    if (!GIST_DATA.budget_data) GIST_DATA.budget_data = {};
+    GIST_DATA.budget_data[selMonth] = md;
+  }
   return md;
 }
 function setMD(monthData) {
   if (!GIST_DATA) return;
   if (!GIST_DATA.budget_data) GIST_DATA.budget_data = {};
   GIST_DATA.budget_data[selMonth] = monthData;
+  // ★ Always save to localStorage immediately — the remote push is best-effort
+  LS.set('bgt_data', GIST_DATA);
 }
 
 function pk(k) { const [m,y]=k.split('_'); return {m:+m, y:2000+(+y)}; }
@@ -1502,10 +1514,8 @@ function renderMonth() {
   // Build legend
   const expLegend = secs.filter(s=>s.type==='expense').map(s=>`<span><span class="dot" style="background:${s.color}"></span>${getSectionShort(s)}: ${fmtN(S(md[s.id]))}</span>`).join('');
 
-  // Build section cards grid — group income first, then expense
-  const incomeSecs = secs.filter(s=>s.type==='income');
-  const expenseSecs = secs.filter(s=>s.type==='expense');
-  const allSecCards = [...incomeSecs, ...expenseSecs].map(s =>
+  // Build section cards in user-defined order (exactly as in GIST_DATA.sections)
+  const allSecCards = secs.map(s =>
     secHTML(s.id, getSectionLabel(s), s.color, md[s.id]||{}, S(md[s.id]))
   ).join('');
 
@@ -1561,12 +1571,14 @@ function bindMonth() {
   });
   const ei = document.getElementById('editIn');
   if (ei) {
-    const commit = async () => {
+    const commit = () => {
       if (!editing) return;
       const md = getMD();
       md[editing.sec][editing.key] = parseFloat(ei.value)||0;
-      setMD(md); editing = null;
-      await pushData(); renderMonth(); renderStats();
+      setMD(md); editing = null; // setMD saves to LS
+      markLocalChange();
+      renderMonth(); renderStats();
+      pushData(); // background remote sync
     };
     ei.addEventListener('blur', commit);
     ei.addEventListener('keydown', e => { if(e.key==='Enter') commit(); if(e.key==='Escape'){editing=null;renderMonth();} });
@@ -1575,8 +1587,10 @@ function bindMonth() {
     b.addEventListener('click', async e => {
       e.stopPropagation();
       const sec=b.dataset.ds, key=decodeURIComponent(b.dataset.dk);
-      const md=getMD(); delete md[sec][key]; setMD(md);
-      await pushData(); renderMonth(); renderStats(); toast(t('deleted') + key);
+      const md=getMD(); delete md[sec][key]; setMD(md); // setMD saves to LS
+      markLocalChange();
+      renderMonth(); renderStats(); toast(t('deleted') + key);
+      pushData(); // background remote sync
     });
   });
   document.querySelectorAll('[data-asec]').forEach(b => {
@@ -1584,12 +1598,13 @@ function bindMonth() {
   });
   document.getElementById('aiCnl')?.addEventListener('click', () => { addSec=null; renderMonth(); });
   document.querySelectorAll('[data-aok]').forEach(b => {
-    b.addEventListener('click', async () => {
+    b.addEventListener('click', () => {
       const sec=b.dataset.aok, name=document.getElementById('aiN')?.value.trim(), val=parseFloat(document.getElementById('aiV')?.value)||0;
       if (!name) return;
-      const md=getMD(); md[sec][name]=val; setMD(md);
-      addSec=null;
-      await pushData(); renderMonth(); renderStats(); toast(t('added') + name);
+      const md=getMD(); md[sec][name]=val; setMD(md); // setMD saves to LS
+      markLocalChange();
+      addSec=null; renderMonth(); renderStats(); toast(t('added') + name);
+      pushData(); // background remote sync
     });
   });
 }
