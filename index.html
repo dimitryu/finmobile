@@ -222,7 +222,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.6</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.7</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +288,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.6</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.7</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -352,12 +352,36 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   <div class="modal modal-wide">
     <button class="mclose" onclick="closeImportExport()">×</button>
     <h3>📊 Импорт / Экспорт Excel</h3>
-    <div class="mlabel">⬇ Экспорт данных в Excel</div>
+
+    <!-- EXPORT ALL -->
+    <div class="mlabel">⬇ Экспорт всех месяцев</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
-      Скачать все месяцы в файл <b>.xlsx</b> — каждый месяц на отдельном листе с разделами Доходы, Расходы, Кредиты.
+      Скачать <b>все месяцы</b> в файл .xlsx — каждый месяц на отдельном листе.
     </p>
-    <button class="sbtn sbtn-green" style="font-size:13px" onclick="exportToExcel()">⬇ Скачать Excel файл</button>
+    <button class="sbtn sbtn-green" style="font-size:13px" onclick="exportToExcel('all')">⬇ Все месяцы</button>
+
+    <!-- EXPORT SINGLE -->
+    <div class="mlabel" style="margin-top:12px">⬇ Экспорт одного месяца</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+      <select class="month-src-sel" id="exportMonthSel" style="margin:0;flex:1;font-size:13px;padding:8px 10px"></select>
+      <button class="sbtn sbtn-green" style="font-size:13px;width:auto;padding:10px 16px;margin:0" onclick="exportToExcel('single')">⬇ Экспорт</button>
+    </div>
+
     <hr class="ie-divider"/>
+
+    <!-- DELETE MONTH -->
+    <div class="mlabel" style="color:#f87171">🗑 Удалить месяц</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+      <select class="month-src-sel" id="deleteMonthSel" style="margin:0;flex:1;font-size:13px;padding:8px 10px"></select>
+      <button onclick="deleteMonth()" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);color:#f87171;border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑 Удалить</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.5">
+      ⚠ Удаление необратимо. Создайте резервную копию через «Экспорт» перед удалением.
+    </p>
+
+    <hr class="ie-divider"/>
+
+    <!-- IMPORT -->
     <div class="mlabel">⬆ Импорт из Excel (AI-анализ)</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
       Загрузите файл <b>.xlsx</b> или <b>.xls</b> — ИИ автоматически распознает структуру и заполнит все месяцы.
@@ -489,7 +513,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.6';  // Версия приложения
+const APP_VER = '2.9.7';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1594,8 +1618,17 @@ function buildSel() {
   const sel = document.getElementById('monthSel');
   if (!sel) return;
   sel.innerHTML = [...ms].reverse().map(k => `<option value="${k}"${k===selMonth?' selected':''}>${fmtK(k)}</option>`).join('');
-  document.getElementById('prevBtn').disabled = ms.indexOf(selMonth) === 0;
-  document.getElementById('nextBtn').disabled = ms.indexOf(selMonth) === ms.length - 1;
+
+  // Current calendar month key
+  const now = new Date();
+  const curKey = `${String(now.getMonth()+1).padStart(2,'0')}_${String(now.getFullYear()-2000).padStart(2,'0')}`;
+
+  const idx = ms.indexOf(selMonth);
+  // Prev: disabled if first month
+  document.getElementById('prevBtn').disabled = idx === 0;
+  // Next: disabled if at current month OR at a future month (don't allow browsing into the future)
+  const nextKey = ms[idx + 1];
+  document.getElementById('nextBtn').disabled = !nextKey || nextKey >= curKey;
 }
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
@@ -2016,8 +2049,12 @@ document.getElementById('prevBtn').addEventListener('click', () => {
   if(i>0){selMonth=ms[i-1];editing=null;buildSel();renderView();}
 });
 document.getElementById('nextBtn').addEventListener('click', () => {
-  const ms=sortK(Object.keys(getBudgetData())), i=ms.indexOf(selMonth);
-  if(i<ms.length-1){selMonth=ms[i+1];editing=null;buildSel();renderView();}
+  const now = new Date();
+  const curKey = `${String(now.getMonth()+1).padStart(2,'0')}_${String(now.getFullYear()-2000).padStart(2,'0')}`;
+  const ms = sortK(Object.keys(getBudgetData()));
+  const i  = ms.indexOf(selMonth);
+  const nextKey = ms[i + 1];
+  if (nextKey && nextKey < curKey) { selMonth=nextKey; editing=null; buildSel(); renderView(); }
 });
 document.getElementById('monthSel').addEventListener('change', e => { selMonth=e.target.value; editing=null; renderView(); });
 
@@ -2117,55 +2154,103 @@ function getInitialData() {
 // ─── IMPORT / EXPORT ──────────────────────────────────────────────────────────
 let importedData = null;
 
-function openImportExport() { resetImport(); document.getElementById('ieModal').classList.add('open'); }
+function openImportExport() {
+  resetImport();
+  // Populate export single + delete month selectors
+  const months = sortK(Object.keys(getBudgetData())).reverse();
+  const opts = months.map(k => `<option value="${k}"${k===selMonth?' selected':''}>${fmtK(k)}</option>`).join('');
+  const exp = document.getElementById('exportMonthSel');
+  const del = document.getElementById('deleteMonthSel');
+  if (exp) exp.innerHTML = opts;
+  if (del) del.innerHTML = opts;
+  document.getElementById('ieModal').classList.add('open');
+}
 function closeImportExport() { document.getElementById('ieModal').classList.remove('open'); }
 
-function exportToExcel() {
+// ── Shared: build worksheet for one month ────────────────────────────────────
+function _buildMonthSheet(key, md) {
+  const secs = getSections();
+  const rows = [];
+  const hdr = [''];
+  secs.forEach(s => hdr.push(s.label, 'Сумма'));
+  hdr.push('', 'Кредиты', 'Платёж/мес', '', 'Выплат осталось');
+  rows.push(hdr);
+  const secEntries = secs.map(s => Object.entries(md[s.id]||{}).filter(([,v])=>v>0));
+  const debtRows = (md.debts||[]);
+  const maxRows = Math.max(...secEntries.map(e=>e.length), debtRows.length, 1);
+  for (let i = 0; i < maxRows; i++) {
+    const row = [''];
+    secs.forEach((s, si) => {
+      const e = secEntries[si][i];
+      row.push(e ? e[0] : '', e ? (e[1]||0) : '');
+    });
+    const d = debtRows[i];
+    row.push('', d ? d.name : '', d ? d.monthly : '', '', d ? d.payments_left : '');
+    rows.push(row);
+  }
+  rows.push(['']);
+  const totRow = ['ИТОГО'];
+  secs.forEach(s => {
+    const total = Object.values(md[s.id]||{}).reduce((a,v)=>a+(+v||0),0);
+    totRow.push('', total);
+  });
+  rows.push(totRow);
+  const debtTotal = debtRows.reduce((s,d)=>s+(d.monthly||0),0);
+  rows.push(['', ...Array(secs.length*2).fill(''), '', 'Итого/мес', debtTotal]);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch:2 }, ...secs.flatMap(()=>[{wch:24},{wch:10}]), {wch:2},{wch:24},{wch:10},{wch:2},{wch:14}];
+  return ws;
+}
+
+function exportToExcel(mode) {
   if (typeof XLSX === 'undefined') { toast('⚠ Библиотека XLSX не загружена'); return; }
   const budgetData = getBudgetData();
-  const months = sortK(Object.keys(budgetData));
-  if (!months.length) { toast('⚠ Нет данных для экспорта'); return; }
   const wb = XLSX.utils.book_new();
-  months.forEach(key => {
-    const md = budgetData[key];
-    const secs = getSections();
-    const rows = [];
-    const hdr = [''];
-    const secCols = secs.map(s => [s.label, 'Сумма']);
-    secCols.forEach(c => hdr.push(...c));
-    hdr.push('', 'Кредиты', 'Сумма', '', 'Выплат осталось', 'В месяц');
-    rows.push(hdr);
-    const secEntries = secs.map(s => Object.entries(md[s.id]||{}).filter(([,v])=>v>0));
-    const debtRows = (md.debts||[]);
-    const maxRows = Math.max(...secEntries.map(e=>e.length), debtRows.length, 1);
-    for (let i = 0; i < maxRows; i++) {
-      const row = [''];
-      secs.forEach((s, si) => {
-        const e = secEntries[si][i];
-        row.push(e ? e[0] : '', e ? (e[1]||0) : '');
-      });
-      const d = debtRows[i];
-      row.push('', d ? d.name : '', d ? d.monthly : '', '', d ? d.payments_left : '', '');
-      rows.push(row);
-    }
-    rows.push(['']);
-    const totRow = ['ИТОГО'];
-    secs.forEach(s => {
-      const total = Object.values(md[s.id]||{}).reduce((a,v)=>a+(+v||0),0);
-      totRow.push('', total);
-    });
-    rows.push(totRow);
-    const debtTotal = debtRows.reduce((s,d)=>s+(d.monthly||0),0);
-    rows.push(['', ...Array(secs.length*2).fill(''), '', 'Итого/мес', debtTotal]);
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch:2 }, ...secs.flatMap(()=>[{wch:24},{wch:10}]), {wch:2},{wch:24},{wch:10},{wch:2},{wch:12},{wch:10}];
+  let fname;
+
+  if (mode === 'single') {
+    const key = document.getElementById('exportMonthSel')?.value;
+    if (!key || !budgetData[key]) { toast('⚠ Выберите месяц'); return; }
     const sheetName = fmtK(key).replace(/[:\\\/\?\*\[\]]/g,'').slice(0,31);
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  });
-  const fname = `Семейный_Бюджет_${new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, _buildMonthSheet(key, budgetData[key]), sheetName);
+    fname = `Бюджет_${sheetName.replace(/\s/g,'_')}.xlsx`;
+  } else {
+    // all months
+    const months = sortK(Object.keys(budgetData));
+    if (!months.length) { toast('⚠ Нет данных для экспорта'); return; }
+    months.forEach(key => {
+      const sheetName = fmtK(key).replace(/[:\\\/\?\*\[\]]/g,'').slice(0,31);
+      XLSX.utils.book_append_sheet(wb, _buildMonthSheet(key, budgetData[key]), sheetName);
+    });
+    fname = `Семейный_Бюджет_${new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')}.xlsx`;
+  }
+
   XLSX.writeFile(wb, fname);
-  toast('✅ Файл сохранён: ' + fname);
+  toast('✅ ' + fname);
   closeImportExport();
+}
+
+// ── Delete month ──────────────────────────────────────────────────────────────
+async function deleteMonth() {
+  const key = document.getElementById('deleteMonthSel')?.value;
+  if (!key) return;
+  const label = fmtK(key);
+  if (!confirm(`🗑 Удалить ${label}?\n\nВсе данные этого месяца будут удалены безвозвратно.`)) return;
+
+  delete GIST_DATA.budget_data[key];
+  LS.set('bgt_data', GIST_DATA);
+
+  // If deleted month was current → switch to most recent remaining
+  const remaining = sortK(Object.keys(GIST_DATA.budget_data));
+  if (remaining.length) {
+    selMonth = remaining[remaining.length - 1];
+  }
+
+  closeImportExport();
+  buildSel();
+  renderView();
+  toast(`🗑 ${label} удалён`);
+  pushData();
 }
 
 function handleFileDrop(e) {
