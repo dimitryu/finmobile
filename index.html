@@ -118,9 +118,14 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .pin-btn{background:none;border:none;font-size:11px;cursor:pointer;padding:0 3px;opacity:.25;transition:opacity .15s,transform .1s;flex-shrink:0;line-height:1}
 .pin-btn:hover{opacity:.7}
 .pin-btn.pinned{opacity:1;transform:rotate(-20deg)}
-.del2{color:#f87171;font-size:9px;cursor:pointer;background:none;border:none;opacity:0;padding:0 2px}
-.item2:hover .del2{opacity:1}
-.ein{width:68px;background:#374151;color:white;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;font-family:monospace;outline:none;text-align:right}
+.del2{color:#f87171;font-size:13px;cursor:pointer;background:none;border:none;opacity:0;padding:2px 5px;border-radius:4px;flex-shrink:0;transition:opacity .15s,background .1s;line-height:1}
+.item2:hover .del2{opacity:.55}
+.del2:hover{opacity:1!important;background:rgba(248,113,113,.15)}
+.ein{width:72px;background:#374151;color:white;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;font-family:monospace;outline:none;text-align:right}
+.edit-amt-wrap{display:flex;align-items:center;gap:3px}
+.emode-btn{background:#1f2937;border:1px solid #374151;color:var(--muted);border-radius:4px;padding:2px 7px;font-size:12px;font-weight:700;cursor:pointer;line-height:1.4;transition:all .12s}
+.emode-btn.active{background:#2563eb;border-color:#3b82f6;color:white}
+.emode-btn:hover:not(.active){border-color:#4b5563;color:var(--text)}
 .add-row2{display:flex;gap:3px;margin-top:7px}
 .add-row2 input{flex:1;background:var(--card2);color:white;border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:calc(13px * var(--fs));outline:none;min-width:0}
 .add-row2 input:focus{border-color:#3b82f6}
@@ -222,7 +227,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.7</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.8</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -288,7 +293,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.7</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.8</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -498,6 +503,26 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <input class="sinp" id="changeNameInp" placeholder="Изменить имя..."/>
     <button class="sbtn sbtn-green" style="margin-top:6px" id="btnSaveName" onclick="changeName()">Сохранить имя</button>
     <button class="sbtn sbtn-gray" style="margin-top:8px" id="btnLeave" onclick="leaveFamily()">🚪 Выйти из семьи</button>
+    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0"/>
+    <div class="mlabel">💾 Резервные копии</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5">Ежедневный автобэкап в 07:00. Хранится до 10 копий.</p>
+    <div style="display:flex;gap:6px">
+      <button class="sbtn sbtn-purple" style="font-size:12px;padding:9px" onclick="openBackupModal()">📂 Резервные копии</button>
+      <button class="sbtn sbtn-gray" style="font-size:12px;padding:9px" onclick="runDailyBackup(true)">💾 Бэкап сейчас</button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup modal -->
+<div class="modal-bg" id="backupModal">
+  <div class="modal">
+    <button class="mclose" onclick="closeBackupModal()">×</button>
+    <h3>💾 Резервные копии</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+      Автоматический бэкап каждый день в 07:00. Хранится до 10 копий локально на устройстве.
+    </p>
+    <div id="backupList"></div>
+    <button class="sbtn sbtn-gray" style="font-size:12px;margin-top:8px" onclick="runDailyBackup(true)">💾 Создать копию сейчас</button>
   </div>
 </div>
 
@@ -513,7 +538,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.7';  // Версия приложения
+const APP_VER = '2.9.8';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1196,33 +1221,26 @@ function setupPWA() {
   }
 
   // ── Service Worker — регистрация из ./sw.js ───────────────────────────────
-  // ./sw.js лежит рядом с index.html на GitHub Pages.
-  // Реальный файл на том же origin → переживает перезапуск телефона навсегда.
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js', { scope: swScope })
       .then(reg => {
-        // Проверка обновлений каждые 30 минут
         setInterval(() => reg.update(), 30 * 60 * 1000);
-        // Новый SW установлен → показываем баннер обновления
+        // Баннер показываем ТОЛЬКО если:
+        // 1) Страница уже контролировалась SW (не первая установка)
+        // 2) Новый SW установился И его версия реально отличается от APP_VER
+        // 3) В этой сессии баннер ещё не показывали
         reg.addEventListener('updatefound', () => {
+          if (!navigator.serviceWorker.controller) return; // первая установка — не апдейт
+          if (sessionStorage.getItem('_updateShown')) return; // уже показывали
           const nw = reg.installing;
           nw?.addEventListener('statechange', () => {
-            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            if (nw.state === 'installed') {
+              sessionStorage.setItem('_updateShown', '1');
               document.getElementById('updateBanner')?.classList.add('vis');
             }
           });
         });
       })
-      .catch(() => {});
-
-    // Версия SW не совпадает с APP_VER → показываем баннер обновления
-    navigator.serviceWorker.addEventListener('message', e => {
-      if (e.data?.type === 'VERSION' && e.data.ver !== APP_VER) {
-        document.getElementById('updateBanner')?.classList.add('vis');
-      }
-    });
-    navigator.serviceWorker.ready
-      .then(reg => reg.active?.postMessage('CHECK_VER'))
       .catch(() => {});
   }
 
@@ -1248,6 +1266,8 @@ function setupPWA() {
 
 // Apply update: clear caches + SW, then hard reload
 async function applyUpdate() {
+  document.getElementById('updateBanner')?.classList.remove('vis');
+  sessionStorage.removeItem('_updateShown'); // allow banner on next real update
   toast('🔄 Обновление...');
   try {
     if ('serviceWorker' in navigator) {
@@ -1445,9 +1465,89 @@ function initApp() {
   if (syncTimer) clearInterval(syncTimer);
   syncTimer = setInterval(syncNow, 300000);
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
+  // Start daily backup scheduler
+  scheduleBackup();
 }
 
 function saveLocal() { LS.set('bgt_data', GIST_DATA); }
+
+// ─── DAILY BACKUP SYSTEM ──────────────────────────────────────────────────────
+// Runs every day at 07:00. Stores up to 10 snapshots in localStorage.
+// Each backup = full GIST_DATA snapshot with timestamp.
+const BACKUP_KEY   = 'bgt_backups';
+const BACKUP_MAXN  = 10;
+const BACKUP_HOUR  = 7; // 07:00 local time
+
+function getBackups() {
+  try { return JSON.parse(localStorage.getItem(BACKUP_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveBackups(list) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(list)); } catch(e) {}
+}
+
+function runDailyBackup(force) {
+  if (!GIST_DATA) return;
+  const backups  = getBackups();
+  const today    = new Date().toLocaleDateString('ru-RU'); // "07.04.2026"
+  // Don't back up twice on the same day (unless forced)
+  if (!force && backups.length && backups[0].date === today) return;
+  const snap = {
+    date:      today,
+    ts:        new Date().toISOString(),
+    label:     new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+    data:      JSON.parse(JSON.stringify(GIST_DATA)), // deep clone
+  };
+  backups.unshift(snap);
+  if (backups.length > BACKUP_MAXN) backups.length = BACKUP_MAXN;
+  saveBackups(backups);
+  if (force) toast(`💾 Резервная копия создана: ${snap.label}`);
+}
+
+function restoreBackup(idx) {
+  const backups = getBackups();
+  const snap    = backups[idx];
+  if (!snap) return;
+  const label   = snap.label;
+  if (!confirm(`Восстановить данные из резервной копии от ${label}?\n\nТекущие данные будут заменены.`)) return;
+  GIST_DATA = JSON.parse(JSON.stringify(snap.data));
+  LS.set('bgt_data', GIST_DATA);
+  buildSel(); renderView(); updateSubTitle();
+  toast(`✅ Восстановлено из копии: ${label}`);
+  pushData();
+}
+
+function openBackupModal() {
+  const backups = getBackups();
+  const list    = backups.length === 0
+    ? '<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Резервных копий пока нет.<br>Первая будет создана сегодня в 07:00.</p>'
+    : backups.map((b, i) => {
+        const months = Object.keys(b.data?.budget_data || {}).length;
+        return `<div style="background:var(--card2);border-radius:9px;padding:10px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--white);font-weight:600">📁 ${b.label}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${months} месяцев · ${b.data?.family_name || ''}</div>
+          </div>
+          <button onclick="restoreBackup(${i});closeBackupModal()" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;border-radius:6px;padding:5px 11px;font-size:11px;cursor:pointer;white-space:nowrap">↩ Восстановить</button>
+        </div>`;
+      }).join('');
+  document.getElementById('backupList').innerHTML = list;
+  document.getElementById('backupModal').classList.add('open');
+}
+function closeBackupModal() { document.getElementById('backupModal').classList.remove('open'); }
+
+// Schedule backup: check every 5 min if it's past 07:00 and no backup yet today
+let _backupTimer = null;
+function scheduleBackup() {
+  if (_backupTimer) clearInterval(_backupTimer);
+  // Check immediately on app open
+  const now = new Date();
+  if (now.getHours() >= BACKUP_HOUR) runDailyBackup(false);
+  // Then check every 5 minutes
+  _backupTimer = setInterval(() => {
+    const h = new Date().getHours();
+    if (h >= BACKUP_HOUR) runDailyBackup(false);
+  }, 5 * 60 * 1000);
+}
 
 function updateSubTitle() {
   if (!GIST_DATA) return;
@@ -1662,12 +1762,17 @@ function secHTML(sec, title, color, items, total) {
     const sk = encodeURIComponent(k);
     const pinned = isItemRecurring(sec, k);
     return `<div class="item2">
+      <button class="del2" data-ds="${sec}" data-dk="${sk}" title="Удалить">🗑</button>
       <button class="pin-btn${pinned?' pinned':''}" data-psec="${sec}" data-pkey="${sk}" title="${pinned?t('pinOn'):t('pinOff')}">📌</button>
       <span class="iname" title="${k}">${k}</span>
       <div class="iright">
-        ${isEd ? `<input class="ein" id="editIn" type="number" value="${v||0}"/>`
-               : `<span class="iamt" style="color:${color}" data-sec="${sec}" data-key="${sk}">${fmtN(v||0)}</span>`}
-        <button class="del2" data-ds="${sec}" data-dk="${sk}">✕</button>
+        ${isEd
+          ? `<div class="edit-amt-wrap" data-sec="${sec}" data-key="${sk}" data-cur="${v||0}">
+               <button class="emode-btn active" data-mode="set" title="Установить значение">=</button>
+               <button class="emode-btn" data-mode="add" title="Прибавить к текущему">+</button>
+               <input class="ein" id="editIn" type="number" value="${v||0}" placeholder="${v||0}"/>
+             </div>`
+          : `<span class="iamt" style="color:${color}" data-sec="${sec}" data-key="${sk}">${fmtN(v||0)}</span>`}
       </div>
     </div>`;
   }).join('');
@@ -1742,7 +1847,7 @@ function renderMonth() {
 function bindMonth() {
   document.querySelectorAll('[data-toggle]').forEach(h => {
     h.addEventListener('click', e => {
-      if (e.target.closest('.iamt,.del2,.add-trig2,.add-row2,[data-asec]')) return;
+      if (e.target.closest('.iamt,.del2,.add-trig2,.add-row2,[data-asec],.pin-btn,.emode-btn,.edit-amt-wrap')) return;
       const s = h.dataset.toggle;
       collapsed.has(s) ? collapsed.delete(s) : collapsed.add(s);
       saveCollapsed();
@@ -1763,12 +1868,40 @@ function bindMonth() {
       setTimeout(() => { const i=document.getElementById('editIn'); if(i){i.focus();i.select();} }, 50);
     });
   });
+
+  // ── Add/Set mode toggle buttons ───────────────────────────────────────────
+  document.querySelectorAll('.emode-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const wrap = btn.closest('.edit-amt-wrap');
+      if (!wrap) return;
+      const curVal = parseFloat(wrap.dataset.cur) || 0;
+      const mode   = btn.dataset.mode;
+      wrap.querySelectorAll('.emode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+      const inp = document.getElementById('editIn');
+      if (!inp) return;
+      if (mode === 'add') {
+        inp.value = 0;
+        inp.placeholder = '+ добавить';
+      } else {
+        inp.value = curVal;
+        inp.placeholder = String(curVal);
+      }
+      inp.focus(); inp.select();
+    });
+  });
+
+  // ── Commit edit ───────────────────────────────────────────────────────────
   const ei = document.getElementById('editIn');
   if (ei) {
     const commit = () => {
       if (!editing) return;
-      const md = getMD();
-      md[editing.sec][editing.key] = parseFloat(ei.value)||0;
+      const wrap    = ei.closest?.('.edit-amt-wrap');
+      const isAdd   = wrap?.querySelector('.emode-btn.active')?.dataset.mode === 'add';
+      const entered = parseFloat(ei.value) || 0;
+      const md      = getMD();
+      const curVal  = parseFloat(md[editing.sec][editing.key]) || 0;
+      md[editing.sec][editing.key] = isAdd ? curVal + entered : entered;
       setMD(md); editing = null;
       markLocalChange();
       renderMonth(); renderStats();
@@ -1777,11 +1910,17 @@ function bindMonth() {
     ei.addEventListener('blur', commit);
     ei.addEventListener('keydown', e => { if(e.key==='Enter') commit(); if(e.key==='Escape'){editing=null;renderMonth();} });
   }
+
+  // ── Delete with confirmation ──────────────────────────────────────────────
   document.querySelectorAll('[data-ds]').forEach(b => {
     b.addEventListener('click', async e => {
       e.stopPropagation();
-      const sec=b.dataset.ds, key=decodeURIComponent(b.dataset.dk);
-      const md=getMD(); delete md[sec][key]; setMD(md);
+      const sec = b.dataset.ds;
+      const key = decodeURIComponent(b.dataset.dk);
+      if (!confirm(`🗑 Удалить «${key}»?`)) return;
+      const md = getMD();
+      delete md[sec][key];
+      setMD(md);
       markLocalChange();
       renderMonth(); renderStats(); toast(t('deleted') + key);
       pushData();
