@@ -240,7 +240,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.9</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.10</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -306,7 +306,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.9</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.10</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -567,7 +567,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.9';  // Версия приложения
+const APP_VER = '2.9.10';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1875,12 +1875,13 @@ let _epEditing = null; // { sec, key, curVal, color }
 let _epMode    = 'set'; // 'set' | 'add'
 
 function epOpen(sec, key, curVal, anchorEl) {
+  // key MUST be the raw decoded item name (e.g. "Врач"), never URI-encoded.
   _epEditing = { sec, key, curVal };
   _epMode    = 'set';
 
   const pop  = document.getElementById('editPopover');
   const inp  = document.getElementById('epInput');
-  document.getElementById('epTitle').textContent = decodeURIComponent(key);
+  document.getElementById('epTitle').textContent = key;        // already decoded
   document.getElementById('epCur').textContent   = fmtN(curVal);
   document.getElementById('epTabSet').classList.add('active');
   document.getElementById('epTabAdd').classList.remove('active');
@@ -1900,7 +1901,6 @@ function epOpen(sec, key, curVal, anchorEl) {
   pop.style.top  = top  + 'px';
   pop.style.width = popW + 'px';
 
-  // Small delay so the tap that opened it doesn't immediately blur
   setTimeout(() => { inp.focus(); inp.select(); }, 80);
 }
 
@@ -1997,11 +1997,11 @@ function bindMonth() {
   document.querySelectorAll('.iamt').forEach(el => {
     el.addEventListener('click', e => {
       e.stopPropagation();
-      epClose(); // close any existing
+      epClose();
       const sec    = el.dataset.sec;
-      const key    = decodeURIComponent(el.dataset.key);
+      const key    = decodeURIComponent(el.dataset.key); // decoded = "Врач"
       const curVal = parseFloat(el.dataset.val) || 0;
-      epOpen(sec, encodeURIComponent(key), curVal, el);
+      epOpen(sec, key, curVal, el); // pass decoded key — NO re-encoding
     });
   });
 
