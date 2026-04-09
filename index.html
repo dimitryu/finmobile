@@ -118,14 +118,27 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 .pin-btn{background:none;border:none;font-size:11px;cursor:pointer;padding:0 3px;opacity:.25;transition:opacity .15s,transform .1s;flex-shrink:0;line-height:1}
 .pin-btn:hover{opacity:.7}
 .pin-btn.pinned{opacity:1;transform:rotate(-20deg)}
-.del2{color:#f87171;font-size:13px;cursor:pointer;background:none;border:none;opacity:0;padding:2px 5px;border-radius:4px;flex-shrink:0;transition:opacity .15s,background .1s;line-height:1}
-.item2:hover .del2{opacity:.55}
-.del2:hover{opacity:1!important;background:rgba(248,113,113,.15)}
+.del2{color:#94a3b8;font-size:11px;cursor:pointer;background:none;border:none;opacity:0;padding:3px 5px;border-radius:4px;flex-shrink:0;transition:opacity .15s,color .1s,background .1s;line-height:1;display:flex;align-items:center}
+.item2:hover .del2{opacity:.7}
+.del2:hover{opacity:1!important;color:#f87171;background:rgba(248,113,113,.12)}
 .ein{width:72px;background:#374151;color:white;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;font-family:monospace;outline:none;text-align:right}
-.edit-amt-wrap{display:flex;align-items:center;gap:3px}
-.emode-btn{background:#1f2937;border:1px solid #374151;color:var(--muted);border-radius:4px;padding:2px 7px;font-size:12px;font-weight:700;cursor:pointer;line-height:1.4;transition:all .12s}
-.emode-btn.active{background:#2563eb;border-color:#3b82f6;color:white}
-.emode-btn:hover:not(.active){border-color:#4b5563;color:var(--text)}
+/* Floating edit popover */
+.edit-popover{position:fixed;z-index:300;background:#1e293b;border:1px solid #334155;border-radius:14px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.55);min-width:220px;max-width:280px}
+.edit-popover-title{font-size:11px;color:#64748b;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edit-popover-cur{font-size:13px;color:#94a3b8;margin-bottom:10px}
+.edit-popover-cur b{color:#f1f5f9;font-family:monospace}
+.edit-tabs{display:flex;gap:4px;margin-bottom:8px}
+.edit-tab{flex:1;padding:6px 4px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #334155;background:#0f172a;color:#64748b;text-align:center;transition:all .12s}
+.edit-tab.active{background:#2563eb;border-color:#3b82f6;color:white}
+.edit-popover input[type=number]{width:100%;background:#0f172a;color:white;border:1px solid #334155;border-radius:8px;padding:9px 11px;font-size:16px;font-family:monospace;outline:none;margin-bottom:8px}
+.edit-popover input:focus{border-color:#3b82f6}
+.edit-popover-hint{font-size:11px;color:#475569;margin-bottom:10px;min-height:14px}
+.edit-popover-btns{display:flex;gap:6px}
+.edit-popover-btns button{flex:1;padding:8px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none}
+.ep-ok{background:#2563eb;color:white}
+.ep-ok:hover{background:#1d4ed8}
+.ep-cancel{background:#1e293b;color:#94a3b8;border:1px solid #334155!important}
+.ep-cancel:hover{color:white}
 .add-row2{display:flex;gap:3px;margin-top:7px}
 .add-row2 input{flex:1;background:var(--card2);color:white;border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:calc(13px * var(--fs));outline:none;min-width:0}
 .add-row2 input:focus{border-color:#3b82f6}
@@ -227,7 +240,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.8</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.9</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -293,7 +306,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.8</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.9</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -526,6 +539,22 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
   </div>
 </div>
 
+<!-- Floating edit popover -->
+<div id="editPopover" class="edit-popover" style="display:none">
+  <div class="edit-popover-title" id="epTitle">Название</div>
+  <div class="edit-popover-cur">Текущее: <b id="epCur">0₪</b></div>
+  <div class="edit-tabs">
+    <div class="edit-tab active" id="epTabSet" onclick="epSetMode('set')">= Заменить</div>
+    <div class="edit-tab" id="epTabAdd" onclick="epSetMode('add')">+ Прибавить</div>
+  </div>
+  <input type="number" id="epInput" inputmode="decimal" placeholder="0"/>
+  <div class="edit-popover-hint" id="epHint"></div>
+  <div class="edit-popover-btns">
+    <button class="ep-ok" onclick="epCommit()">✓ Готово</button>
+    <button class="ep-cancel" onclick="epClose()">✕</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -538,7 +567,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.8';  // Версия приложения
+const APP_VER = '2.9.9';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -794,7 +823,7 @@ async function toggleItemRecurring(sec, key) {
   if (cur) delete GIST_DATA.recurring[sec][key];
   else GIST_DATA.recurring[sec][key] = true;
   LS.set('bgt_data', GIST_DATA);
-  renderMonth(); renderStats();
+  renderWithScrollRestore(() => { renderMonth(); renderStats(); });
   pushData();
 }
 
@@ -1758,21 +1787,18 @@ function secHTML(sec, title, color, items, total) {
   const entries = Object.entries(items).sort((a,b) => a[0].localeCompare(b[0], ['ru','en','he'], {sensitivity:'base'}));
   const isColl = collapsed.has(sec);
   const rows = entries.map(([k,v]) => {
-    const isEd = editing?.sec===sec && editing?.key===k;
-    const sk = encodeURIComponent(k);
+    const sk     = encodeURIComponent(k);
     const pinned = isItemRecurring(sec, k);
-    return `<div class="item2">
-      <button class="del2" data-ds="${sec}" data-dk="${sk}" title="Удалить">🗑</button>
+    // SVG trash icon — always visible in dark mode (no emoji rendering issues)
+    const trashSvg = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 3h9M5 3V2h3v1M4.5 3v7.5h4V3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    return `<div class="item2" data-item-sec="${sec}" data-item-key="${sk}">
+      <button class="del2" data-ds="${sec}" data-dk="${sk}" title="Удалить">${trashSvg}</button>
       <button class="pin-btn${pinned?' pinned':''}" data-psec="${sec}" data-pkey="${sk}" title="${pinned?t('pinOn'):t('pinOff')}">📌</button>
       <span class="iname" title="${k}">${k}</span>
       <div class="iright">
-        ${isEd
-          ? `<div class="edit-amt-wrap" data-sec="${sec}" data-key="${sk}" data-cur="${v||0}">
-               <button class="emode-btn active" data-mode="set" title="Установить значение">=</button>
-               <button class="emode-btn" data-mode="add" title="Прибавить к текущему">+</button>
-               <input class="ein" id="editIn" type="number" value="${v||0}" placeholder="${v||0}"/>
-             </div>`
-          : `<span class="iamt" style="color:${color}" data-sec="${sec}" data-key="${sk}">${fmtN(v||0)}</span>`}
+        <span class="iamt" style="color:${color}" data-sec="${sec}" data-key="${sk}" data-val="${v||0}">${fmtN(v||0)}</span>
       </div>
     </div>`;
   }).join('');
@@ -1844,14 +1870,121 @@ function renderMonth() {
   }
 }
 
+// ─── FLOATING EDIT POPOVER ────────────────────────────────────────────────────
+let _epEditing = null; // { sec, key, curVal, color }
+let _epMode    = 'set'; // 'set' | 'add'
+
+function epOpen(sec, key, curVal, anchorEl) {
+  _epEditing = { sec, key, curVal };
+  _epMode    = 'set';
+
+  const pop  = document.getElementById('editPopover');
+  const inp  = document.getElementById('epInput');
+  document.getElementById('epTitle').textContent = decodeURIComponent(key);
+  document.getElementById('epCur').textContent   = fmtN(curVal);
+  document.getElementById('epTabSet').classList.add('active');
+  document.getElementById('epTabAdd').classList.remove('active');
+  document.getElementById('epHint').textContent  = '';
+  inp.value = curVal;
+  pop.style.display = 'block';
+
+  // Position: below/above the tapped element
+  const rect  = anchorEl.getBoundingClientRect();
+  const popW  = 250;
+  const popH  = 210;
+  let left = Math.min(rect.left, window.innerWidth - popW - 8);
+  left = Math.max(8, left);
+  let top  = rect.bottom + 6;
+  if (top + popH > window.innerHeight - 8) top = rect.top - popH - 6;
+  pop.style.left = left + 'px';
+  pop.style.top  = top  + 'px';
+  pop.style.width = popW + 'px';
+
+  // Small delay so the tap that opened it doesn't immediately blur
+  setTimeout(() => { inp.focus(); inp.select(); }, 80);
+}
+
+function epSetMode(mode) {
+  _epMode = mode;
+  document.getElementById('epTabSet').classList.toggle('active', mode === 'set');
+  document.getElementById('epTabAdd').classList.toggle('active', mode === 'add');
+  const inp   = document.getElementById('epInput');
+  const cur   = _epEditing?.curVal || 0;
+  if (mode === 'add') {
+    inp.value       = '';
+    inp.placeholder = 'сколько добавить';
+    document.getElementById('epHint').textContent = `${fmtN(cur)} + ? = новый итог`;
+  } else {
+    inp.value       = cur;
+    inp.placeholder = '0';
+    document.getElementById('epHint').textContent = '';
+  }
+  inp.focus(); inp.select();
+}
+
+function epCommit() {
+  if (!_epEditing) return;
+  const inp     = document.getElementById('epInput');
+  const entered = parseFloat(inp.value);
+  if (isNaN(entered)) { epClose(); return; }
+  const md      = getMD();
+  const cur     = parseFloat(md[_epEditing.sec][_epEditing.key]) || 0;
+  md[_epEditing.sec][_epEditing.key] = _epMode === 'add' ? cur + entered : entered;
+  setMD(md);
+  markLocalChange();
+  epClose();
+  renderWithScrollRestore(() => { renderMonth(); renderStats(); });
+  pushData();
+}
+
+function epClose() {
+  document.getElementById('editPopover').style.display = 'none';
+  _epEditing = null;
+}
+
+// Close popover when tapping outside
+document.addEventListener('click', e => {
+  const pop = document.getElementById('editPopover');
+  if (pop && pop.style.display !== 'none' && !pop.contains(e.target) && !e.target.closest('.iamt')) {
+    epClose();
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') epClose(); });
+document.getElementById('epInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); epCommit(); }
+});
+
+// ─── SCROLL POSITION SAVE / RESTORE ──────────────────────────────────────────
+// Saves scroll position PER month key. Restored after every renderMonth call.
+const _scrollPos = {}; // { monthKey: scrollY }
+
+function saveScrollPos() {
+  _scrollPos[selMonth] = window.scrollY;
+}
+
+function restoreScrollPos() {
+  const y = _scrollPos[selMonth];
+  if (y != null) {
+    requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' }));
+  }
+}
+
+function renderWithScrollRestore(fn) {
+  saveScrollPos();
+  fn();
+  restoreScrollPos();
+}
+
 function bindMonth() {
   document.querySelectorAll('[data-toggle]').forEach(h => {
     h.addEventListener('click', e => {
-      if (e.target.closest('.iamt,.del2,.add-trig2,.add-row2,[data-asec],.pin-btn,.emode-btn,.edit-amt-wrap')) return;
+      if (e.target.closest('.iamt,.del2,.add-trig2,.add-row2,[data-asec],.pin-btn')) return;
       const s = h.dataset.toggle;
+      saveScrollPos();
       collapsed.has(s) ? collapsed.delete(s) : collapsed.add(s);
       saveCollapsed();
       renderMonth(); renderStats();
+      restoreScrollPos();
     });
   });
   document.querySelectorAll('.pin-btn[data-psec]').forEach(b => {
@@ -1860,56 +1993,17 @@ function bindMonth() {
       toggleItemRecurring(b.dataset.psec, decodeURIComponent(b.dataset.pkey));
     });
   });
+  // Open floating popover on amount tap
   document.querySelectorAll('.iamt').forEach(el => {
     el.addEventListener('click', e => {
       e.stopPropagation();
-      editing = { sec: el.dataset.sec, key: decodeURIComponent(el.dataset.key) };
-      renderMonth(); renderStats();
-      setTimeout(() => { const i=document.getElementById('editIn'); if(i){i.focus();i.select();} }, 50);
+      epClose(); // close any existing
+      const sec    = el.dataset.sec;
+      const key    = decodeURIComponent(el.dataset.key);
+      const curVal = parseFloat(el.dataset.val) || 0;
+      epOpen(sec, encodeURIComponent(key), curVal, el);
     });
   });
-
-  // ── Add/Set mode toggle buttons ───────────────────────────────────────────
-  document.querySelectorAll('.emode-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const wrap = btn.closest('.edit-amt-wrap');
-      if (!wrap) return;
-      const curVal = parseFloat(wrap.dataset.cur) || 0;
-      const mode   = btn.dataset.mode;
-      wrap.querySelectorAll('.emode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-      const inp = document.getElementById('editIn');
-      if (!inp) return;
-      if (mode === 'add') {
-        inp.value = 0;
-        inp.placeholder = '+ добавить';
-      } else {
-        inp.value = curVal;
-        inp.placeholder = String(curVal);
-      }
-      inp.focus(); inp.select();
-    });
-  });
-
-  // ── Commit edit ───────────────────────────────────────────────────────────
-  const ei = document.getElementById('editIn');
-  if (ei) {
-    const commit = () => {
-      if (!editing) return;
-      const wrap    = ei.closest?.('.edit-amt-wrap');
-      const isAdd   = wrap?.querySelector('.emode-btn.active')?.dataset.mode === 'add';
-      const entered = parseFloat(ei.value) || 0;
-      const md      = getMD();
-      const curVal  = parseFloat(md[editing.sec][editing.key]) || 0;
-      md[editing.sec][editing.key] = isAdd ? curVal + entered : entered;
-      setMD(md); editing = null;
-      markLocalChange();
-      renderMonth(); renderStats();
-      pushData();
-    };
-    ei.addEventListener('blur', commit);
-    ei.addEventListener('keydown', e => { if(e.key==='Enter') commit(); if(e.key==='Escape'){editing=null;renderMonth();} });
-  }
 
   // ── Delete with confirmation ──────────────────────────────────────────────
   document.querySelectorAll('[data-ds]').forEach(b => {
@@ -1917,26 +2011,43 @@ function bindMonth() {
       e.stopPropagation();
       const sec = b.dataset.ds;
       const key = decodeURIComponent(b.dataset.dk);
-      if (!confirm(`🗑 Удалить «${key}»?`)) return;
+      if (!confirm(`Удалить «${key}»?`)) return;
+      saveScrollPos();
       const md = getMD();
       delete md[sec][key];
       setMD(md);
       markLocalChange();
-      renderMonth(); renderStats(); toast(t('deleted') + key);
+      renderMonth(); renderStats();
+      restoreScrollPos();
+      toast(t('deleted') + key);
       pushData();
     });
   });
   document.querySelectorAll('[data-asec]').forEach(b => {
-    b.addEventListener('click', e => { e.stopPropagation(); addSec=b.dataset.asec; renderMonth(); setTimeout(()=>document.getElementById('aiN')?.focus(),50); });
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      saveScrollPos();
+      addSec=b.dataset.asec;
+      renderMonth();
+      restoreScrollPos();
+      setTimeout(()=>document.getElementById('aiN')?.focus(),50);
+    });
   });
-  document.getElementById('aiCnl')?.addEventListener('click', () => { addSec=null; renderMonth(); });
+  document.getElementById('aiCnl')?.addEventListener('click', () => {
+    saveScrollPos(); addSec=null; renderMonth(); restoreScrollPos();
+  });
   document.querySelectorAll('[data-aok]').forEach(b => {
     b.addEventListener('click', () => {
-      const sec=b.dataset.aok, name=document.getElementById('aiN')?.value.trim(), val=parseFloat(document.getElementById('aiV')?.value)||0;
+      const sec  = b.dataset.aok;
+      const name = document.getElementById('aiN')?.value.trim();
+      const val  = parseFloat(document.getElementById('aiV')?.value)||0;
       if (!name) return;
+      saveScrollPos();
       const md=getMD(); md[sec][name]=val; setMD(md);
       markLocalChange();
-      addSec=null; renderMonth(); renderStats(); toast(t('added') + name);
+      addSec=null; renderMonth(); renderStats();
+      restoreScrollPos();
+      toast(t('added') + name);
       pushData();
     });
   });
@@ -2185,7 +2296,7 @@ function renderView() {
 // ─── HEADER EVENTS ────────────────────────────────────────────────────────────
 document.getElementById('prevBtn').addEventListener('click', () => {
   const ms=sortK(Object.keys(getBudgetData())), i=ms.indexOf(selMonth);
-  if(i>0){selMonth=ms[i-1];editing=null;buildSel();renderView();}
+  if(i>0){selMonth=ms[i-1];editing=null;epClose();buildSel();renderView();}
 });
 document.getElementById('nextBtn').addEventListener('click', () => {
   const now = new Date();
@@ -2193,9 +2304,9 @@ document.getElementById('nextBtn').addEventListener('click', () => {
   const ms = sortK(Object.keys(getBudgetData()));
   const i  = ms.indexOf(selMonth);
   const nextKey = ms[i + 1];
-  if (nextKey && nextKey < curKey) { selMonth=nextKey; editing=null; buildSel(); renderView(); }
+  if (nextKey && nextKey < curKey) { selMonth=nextKey; editing=null; epClose(); buildSel(); renderView(); }
 });
-document.getElementById('monthSel').addEventListener('change', e => { selMonth=e.target.value; editing=null; renderView(); });
+document.getElementById('monthSel').addEventListener('change', e => { selMonth=e.target.value; editing=null; epClose(); renderView(); });
 
 // ─── ADD MONTH MODAL ──────────────────────────────────────────────────────────
 function openAddMonthModal() {
@@ -2265,7 +2376,7 @@ async function confirmAddMonth() {
 
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
-    curView=t.dataset.view; editing=null; addSec=null; addDebtMode=false;
+    curView=t.dataset.view; editing=null; addSec=null; addDebtMode=false; epClose();
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active'); renderView();
   });
