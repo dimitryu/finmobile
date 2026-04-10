@@ -244,7 +244,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.11</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.12</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -310,7 +310,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.11</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.12</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -521,6 +521,19 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <button class="sbtn sbtn-green" style="margin-top:6px" id="btnSaveName" onclick="changeName()">Сохранить имя</button>
     <button class="sbtn sbtn-gray" style="margin-top:8px" id="btnLeave" onclick="leaveFamily()">🚪 Выйти из семьи</button>
     <hr style="border:none;border-top:1px solid var(--border);margin:14px 0"/>
+
+    <!-- RESERVE / SAVINGS GOAL -->
+    <div class="mlabel" id="lbReserve">🎯 Резерв (цель накопления)</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5" id="lbReserveHint">
+      Сумма, которую вы хотите откладывать каждый месяц. Будет вычтена из остатка в расчётах.
+    </p>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+      <input class="sinp" id="reserveInp" type="number" min="0" placeholder="0" style="margin:0;flex:1;font-family:monospace" oninput="_updateReservePreview(parseFloat(this.value)||0)"/>
+      <button class="sbtn sbtn-green" style="width:auto;padding:12px 14px;margin:0;font-size:13px" onclick="saveReserve()">✓</button>
+    </div>
+    <div id="reservePreview" style="font-size:11px;color:#a78bfa;margin-bottom:4px"></div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0"/>
     <div class="mlabel">💾 Резервные копии</div>
     <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5">Ежедневный автобэкап в 07:00. Хранится до 10 копий.</p>
     <div style="display:flex;gap:6px">
@@ -571,7 +584,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.11';  // Версия приложения
+const APP_VER = '2.9.12';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -628,6 +641,8 @@ const LANGS = {
     addItem:'+ Добавить', itemName:'Название', itemAmount:'Сумма',
     pay:'платёж', pays:'платежа', manyPays:'платежей',
     pinOn:'📌 Постоянная', pinOff:'Сделать постоянной',
+    reserveLabel:'🎯 Резерв (цель накопления)', reservePlaceholder:'Сумма резерва в месяц (₪)',
+    reserveSaved:'✅ Резерв сохранён', reserveChip:'🎯 Резерв', freeChip:'💸 Свободно',
   },
   he: {
     appName:'תקציב משפחתי', financialTracker:'מעקב פיננסי',
@@ -673,6 +688,8 @@ const LANGS = {
     addItem:'+ הוסף', itemName:'שם', itemAmount:'סכום',
     pay:'תשלום', pays:'תשלומים', manyPays:'תשלומים',
     pinOn:'📌 קבוע', pinOff:'סמן כקבוע',
+    reserveLabel:'🎯 יעד חיסכון חודשי', reservePlaceholder:'סכום לחיסכון בחודש (₪)',
+    reserveSaved:'✅ יעד נשמר', reserveChip:'🎯 חיסכון', freeChip:'💸 פנוי',
   },
   en: {
     appName:'Family Budget', financialTracker:'Financial Tracker',
@@ -718,6 +735,8 @@ const LANGS = {
     addItem:'+ Add', itemName:'Name', itemAmount:'Amount',
     pay:'payment', pays:'payments', manyPays:'payments',
     pinOn:'📌 Recurring', pinOff:'Mark as recurring',
+    reserveLabel:'🎯 Monthly Reserve Goal', reservePlaceholder:'Amount to reserve each month (₪)',
+    reserveSaved:'✅ Reserve saved', reserveChip:'🎯 Reserve', freeChip:'💸 Free',
   }
 };
 
@@ -1504,6 +1523,29 @@ function initApp() {
 
 function saveLocal() { LS.set('bgt_data', GIST_DATA); }
 
+// ─── MONTHLY RESERVE / SAVINGS GOAL ──────────────────────────────────────────
+// Stored in CONFIG (localStorage, personal — not synced to JSONBin).
+// Logic: reserve is deducted from balance → "free" = income - expenses - debt - reserve.
+function getReserve() {
+  return parseFloat(CONFIG?.reserve || 0) || 0;
+}
+function saveReserve() {
+  const val = parseFloat(document.getElementById('reserveInp')?.value) || 0;
+  if (!CONFIG) return;
+  CONFIG.reserve = val;
+  LS.set('bgt_config', CONFIG);
+  _updateReservePreview(val);
+  renderStats(); renderMonth();
+  toast(t('reserveSaved') + ' — ' + fmtN(val) + '/мес');
+}
+function _updateReservePreview(val) {
+  const prev = document.getElementById('reservePreview');
+  if (!prev) return;
+  prev.textContent = val > 0
+    ? `💜 ${fmtN(val)} будет отложено каждый месяц`
+    : '';
+}
+
 // ─── DAILY BACKUP SYSTEM ──────────────────────────────────────────────────────
 // Runs every day at 07:00. Stores up to 10 snapshots in localStorage.
 // Each backup = full GIST_DATA snapshot with timestamp.
@@ -1661,6 +1703,9 @@ function openSettings() {
     </div>`).join('');
   document.getElementById('changeNameInp').value = CONFIG.userName;
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
+  // Populate reserve field
+  const resInp = document.getElementById('reserveInp');
+  if (resInp) { const rv = getReserve(); resInp.value = rv || ''; _updateReservePreview(rv); }
   const savedFont = (() => { try { return localStorage.getItem('bgt_font') || 'm'; } catch(e) { return 'm'; } })();
   document.querySelectorAll('.font-btn[data-fk]').forEach(b => b.classList.toggle('factive', b.dataset.fk === savedFont));
   document.querySelectorAll('.font-btn[data-lk]').forEach(b => b.classList.toggle('factive', b.dataset.lk === CURLANG));
@@ -1803,31 +1848,55 @@ function buildSel() {
   document.getElementById('nextBtn').disabled = !nextKey || nextKey >= curKey;
 }
 
-// ─── STATS ────────────────────────────────────────────────────────────────────
-// ─── COMPACT SUMMARY STRIP (replaces old big stats grid) ─────────────────────
+// ─── COMPACT SUMMARY STRIP ────────────────────────────────────────────────────
 function renderStats() {
   const md   = getMD();
   const secs = getSections();
   const totalIncome   = secs.filter(s=>s.type==='income') .reduce((sum,s)=>sum+S(md[s.id]),0);
   const totalExpenses = secs.filter(s=>s.type==='expense').reduce((sum,s)=>sum+S(md[s.id]),0);
-  const tD  = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
-  const bal = totalIncome - totalExpenses - tD;
-  const el  = document.getElementById('summaryStrip');
+  const tD      = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
+  const reserve = getReserve();
+  const bal     = totalIncome - totalExpenses - tD;          // total remaining
+  const free    = bal - reserve;                             // free after reserve
+  const el      = document.getElementById('summaryStrip');
   if (!el) return;
-  const balColor = bal >= 0 ? CC.balance : '#ef4444';
-  el.innerHTML = `
+
+  const freeColor = free >= 0 ? CC.balance : '#ef4444';
+  const resColor  = '#a78bfa';  // purple — goal/savings color
+
+  // Base 3 chips — always shown
+  let chips = `
     <div class="sum-chip" style="border-left-color:${CC.income}">
       <div class="sum-chip-lbl">↑ ${t('statsIncome')}</div>
       <div class="sum-chip-val" style="color:${CC.income}">${fmtN(totalIncome)}</div>
     </div>
     <div class="sum-chip" style="border-left-color:#f87171">
-      <div class="sum-chip-lbl">↓ ${t('statsFixed').replace(/\. .*/,'')} + ${t('statsVar').split(' ')[0]}</div>
+      <div class="sum-chip-lbl">↓ ${t('statsFixed').replace(/\..*/,'').replace(/ расходы/,'')} + ${t('statsVar').split(' ')[0]}</div>
       <div class="sum-chip-val" style="color:#f87171">${fmtN(totalExpenses + tD)}</div>
+    </div>`;
+
+  if (reserve > 0) {
+    // With reserve: show Reserve chip + Free chip
+    chips += `
+    <div class="sum-chip" style="border-left-color:${resColor}">
+      <div class="sum-chip-lbl">${t('reserveChip')}</div>
+      <div class="sum-chip-val" style="color:${resColor}">${fmtN(reserve)}</div>
     </div>
+    <div class="sum-chip" style="border-left-color:${freeColor}">
+      <div class="sum-chip-lbl">${t('freeChip')}</div>
+      <div class="sum-chip-val" style="color:${freeColor}">${fmtN(free)}</div>
+    </div>`;
+  } else {
+    // No reserve: show plain balance chip
+    const balColor = bal >= 0 ? CC.balance : '#ef4444';
+    chips += `
     <div class="sum-chip" style="border-left-color:${balColor}">
       <div class="sum-chip-lbl">${bal>=0?'✓':'⚠'} ${t('statsBalance')}</div>
       <div class="sum-chip-val" style="color:${balColor}">${fmtN(bal)}</div>
     </div>`;
+  }
+
+  el.innerHTML = chips;
 }
 
 // ─── SECTION HTML ─────────────────────────────────────────────────────────────
