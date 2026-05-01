@@ -253,7 +253,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.13</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.14</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -319,7 +319,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.13</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.14</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -598,7 +598,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.13';  // Версия приложения
+const APP_VER = '2.9.14';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1521,6 +1521,8 @@ function copyFamilyCode() {
 function enterApp() {
   document.getElementById('screenSetup').classList.remove('active');
   document.getElementById('screenApp').classList.add('active');
+  // Push a history state so Android back button is interceptable
+  history.pushState({ pwa: true }, '');
   initApp();
 }
 
@@ -2370,7 +2372,7 @@ function bindDebts(md) {
 // Helper shared by: confirmAddMonth (manual) + checkAutoMonth (automatic).
 // Builds a new month object pre-filled with all 📌 pinned items from ALL sections
 // (including user-created ones), copying amounts from sourceMonthKey.
-// Amount priority: sourceMonthKey → most recent non-zero value → 0.
+// Amount logic: expense sections → 0 (user fills each month), income → carry amount, debts → forward-1
 function buildMonthWithRecurring(sourceMonthKey) {
   const secs      = getSections();
   const rec       = GIST_DATA?.recurring || {};
@@ -2378,30 +2380,36 @@ function buildMonthWithRecurring(sourceMonthKey) {
   const srcData   = GIST_DATA.budget_data?.[sourceMonthKey] || {};
 
   const newMonth = { debts: [], edp_target: 15000 };
-  // Create entry for EVERY section (default + user-created)
   secs.forEach(s => { newMonth[s.id] = {}; });
 
   secs.forEach(s => {
     const secRec = rec[s.id] || {};
     Object.keys(secRec).forEach(itemName => {
-      if (!secRec[itemName]) return; // not pinned
+      if (!secRec[itemName]) return;
 
-      // 1st priority: amount from the source month
-      const srcAmt = srcData[s.id]?.[itemName];
-      if (srcAmt !== undefined) {
-        newMonth[s.id][itemName] = srcAmt;
-        return;
+      if (s.type === 'expense') {
+        // Expense: carry item name with 0 — user fills the actual amount each month
+        newMonth[s.id][itemName] = 0;
+      } else {
+        // Income: carry with amount (salary is usually constant)
+        const srcAmt = srcData[s.id]?.[itemName];
+        if (srcAmt !== undefined) { newMonth[s.id][itemName] = srcAmt; return; }
+        let found = 0;
+        for (let i = allMonths.length - 1; i >= 0; i--) {
+          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
+          if (amt !== undefined && amt !== 0) { found = amt; break; }
+        }
+        newMonth[s.id][itemName] = found;
       }
-
-      // 2nd priority: most recent non-zero value across all months
-      let found = 0;
-      for (let i = allMonths.length - 1; i >= 0; i--) {
-        const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
-        if (amt !== undefined && amt !== 0) { found = amt; break; }
-      }
-      newMonth[s.id][itemName] = found;
     });
   });
+
+  // Debts: carry forward only active loans (payments_left > 1), decrement by 1
+  // When payments_left === 1 it means this IS the last payment — don't carry forward
+  const srcDebts = srcData.debts || [];
+  newMonth.debts = srcDebts
+    .filter(d => (d.payments_left || 0) > 1)
+    .map(d => ({ ...d, payments_left: d.payments_left - 1 }));
 
   return newMonth;
 }
@@ -2436,21 +2444,19 @@ function checkAutoMonth() {
   GIST_DATA.budget_data[key] = newMonth;
   LS.set('bgt_data', GIST_DATA);
 
-  // Count pinned items that were copied (for toast message)
   const pinnedCount = getSections().reduce((sum, s) => {
     return sum + Object.keys(newMonth[s.id] || {}).length;
   }, 0);
+  const debtCount = (newMonth.debts || []).length;
 
-  // Navigate to new month and re-render
   selMonth = key;
   buildSel();
   renderView();
 
-  if (pinnedCount > 0) {
-    toast(`🗓 ${fmtK(key)} — создан автоматически (${pinnedCount} 📌)`, 4000);
-  } else {
-    toast(`🗓 ${fmtK(key)} — создан автоматически`, 3000);
-  }
+  const parts = [];
+  if (pinnedCount > 0) parts.push(`${pinnedCount} 📌`);
+  if (debtCount   > 0) parts.push(`${debtCount} 💳`);
+  toast(`🗓 ${fmtK(key)} — создан автоматически${parts.length ? ' (' + parts.join(', ') + ')' : ''}`, 4000);
 
   // Push to remote silently
   pushData();
@@ -2923,6 +2929,30 @@ function migrateSkip() {
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 setupPWA();
+
+// ── Android / iOS back button handler ────────────────────────────────────────
+// Priority: close open modal → close popover → switch to month tab → stay in app
+window.addEventListener('popstate', () => {
+  // Re-push state so subsequent back presses are also intercepted
+  history.pushState({ pwa: true }, '');
+
+  // 1. Close any open modal
+  const modals = ['settingsModal','ieModal','addMonthModal','backupModal'];
+  for (const id of modals) {
+    const el = document.getElementById(id);
+    if (el?.classList.contains('open')) { el.classList.remove('open'); return; }
+  }
+  // 2. Close edit popover
+  if (document.getElementById('editPopover')?.style.display !== 'none') { epClose(); return; }
+  // 3. If not on month tab → switch to month tab
+  if (curView !== 'month') {
+    curView = 'month'; addSec = null; addDebtMode = false; epClose();
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === 'month'));
+    renderView();
+    return;
+  }
+  // 4. Already on month tab → do nothing (stay in app)
+});
 
 document.body.style.direction = CURLANG === 'he' ? 'rtl' : 'ltr';
 document.body.style.textAlign = CURLANG === 'he' ? 'right' : 'left';
