@@ -253,7 +253,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.17</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.18</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -319,7 +319,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.17</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.18</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -605,7 +605,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.17';  // Версия приложения
+const APP_VER = '2.9.18';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -2441,22 +2441,26 @@ function buildPinnedWithAmounts(sourceMonthKey) {
   secs.forEach(s => { newMonth[s.id] = {}; });
 
   secs.forEach(s => {
-    const secRec = rec[s.id] || {};
-    Object.keys(secRec).forEach(itemName => {
-      if (!secRec[itemName]) return; // not pinned
-
-      // Both income AND expense: carry the actual amount from source
-      const srcAmt = srcData[s.id]?.[itemName];
-      if (srcAmt !== undefined) { newMonth[s.id][itemName] = srcAmt; return; }
-
-      // Walk back to find most recent non-zero value
-      let found = 0;
-      for (let i = allMonths.length - 1; i >= 0; i--) {
-        const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
-        if (amt !== undefined && amt !== 0) { found = amt; break; }
-      }
-      newMonth[s.id][itemName] = found;
-    });
+    if (s.type === 'expense') {
+      // ALL expense items → copy names, amount = 0 (user fills each month)
+      Object.keys(srcData[s.id] || {}).forEach(itemName => {
+        newMonth[s.id][itemName] = 0;
+      });
+    } else {
+      // Income → only 📌 pinned items WITH their actual amounts
+      const secRec = rec[s.id] || {};
+      Object.keys(secRec).forEach(itemName => {
+        if (!secRec[itemName]) return;
+        const srcAmt = srcData[s.id]?.[itemName];
+        if (srcAmt !== undefined) { newMonth[s.id][itemName] = srcAmt; return; }
+        let found = 0;
+        for (let i = allMonths.length - 1; i >= 0; i--) {
+          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
+          if (amt !== undefined && amt !== 0) { found = amt; break; }
+        }
+        newMonth[s.id][itemName] = found;
+      });
+    }
   });
 
   // Debts: carry forward active loans with decremented payments_left
