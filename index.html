@@ -253,7 +253,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.18</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.19</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -319,7 +319,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.18</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.19</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -605,7 +605,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.18';  // Версия приложения
+const APP_VER = '2.9.19';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -2382,7 +2382,12 @@ function bindDebts(md) {
 //   EXPENSE sections → copy ALL items from source month with 0 amount (names preserved, user fills)
 //   INCOME sections  → copy only 📌 pinned items WITH their amounts
 //   DEBTS            → carry forward active loans, decrement payments_left by 1
-function buildMonthWithRecurring(sourceMonthKey) {
+// ─── SHARED HELPER for new month population ──────────────────────────────────
+// Rules (same for both auto and manual creation):
+//   • 'variable' section  → ALL items copied, amount = 0
+//   • all other sections  → only 📌 pinned items, copied WITH their amounts
+//   • debts               → active loans forwarded, payments_left decremented by 1
+function _buildNewMonth(sourceMonthKey) {
   const secs      = getSections();
   const rec       = GIST_DATA?.recurring || {};
   const allMonths = sortK(Object.keys(GIST_DATA.budget_data || {}));
@@ -2392,34 +2397,31 @@ function buildMonthWithRecurring(sourceMonthKey) {
   secs.forEach(s => { newMonth[s.id] = {}; });
 
   secs.forEach(s => {
-    if (s.type === 'expense') {
-      // ── ALL expense items from previous month → copy name, amount = 0 ────
-      // User will enter actual amounts for the new month.
-      // This way the category is pre-populated — no need to re-type item names.
-      const srcItems = srcData[s.id] || {};
-      Object.keys(srcItems).forEach(itemName => {
-        newMonth[s.id][itemName] = 0;
+    if (s.id === 'variable') {
+      // Variable expenses: copy ALL item names from previous month, amount = 0
+      Object.keys(srcData[s.id] || {}).forEach(name => {
+        newMonth[s.id][name] = 0;
       });
     } else {
-      // ── Income sections → only 📌 pinned items, carry their amounts ───────
+      // All other sections (fixed, income, insurance, custom):
+      // copy only 📌 pinned items WITH their amounts
       const secRec = rec[s.id] || {};
-      Object.keys(secRec).forEach(itemName => {
-        if (!secRec[itemName]) return;
-        const srcAmt = srcData[s.id]?.[itemName];
-        if (srcAmt !== undefined) { newMonth[s.id][itemName] = srcAmt; return; }
+      Object.keys(secRec).forEach(name => {
+        if (!secRec[name]) return;
+        const srcAmt = srcData[s.id]?.[name];
+        if (srcAmt !== undefined) { newMonth[s.id][name] = srcAmt; return; }
         // Walk back to find most recent non-zero value
         let found = 0;
         for (let i = allMonths.length - 1; i >= 0; i--) {
-          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
+          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[name];
           if (amt !== undefined && amt !== 0) { found = amt; break; }
         }
-        newMonth[s.id][itemName] = found;
+        newMonth[s.id][name] = found;
       });
     }
   });
 
-  // ── Debts: carry forward only active loans (payments_left > 1) ─────────
-  // payments_left === 1 = this IS the last payment month, so don't carry over
+  // Debts: carry forward active loans, decrement payments_left by 1
   const srcDebts = srcData.debts || [];
   newMonth.debts = srcDebts
     .filter(d => (d.payments_left || 0) > 1)
@@ -2428,49 +2430,9 @@ function buildMonthWithRecurring(sourceMonthKey) {
   return newMonth;
 }
 
-// ─── BUILD MONTH: PINNED ITEMS WITH AMOUNTS ───────────────────────────────────
-// Used by manual "Только постоянные статьи (📌) — с суммами" option.
-// Copies ONLY 📌 pinned items, ALL section types carry their ACTUAL amounts.
-function buildPinnedWithAmounts(sourceMonthKey) {
-  const secs      = getSections();
-  const rec       = GIST_DATA?.recurring || {};
-  const allMonths = sortK(Object.keys(GIST_DATA.budget_data || {}));
-  const srcData   = GIST_DATA.budget_data?.[sourceMonthKey] || {};
-
-  const newMonth = { debts: [], edp_target: 15000 };
-  secs.forEach(s => { newMonth[s.id] = {}; });
-
-  secs.forEach(s => {
-    if (s.type === 'expense') {
-      // ALL expense items → copy names, amount = 0 (user fills each month)
-      Object.keys(srcData[s.id] || {}).forEach(itemName => {
-        newMonth[s.id][itemName] = 0;
-      });
-    } else {
-      // Income → only 📌 pinned items WITH their actual amounts
-      const secRec = rec[s.id] || {};
-      Object.keys(secRec).forEach(itemName => {
-        if (!secRec[itemName]) return;
-        const srcAmt = srcData[s.id]?.[itemName];
-        if (srcAmt !== undefined) { newMonth[s.id][itemName] = srcAmt; return; }
-        let found = 0;
-        for (let i = allMonths.length - 1; i >= 0; i--) {
-          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[itemName];
-          if (amt !== undefined && amt !== 0) { found = amt; break; }
-        }
-        newMonth[s.id][itemName] = found;
-      });
-    }
-  });
-
-  // Debts: carry forward active loans with decremented payments_left
-  const srcDebts = srcData.debts || [];
-  newMonth.debts = srcDebts
-    .filter(d => (d.payments_left || 0) > 1)
-    .map(d => ({ ...d, payments_left: d.payments_left - 1 }));
-
-  return newMonth;
-}
+// Both auto-creation and manual creation use the same logic
+function buildMonthWithRecurring(sourceMonthKey) { return _buildNewMonth(sourceMonthKey); }
+function buildPinnedWithAmounts(sourceMonthKey)   { return _buildNewMonth(sourceMonthKey); }
 // Called on every app open. If the current calendar month doesn't exist yet,
 // creates it automatically with all pinned recurring items (+ their amounts).
 // Silently saves to localStorage and pushes to remote in background.
