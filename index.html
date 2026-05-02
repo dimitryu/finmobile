@@ -253,7 +253,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.15</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.16</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -319,7 +319,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.15</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.16</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -400,15 +400,22 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 
     <hr class="ie-divider"/>
 
-    <!-- DELETE MONTH -->
-    <div class="mlabel" style="color:#f87171">🗑 Удалить месяц</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
-      <select class="month-src-sel" id="deleteMonthSel" style="margin:0;flex:1;font-size:13px;padding:8px 10px"></select>
-      <button onclick="deleteMonth()" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);color:#f87171;border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">🗑 Удалить</button>
+    <!-- MONTH MANAGEMENT -->
+    <div class="mlabel">📅 Управление месяцем</div>
+    <div style="margin-bottom:8px">
+      <select class="month-src-sel" id="mgmtMonthSel" style="margin:0 0 8px 0;font-size:13px;padding:8px 10px"></select>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="clearMonthAmounts()" style="flex:1;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:#fb923c;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+          🧹 Очистить суммы<br><span style="font-size:10px;opacity:.7">Имена остаются · суммы → 0</span>
+        </button>
+        <button onclick="rebuildMonthFromPrev()" style="flex:1;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);color:#60a5fa;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+          🔄 Пересоздать из прошлого<br><span style="font-size:10px;opacity:.7">Заполнить из предыдущего месяца</span>
+        </button>
+        <button onclick="deleteMonth()" style="flex:1;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);color:#f87171;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+          🗑 Удалить месяц<br><span style="font-size:10px;opacity:.7">Необратимо</span>
+        </button>
+      </div>
     </div>
-    <p style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.5">
-      ⚠ Удаление необратимо. Создайте резервную копию через «Экспорт» перед удалением.
-    </p>
 
     <hr class="ie-divider"/>
 
@@ -598,7 +605,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.15';  // Версия приложения
+const APP_VER = '2.9.16';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -2428,44 +2435,59 @@ function buildMonthWithRecurring(sourceMonthKey) {
 function checkAutoMonth() {
   if (!GIST_DATA?.budget_data) return;
 
-  const now   = new Date();
-  const m     = String(now.getMonth() + 1).padStart(2, '0');
-  const y     = String(now.getFullYear() - 2000).padStart(2, '0');
-  const key   = `${m}_${y}`;
+  const now = new Date();
+  const m   = String(now.getMonth() + 1).padStart(2, '0');
+  const y   = String(now.getFullYear() - 2000).padStart(2, '0');
+  const key = `${m}_${y}`;
 
-  // Month already exists — nothing to do
-  if (GIST_DATA.budget_data[key]) return;
+  const allMonths = sortK(Object.keys(GIST_DATA.budget_data));
+  const srcKey    = allMonths.filter(k => k !== key).pop() || null;
 
-  // Find the most recent existing month to use as amount source
-  const allMonths  = sortK(Object.keys(GIST_DATA.budget_data));
-  const srcKey     = allMonths.length ? allMonths[allMonths.length - 1] : null;
+  // Check if month needs to be created or rebuilt
+  const existing = GIST_DATA.budget_data[key];
+  if (existing) {
+    // Month exists — check if ALL expense sections are empty (month was created before fix)
+    const secs = getSections();
+    const totalExpenseItems = secs
+      .filter(s => s.type === 'expense')
+      .reduce((sum, s) => sum + Object.keys(existing[s.id] || {}).length, 0);
+    const hasDebts = (existing.debts || []).length > 0;
+    // If no expense items AND no debts AND we have a previous month to copy from → rebuild
+    if (totalExpenseItems === 0 && !hasDebts && srcKey) {
+      const rebuilt = buildMonthWithRecurring(srcKey);
+      GIST_DATA.budget_data[key] = rebuilt;
+      LS.set('bgt_data', GIST_DATA);
+      selMonth = key;
+      buildSel(); renderView();
+      const itemCount = secs.reduce((s, sec) => s + Object.keys(rebuilt[sec.id] || {}).length, 0);
+      toast(`🔄 ${fmtK(key)} — заполнен из ${fmtK(srcKey)} (${itemCount} 📋, ${(rebuilt.debts||[]).length} 💳)`, 4000);
+      pushData();
+    }
+    return;
+  }
 
-  const newMonth   = srcKey
+  // Month doesn't exist — create it
+  const newMonth = srcKey
     ? buildMonthWithRecurring(srcKey)
     : (() => {
-        const m = { debts: [], edp_target: 15000 };
-        getSections().forEach(s => { m[s.id] = {}; });
-        return m;
+        const mo = { debts: [], edp_target: 15000 };
+        getSections().forEach(s => { mo[s.id] = {}; });
+        return mo;
       })();
 
   GIST_DATA.budget_data[key] = newMonth;
   LS.set('bgt_data', GIST_DATA);
 
-  const pinnedCount = getSections().reduce((sum, s) => {
-    return sum + Object.keys(newMonth[s.id] || {}).length;
-  }, 0);
-  const debtCount = (newMonth.debts || []).length;
+  const pinnedCount = getSections().reduce((sum, s) => sum + Object.keys(newMonth[s.id] || {}).length, 0);
+  const debtCount   = (newMonth.debts || []).length;
 
   selMonth = key;
-  buildSel();
-  renderView();
+  buildSel(); renderView();
 
   const parts = [];
-  if (pinnedCount > 0) parts.push(`${pinnedCount} 📌`);
+  if (pinnedCount > 0) parts.push(`${pinnedCount} 📋`);
   if (debtCount   > 0) parts.push(`${debtCount} 💳`);
   toast(`🗓 ${fmtK(key)} — создан автоматически${parts.length ? ' (' + parts.join(', ') + ')' : ''}`, 4000);
-
-  // Push to remote silently
   pushData();
 }
 
@@ -2590,13 +2612,12 @@ let importedData = null;
 
 function openImportExport() {
   resetImport();
-  // Populate export single + delete month selectors
   const months = sortK(Object.keys(getBudgetData())).reverse();
   const opts = months.map(k => `<option value="${k}"${k===selMonth?' selected':''}>${fmtK(k)}</option>`).join('');
-  const exp = document.getElementById('exportMonthSel');
-  const del = document.getElementById('deleteMonthSel');
-  if (exp) exp.innerHTML = opts;
-  if (del) del.innerHTML = opts;
+  const exp  = document.getElementById('exportMonthSel');
+  const mgmt = document.getElementById('mgmtMonthSel');
+  if (exp)  exp.innerHTML  = opts;
+  if (mgmt) mgmt.innerHTML = opts;
   document.getElementById('ieModal').classList.add('open');
 }
 function closeImportExport() { document.getElementById('ieModal').classList.remove('open'); }
@@ -2664,26 +2685,57 @@ function exportToExcel(mode) {
   closeImportExport();
 }
 
-// ── Delete month ──────────────────────────────────────────────────────────────
-async function deleteMonth() {
-  const key = document.getElementById('deleteMonthSel')?.value;
+// ── Clear month amounts (keep names, set all to 0) ───────────────────────────
+async function clearMonthAmounts() {
+  const key = document.getElementById('mgmtMonthSel')?.value;
   if (!key) return;
-  const label = fmtK(key);
-  if (!confirm(`🗑 Удалить ${label}?\n\nВсе данные этого месяца будут удалены безвозвратно.`)) return;
+  if (!confirm(`🧹 Очистить суммы за ${fmtK(key)}?\n\nВсе имена статей сохранятся, суммы станут 0.`)) return;
+  const secs = getSections();
+  const md   = GIST_DATA.budget_data[key];
+  if (!md) return;
+  secs.forEach(s => {
+    const sec = md[s.id] || {};
+    Object.keys(sec).forEach(k => { sec[k] = 0; });
+  });
+  LS.set('bgt_data', GIST_DATA);
+  closeImportExport();
+  if (selMonth === key) renderView();
+  toast(`🧹 ${fmtK(key)} — суммы очищены`);
+  pushData();
+}
 
+// ── Rebuild month from previous (re-populate with previous month's items) ────
+async function rebuildMonthFromPrev() {
+  const key = document.getElementById('mgmtMonthSel')?.value;
+  if (!key) return;
+  // Find the previous month (the one just before this one in sorted order)
+  const allMonths = sortK(Object.keys(GIST_DATA.budget_data || {}));
+  const idx = allMonths.indexOf(key);
+  const srcKey = idx > 0 ? allMonths[idx - 1] : null;
+  if (!srcKey) { toast('⚠ Нет предыдущего месяца для копирования'); return; }
+  if (!confirm(`🔄 Заполнить ${fmtK(key)} из ${fmtK(srcKey)}?\n\nТекущие данные будут ЗАМЕНЕНЫ.`)) return;
+  const rebuilt = buildMonthWithRecurring(srcKey);
+  GIST_DATA.budget_data[key] = rebuilt;
+  LS.set('bgt_data', GIST_DATA);
+  closeImportExport();
+  if (selMonth === key) renderView();
+  const itemCount = getSections().reduce((s, sec) => s + Object.keys(rebuilt[sec.id] || {}).length, 0);
+  toast(`🔄 ${fmtK(key)} — восстановлено из ${fmtK(srcKey)} (${itemCount} статей, ${(rebuilt.debts||[]).length} кредитов)`);
+  pushData();
+}
+
+// ── Delete month entirely ─────────────────────────────────────────────────────
+async function deleteMonth() {
+  const key = document.getElementById('mgmtMonthSel')?.value;
+  if (!key) return;
+  if (!confirm(`🗑 Удалить ${fmtK(key)}?\n\nВсе данные этого месяца будут удалены безвозвратно.`)) return;
   delete GIST_DATA.budget_data[key];
   LS.set('bgt_data', GIST_DATA);
-
-  // If deleted month was current → switch to most recent remaining
   const remaining = sortK(Object.keys(GIST_DATA.budget_data));
-  if (remaining.length) {
-    selMonth = remaining[remaining.length - 1];
-  }
-
+  if (remaining.length) selMonth = remaining[remaining.length - 1];
   closeImportExport();
-  buildSel();
-  renderView();
-  toast(`🗑 ${label} удалён`);
+  buildSel(); renderView();
+  toast(`🗑 ${fmtK(key)} удалён`);
   pushData();
 }
 
