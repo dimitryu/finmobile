@@ -253,7 +253,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.20</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.22</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -319,7 +319,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.20</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.22</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -335,7 +335,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
       </div>
       <div class="sync-wrap">
         <button class="ie-btn" onclick="openImportExport()" title="Импорт / Экспорт Excel">📊 Excel</button>
-        <button class="sync-btn" id="syncBtn" onclick="syncNow()">
+        <button class="sync-btn" id="syncBtn" onclick="syncNow(true)">
           <span id="syncIcon">☁</span>
           <span id="syncText">Synced</span>
         </button>
@@ -605,7 +605,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.20';  // Версия приложения
+const APP_VER = '2.9.22';  // Версия приложения
 
 // JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
 // Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
@@ -1551,7 +1551,7 @@ function initApp() {
   checkAutoMonth();
   renderView();
   if (syncTimer) clearInterval(syncTimer);
-  syncTimer = setInterval(syncNow, 300000);
+  syncTimer = setInterval(() => syncNow(false), 300000);
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
   // Start daily backup scheduler
   scheduleBackup();
@@ -1684,21 +1684,28 @@ function markLocalChange() {
   try { localStorage.setItem('bgt_lastchange', new Date().toISOString()); } catch(e) {}
 }
 
-async function syncNow() {
+// force=true  → manual click: always pull if remote is newer (ignores lastChange)
+// force=false → auto sync: respects lastChange to avoid overwriting local unsaved work
+async function syncNow(force) {
   if (!CONFIG?.binId) return;
   setSyncStatus('spin', t('syncing'));
   try {
-    const remote = await jbRead(CONFIG.binId);
+    const remote     = await jbRead(CONFIG.binId);
     const localTs    = GIST_DATA?.last_updated || '0';
-    const remoteTs   = remote?.last_updated   || '0';
+    const remoteTs   = remote?.last_updated    || '0';
     const lastChange = getLastLocalChange();
-    if (remoteTs > localTs && remoteTs > lastChange) {
+
+    const shouldPull = force
+      ? remoteTs > localTs                             // manual: just check if remote is newer
+      : remoteTs > localTs && remoteTs > lastChange;  // auto: also check no unsaved local work
+
+    if (shouldPull) {
       GIST_DATA = remote;
       LS.set('bgt_data', GIST_DATA);
       buildSel();
       updateSubTitle();
+      if (force) toast('🔄 ' + (remote.updated_by || '?') + ' — ' + new Date(remote.last_updated).toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'}));
     }
-    // After every sync: check if current calendar month needs to be auto-created
     checkAutoMonth();
     renderView();
     setSyncStatus('ok', t('syncOk'));
@@ -2386,13 +2393,15 @@ function bindDebts(md) {
 //   INCOME sections  → copy only 📌 pinned items WITH their amounts
 //   DEBTS            → carry forward active loans, decrement payments_left by 1
 // ─── SHARED HELPER for new month population ──────────────────────────────────
-// Rules (same for both auto and manual creation):
+// Rules:
 //   • 'variable' section  → ALL items copied, amount = 0
 //   • all other sections  → only 📌 pinned items, copied WITH their amounts
+//     (walk-back through ALL months to find the most recent non-zero amount)
 //   • debts               → active loans forwarded, payments_left decremented by 1
 function _buildNewMonth(sourceMonthKey) {
   const secs      = getSections();
   const rec       = GIST_DATA?.recurring || {};
+  // Sort ALL existing months — walk-back will search them newest-first
   const allMonths = sortK(Object.keys(GIST_DATA.budget_data || {}));
   const srcData   = GIST_DATA.budget_data?.[sourceMonthKey] || {};
 
@@ -2407,19 +2416,12 @@ function _buildNewMonth(sourceMonthKey) {
       });
     } else {
       // All other sections (fixed, income, insurance, custom):
-      // copy only 📌 pinned items WITH their amounts
+      // copy only 📌 pinned items WITH their amounts from sourceMonthKey (previous month) only
       const secRec = rec[s.id] || {};
       Object.keys(secRec).forEach(name => {
-        if (!secRec[name]) return;
-        const srcAmt = srcData[s.id]?.[name];
-        if (srcAmt !== undefined) { newMonth[s.id][name] = srcAmt; return; }
-        // Walk back to find most recent non-zero value
-        let found = 0;
-        for (let i = allMonths.length - 1; i >= 0; i--) {
-          const amt = GIST_DATA.budget_data[allMonths[i]]?.[s.id]?.[name];
-          if (amt !== undefined && amt !== 0) { found = amt; break; }
-        }
-        newMonth[s.id][name] = found;
+        if (!secRec[name]) return; // not pinned
+        // Take amount from the source month only — same as fixed expenses
+        newMonth[s.id][name] = srcData[s.id]?.[name] ?? 0;
       });
     }
   });
@@ -3038,7 +3040,7 @@ if (savedConfig && savedData) {
     document.getElementById('screenSetup').classList.remove('active');
     document.getElementById('screenApp').classList.add('active');
     initApp();
-    setTimeout(syncNow, 1500);
+    setTimeout(() => syncNow(false), 1500);
   }
 } else {
   document.getElementById('screenSetup').classList.add('active');
