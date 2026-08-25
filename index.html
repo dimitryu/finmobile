@@ -12,6 +12,8 @@
 <link rel="apple-touch-icon" id="ati"/>
 <link rel="icon" id="favicon" type="image/png"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <style>
 :root{--bg:#0b0f1a;--card:#111827;--card2:#1a2236;--border:#1f2937;--text:#cbd5e1;--muted:#6b7280;--white:#f1f5f9;--fs:1}
 body.light-mode{--bg:#f0f4f8;--card:#ffffff;--card2:#e8edf4;--border:#d1d9e0;--text:#374151;--muted:#9ca3af;--white:#111827}
@@ -253,7 +255,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v2.9.23</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v3.0.0</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -319,7 +321,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v2.9.23</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v3.0.0</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -361,7 +363,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <h3>🔄 Переход на новую версию</h3>
     <div class="hint-box" style="margin-bottom:14px">
       Обнаружены данные от <b>старой версии</b> приложения (v2.0.0).<br/>
-      Новая версия использует другую систему хранения (JSONBin).<br/>
+      Новая версия использует другую систему хранения (Firebase).<br/>
       Ваши данные будут перенесены автоматически.
     </div>
     <div id="migrateStatus" style="text-align:center;padding:16px 0">
@@ -605,12 +607,23 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '2.9.23';  // Версия приложения
+const APP_VER = '3.0.0';  // Версия приложения
 
-// JSONBin.io API Key — получите свой на jsonbin.io (бесплатно)
-// Dashboard → API Keys → скопируйте Master Key и вставьте ниже:
-const JB_KEY = '$2a$10$fpCdqGpNO1kLtg8Qdx3OKuO35jpi6/MSKknfHR5UdRhgC5m4RTzuu'; // ← ЗАМЕНИТЕ на свой ключ
+// Firebase config — Project Settings → General → Your apps → SDK setup
+const firebaseConfig = {
+  apiKey: "AIzaSyBuaQhzPGqw8DQcGKMWFv9A1Q2NaZMZky0",
+  authDomain: "finmobile-b114b.firebaseapp.com",
+  projectId: "finmobile-b114b",
+  storageBucket: "finmobile-b114b.firebasestorage.app",
+  messagingSenderId: "972735713866",
+  appId: "1:972735713866:web:53db6b16cda89af1f68cb3",
+  measurementId: "G-E0S7VHXWLT"
+}; // ← ЗАМЕНИТЕ на конфиг своего Firebase-проекта
 // ╚══════════════════════════════════════════════════════════════════╝
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FAMILIES_COLLECTION = 'families';
 
 const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const MN_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
@@ -1368,52 +1381,86 @@ async function applyUpdate() {
   location.reload(true);
 }
 
-// ─── JSONBIN STORAGE ──────────────────────────────────────────────────────────
-const JB_URL = 'https://api.jsonbin.io/v3/b';
+// ─── FIRESTORE STORAGE ────────────────────────────────────────────────────────
+// Each family = one document in the "families" collection.
+// Document ID = the "family code" shared with members (Firestore auto-generates
+// a random ~20-char ID on creation — same role as the old JSONBin bin ID).
 
-async function jbCreate(data) {
-  const r = await fetch(JB_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': JB_KEY,
-      'X-Bin-Private': 'true',
-      'X-Bin-Name': 'family_budget'
-    },
-    body: JSON.stringify(data)
-  });
-  if (!r.ok) {
-    const err = await r.text();
-    throw new Error(`Storage error ${r.status}: ${err}`);
+async function fsCreate(data) {
+  try {
+    const ref = await db.collection(FAMILIES_COLLECTION).add(data);
+    return ref.id;
+  } catch(e) {
+    throw new Error(_fsErrMsg(e));
   }
-  const j = await r.json();
-  return j.metadata.id;
 }
 
-async function jbRead(binId) {
-  const r = await fetch(`${JB_URL}/${binId}/latest`, {
-    headers: { 'X-Master-Key': JB_KEY }
-  });
-  if (!r.ok) throw new Error(`Read error ${r.status}`);
-  const j = await r.json();
-  return j.record;
+async function fsRead(docId) {
+  try {
+    const snap = await db.collection(FAMILIES_COLLECTION).doc(docId).get();
+    if (!snap.exists) { const e = new Error('not-found'); e.code = 'not-found'; throw e; }
+    return snap.data();
+  } catch(e) {
+    throw new Error(_fsErrMsg(e));
+  }
 }
 
-async function jbUpdate(binId, data) {
-  const r = await fetch(`${JB_URL}/${binId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': JB_KEY
-    },
-    body: JSON.stringify(data)
-  });
-  if (!r.ok) throw new Error(`Update error ${r.status}`);
-  return r.json();
+async function fsUpdate(docId, data) {
+  try {
+    await db.collection(FAMILIES_COLLECTION).doc(docId).set(data);
+  } catch(e) {
+    throw new Error(_fsErrMsg(e));
+  }
 }
 
-function encodeCode(binId) { return binId; }
+function _fsErrMsg(e) {
+  const code = e?.code || '';
+  if (code === 'permission-denied') return 'Нет доступа. Проверьте правила безопасности Firestore';
+  if (code === 'not-found')         return 'Семья не найдена. Проверьте код';
+  if (code === 'unavailable')       return 'Нет соединения с сервером';
+  return e?.message || String(e);
+}
+
+function encodeCode(docId) { return docId; }
 function decodeCode(code) { return code?.trim() || null; }
+
+// ─── REAL-TIME SYNC (Firestore onSnapshot) ────────────────────────────────────
+// Replaces polling: any change made by any family member appears on all other
+// devices within ~1 second, no manual refresh needed.
+let _unsubSnapshot = null;
+
+function startRealtimeSync() {
+  if (!CONFIG?.docId) return;
+  if (_unsubSnapshot) { _unsubSnapshot(); _unsubSnapshot = null; }
+  setSyncStatus('spin', t('syncing'));
+  _unsubSnapshot = db.collection(FAMILIES_COLLECTION).doc(CONFIG.docId)
+    .onSnapshot(
+      snap => {
+        if (!snap.exists) { setSyncStatus('err', t('syncErr')); return; }
+        const remote     = snap.data();
+        const localTs    = GIST_DATA?.last_updated || '0';
+        const remoteTs   = remote?.last_updated    || '0';
+        const lastChange = getLastLocalChange();
+        // Only accept remote data if it's newer than both our local state
+        // AND our last local edit (avoids clobbering unsaved local changes,
+        // and avoids re-processing the echo of our own just-pushed write)
+        if (remoteTs > localTs && remoteTs > lastChange) {
+          GIST_DATA = remote;
+          LS.set('bgt_data', GIST_DATA);
+          buildSel();
+          checkAutoMonth();
+          renderView();
+          updateSubTitle();
+        }
+        setSyncStatus('ok', t('syncOk'));
+      },
+      err => { setSyncStatus('err', t('syncErr')); }
+    );
+}
+
+function stopRealtimeSync() {
+  if (_unsubSnapshot) { _unsubSnapshot(); _unsubSnapshot = null; }
+}
 
 // ─── LOCAL STATE ──────────────────────────────────────────────────────────────
 const LS = {
@@ -1457,9 +1504,9 @@ async function createFamily() {
       last_updated: new Date().toISOString(),
       updated_by: userName
     };
-    const binId = await jbCreate(initData);
-    const code  = encodeCode(binId);
-    CONFIG = { binId, familyName, userId, userName };
+    const docId = await fsCreate(initData);
+    const code  = encodeCode(docId);
+    CONFIG = { docId, familyName, userId, userName };
     LS.set('bgt_config', CONFIG);
     GIST_DATA = initData;
     LS.set('bgt_data', GIST_DATA);
@@ -1482,13 +1529,13 @@ async function joinFamily() {
     toast('❌ Старый код (v2.0.0). Попросите владельца семьи скопировать новый код из настроек ⚙.');
     return;
   }
-  const binId = code;
-  if (!binId || binId.length < 10) {
+  const docId = code;
+  if (!docId || docId.length < 10) {
     toast('❌ Неверный семейный код'); return;
   }
   setSyncStatus('spin', t('connecting'));
   try {
-    const data = await jbRead(binId);
+    const data = await fsRead(docId);
     if (!data || !data.family_name) throw new Error('Данные семьи не найдены');
     const userId = genUID();
     const member = { id: userId, name: userName, color: genColor(), joined: new Date().toISOString() };
@@ -1496,23 +1543,19 @@ async function joinFamily() {
     if (!existing) {
       if (!data.members) data.members = [];
       data.members.push(member);
-      await jbUpdate(binId, { ...data, last_updated: new Date().toISOString(), updated_by: userName });
+      await fsUpdate(docId, { ...data, last_updated: new Date().toISOString(), updated_by: userName });
     } else {
       member.id = existing.id;
     }
-    CONFIG = { binId, familyName: data.family_name, userId: member.id, userName };
+    CONFIG = { docId, familyName: data.family_name, userId: member.id, userName };
     LS.set('bgt_config', CONFIG);
-    LS.set('bgt_family_code', binId);
+    LS.set('bgt_family_code', docId);
     GIST_DATA = data;
     LS.set('bgt_data', GIST_DATA);
     setSyncStatus('ok', t('syncOk'));
     enterApp();
   } catch(e) {
-    const msg = e.message || String(e);
-    if (msg.includes('400')) toast('❌ Ошибка 400: неверный код или API-ключ не настроен');
-    else if (msg.includes('401') || msg.includes('403')) toast('❌ Нет доступа. Проверьте JB_KEY в файле');
-    else if (msg.includes('404')) toast('❌ Семья не найдена. Проверьте код');
-    else toast('❌ ' + msg);
+    toast('❌ ' + (e.message || String(e)));
     setSyncStatus('err', t('syncErr'));
   }
 }
@@ -1551,7 +1594,9 @@ function initApp() {
   checkAutoMonth();
   renderView();
   if (syncTimer) clearInterval(syncTimer);
-  syncTimer = setInterval(() => syncNow(false), 300000);
+  // Real-time sync via Firestore onSnapshot — no more 5-min polling needed.
+  // Changes on any device appear here within ~1 second.
+  startRealtimeSync();
   document.getElementById('settingsFamilyCodeText').textContent = LS.get('bgt_family_code') || '—';
   // Start daily backup scheduler
   scheduleBackup();
@@ -1560,7 +1605,7 @@ function initApp() {
 function saveLocal() { LS.set('bgt_data', GIST_DATA); }
 
 // ─── MONTHLY RESERVE / SAVINGS GOAL ──────────────────────────────────────────
-// Stored in CONFIG (localStorage, personal — not synced to JSONBin).
+// Stored in CONFIG (localStorage, personal — not synced to Firestore).
 // Logic: reserve is deducted from balance → "free" = income - expenses - debt - reserve.
 function getReserve() {
   return parseFloat(CONFIG?.reserve || 0) || 0;
@@ -1684,20 +1729,21 @@ function markLocalChange() {
   try { localStorage.setItem('bgt_lastchange', new Date().toISOString()); } catch(e) {}
 }
 
-// force=true  → manual click: always pull if remote is newer (ignores lastChange)
-// force=false → auto sync: respects lastChange to avoid overwriting local unsaved work
+// Manual "sync" button: force a fresh read + ensure the realtime listener is alive.
+// With Firestore onSnapshot, real-time sync happens automatically — this is a
+// fallback for when the listener may have dropped (e.g. after long background).
 async function syncNow(force) {
-  if (!CONFIG?.binId) return;
+  if (!CONFIG?.docId) return;
   setSyncStatus('spin', t('syncing'));
   try {
-    const remote     = await jbRead(CONFIG.binId);
+    const remote     = await fsRead(CONFIG.docId);
     const localTs    = GIST_DATA?.last_updated || '0';
     const remoteTs   = remote?.last_updated    || '0';
     const lastChange = getLastLocalChange();
 
     const shouldPull = force
-      ? remoteTs > localTs                             // manual: just check if remote is newer
-      : remoteTs > localTs && remoteTs > lastChange;  // auto: also check no unsaved local work
+      ? remoteTs > localTs
+      : remoteTs > localTs && remoteTs > lastChange;
 
     if (shouldPull) {
       GIST_DATA = remote;
@@ -1709,20 +1755,22 @@ async function syncNow(force) {
     checkAutoMonth();
     renderView();
     setSyncStatus('ok', t('syncOk'));
+    // Ensure the live listener is (re)attached
+    if (!_unsubSnapshot) startRealtimeSync();
   } catch(e) {
     setSyncStatus('err', t('syncErr'));
   }
 }
 
 async function pushData() {
-  if (!CONFIG?.binId || !GIST_DATA) return;
+  if (!CONFIG?.docId || !GIST_DATA) return;
   GIST_DATA.last_updated = new Date().toISOString();
   GIST_DATA.updated_by   = CONFIG.userName;
   markLocalChange();
   LS.set('bgt_data', GIST_DATA);
   setSyncStatus('spin', t('saving'));
   try {
-    await jbUpdate(CONFIG.binId, GIST_DATA);
+    await fsUpdate(CONFIG.docId, GIST_DATA);
     setSyncStatus('ok', t('syncOk'));
     updateSubTitle();
   } catch(e) {
@@ -1780,6 +1828,7 @@ async function changeName() {
 
 function leaveFamily() {
   if (!confirm(t('confirmLeave'))) return;
+  stopRealtimeSync();
   LS.del('bgt_config'); LS.del('bgt_data'); LS.del('bgt_family_code');
   if (syncTimer) clearInterval(syncTimer);
   location.reload();
@@ -2935,8 +2984,10 @@ async function confirmImport() {
 }
 
 // ─── MIGRATION FROM v2.0.0 ────────────────────────────────────────────────────
+// Detects any config from a previous storage backend (old Gist-based v2.0.0,
+// or JSONBin-based v2.x) that needs migrating to the current Firestore backend.
 function isOldConfig(cfg) {
-  return cfg && (cfg.gistId || cfg.token) && !cfg.binId;
+  return cfg && !cfg.docId && (cfg.gistId || cfg.token || cfg.binId);
 }
 
 function showMigrateModal(oldData, oldConfig) {
@@ -2956,7 +3007,7 @@ async function runMigration() {
   btn.disabled = true;
   document.getElementById('migrateStatus').innerHTML =
     '<div class="ai-spin" style="font-size:28px;display:inline-block;animation:spin 1s linear infinite">⏳</div>' +
-    '<div style="font-size:13px;color:var(--muted);margin-top:8px">Создаём новое хранилище...</div>';
+    '<div style="font-size:13px;color:var(--muted);margin-top:8px">Переносим в Firebase...</div>';
   try {
     const userId = genUID();
     const userName = oldConfig.userName || 'Пользователь';
@@ -2969,20 +3020,20 @@ async function runMigration() {
       last_updated: new Date().toISOString(),
       updated_by: userName
     };
-    const binId = await jbCreate(newData);
-    CONFIG = { binId, familyName: newData.family_name, userId, userName };
+    const docId = await fsCreate(newData);
+    CONFIG = { docId, familyName: newData.family_name, userId, userName };
     LS.set('bgt_config', CONFIG);
-    LS.set('bgt_family_code', binId);
+    LS.set('bgt_family_code', docId);
     LS.set('bgt_data', newData);
     GIST_DATA = newData;
     document.getElementById('migrateModal').style.display = 'none';
     document.getElementById('screenSetup').classList.remove('active');
     document.getElementById('screenApp').classList.add('active');
     initApp();
-    toast('✅ Данные перенесены! Новый код семьи — в настройках ⚙');
+    toast('✅ Данные перенесены в Firebase! Новый код семьи — в настройках ⚙');
   } catch(e) {
     document.getElementById('migrateStatus').innerHTML =
-      `<div style="color:#f87171;font-size:13px">❌ Ошибка: ${e.message}<br/>Проверьте JB_KEY в файле и попробуйте снова.</div>`;
+      `<div style="color:#f87171;font-size:13px">❌ Ошибка: ${e.message}<br/>Проверьте настройки Firebase и попробуйте снова.</div>`;
     btn.textContent = '🔄 Повторить';
     btn.disabled = false;
   }
