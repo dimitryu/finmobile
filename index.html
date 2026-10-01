@@ -255,7 +255,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 <div id="screenSetup" class="screen active">
   <div class="setup-wrap">
     <div class="setup-logo">₪</div>
-    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v3.0.0</span></h1>
+    <h1 class="setup-h1" id="setupTitle">Семейный Бюджет <span style="font-size:13px;font-weight:600;color:#94a3b8;background:#374151;padding:2px 8px;border-radius:6px;font-family:monospace;vertical-align:middle">v3.0.1</span></h1>
     <p class="setup-sub" id="setupSub">Финансовый трекер</p>
 
     <div id="subWelcome" class="scard">
@@ -321,7 +321,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
     <div class="header-inner">
       <div class="logo">₪</div>
       <div class="app-name">
-        <h1 id="hFamilyName">Семья <span class="ver-badge">v3.0.0</span></h1>
+        <h1 id="hFamilyName">Семья <span class="ver-badge">v3.0.1</span></h1>
         <div class="sub" id="hSubTitle">Загрузка...</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -607,7 +607,7 @@ select.msel{background:var(--card2);color:var(--white);border:1px solid var(--bo
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  НАСТРОЙКИ — изменяйте только эти строки                        ║
 // ╠══════════════════════════════════════════════════════════════════╣
-const APP_VER = '3.0.0';  // Версия приложения
+const APP_VER = '3.0.1';  // Версия приложения
 
 // Firebase config — Project Settings → General → Your apps → SDK setup
 const firebaseConfig = {
@@ -647,7 +647,7 @@ const LANGS = {
     months:'месяцев', addMonth:'+ Мес.',
     tabMonth:'📊 Месяц', tabTrends:'📈 Тренды', tabDebts:'💳 Кредиты',
     install:'📲 Установить', iosHint:'📱 <b>iOS:</b> Нажмите «Поделиться» (□↑) → «На экран Домой» для установки',
-    statsIncome:'Доходы', statsFixed:'Пост. расходы', statsVar:'Перем. расходы', statsDebt:'Кредиты/мес', statsBalance:'Остаток',
+    statsIncome:'Доходы', statsFixed:'Пост. расходы', statsVar:'Перем. расходы', statsDebt:'Кредиты/мес', statsBalance:'Остаток', statsExpenses:'Расходы', statsCredit:'Кредит',
     distribution:'Распределение', ofIncome:'% от дохода',
     incomeSection:'💰 Доходы', fixedSection:'🏠 Постоянные расходы', variableSection:'🛒 Переменные расходы',
     creditsThisMonth:'💳 Кредиты в этом месяце',
@@ -694,7 +694,7 @@ const LANGS = {
     months:'חודשים', addMonth:'+ חודש',
     tabMonth:'📊 חודש', tabTrends:'📈 מגמות', tabDebts:'💳 הלוואות',
     install:'📲 התקן', iosHint:'📱 <b>iOS:</b> לחצו «שתף» (□↑) → «הוסף למסך הבית»',
-    statsIncome:'הכנסות', statsFixed:'הוצ. קבועות', statsVar:'הוצ. משתנות', statsDebt:'הלוואות/חודש', statsBalance:'יתרה',
+    statsIncome:'הכנסות', statsFixed:'הוצ. קבועות', statsVar:'הוצ. משתנות', statsDebt:'הלוואות/חודש', statsBalance:'יתרה', statsExpenses:'הוצאות', statsCredit:'אשראי',
     distribution:'התפלגות', ofIncome:'% מההכנסה',
     incomeSection:'💰 הכנסות', fixedSection:'🏠 הוצאות קבועות', variableSection:'🛒 הוצאות משתנות',
     creditsThisMonth:'💳 הלוואות החודש',
@@ -741,7 +741,7 @@ const LANGS = {
     months:'months', addMonth:'+ Month',
     tabMonth:'📊 Month', tabTrends:'📈 Trends', tabDebts:'💳 Loans',
     install:'📲 Install', iosHint:'📱 <b>iOS:</b> Tap «Share» (□↑) → «Add to Home Screen»',
-    statsIncome:'Income', statsFixed:'Fixed exp.', statsVar:'Variable exp.', statsDebt:'Loans/mo', statsBalance:'Balance',
+    statsIncome:'Income', statsFixed:'Fixed exp.', statsVar:'Variable exp.', statsDebt:'Loans/mo', statsBalance:'Balance', statsExpenses:'Expenses', statsCredit:'Credit',
     distribution:'Distribution', ofIncome:'% of income',
     incomeSection:'💰 Income', fixedSection:'🏠 Fixed expenses', variableSection:'🛒 Variable expenses',
     creditsThisMonth:'💳 Loans this month',
@@ -1947,15 +1947,23 @@ function buildSel() {
 }
 
 // ─── COMPACT SUMMARY STRIP ────────────────────────────────────────────────────
+let _statsExpanded = false;
+function toggleStatsBreakdown() {
+  _statsExpanded = !_statsExpanded;
+  renderStats();
+}
 function renderStats() {
   const md   = getMD();
   const secs = getSections();
-  const totalIncome   = secs.filter(s=>s.type==='income') .reduce((sum,s)=>sum+S(md[s.id]),0);
-  const totalExpenses = secs.filter(s=>s.type==='expense').reduce((sum,s)=>sum+S(md[s.id]),0);
+  const totalIncome    = secs.filter(s=>s.type==='income') .reduce((sum,s)=>sum+S(md[s.id]),0);
+  const expenseSecs    = secs.filter(s=>s.type==='expense');
+  const expenseBreakdown = expenseSecs.map(s=>({label:getSectionStatLabel(s), val:S(md[s.id])})).filter(x=>x.val>0);
+  const totalExpensesOnly = expenseSecs.reduce((sum,s)=>sum+S(md[s.id]),0);
   const tD      = (md.debts||[]).reduce((s,d)=>s+(d.monthly||0),0);
+  const totalExpenses = totalExpensesOnly + tD; // all expense-type sections (fixed/variable/insurance/custom) + this month's credit payments
   const reserve = getReserve();
-  const bal     = totalIncome - totalExpenses - tD;          // total remaining
-  const free    = bal - reserve;                             // free after reserve
+  const bal     = totalIncome - totalExpenses;                // total remaining
+  const free    = bal - reserve;                              // free after reserve
   const el      = document.getElementById('summaryStrip');
   if (!el) return;
 
@@ -1968,9 +1976,9 @@ function renderStats() {
       <div class="sum-chip-lbl">↑ ${t('statsIncome')}</div>
       <div class="sum-chip-val" style="color:${CC.income}">${fmtN(totalIncome)}</div>
     </div>
-    <div class="sum-chip" style="border-left-color:#f87171">
-      <div class="sum-chip-lbl">↓ ${t('statsFixed').replace(/\..*/,'').replace(/ расходы/,'')} + ${t('statsVar').split(' ')[0]}</div>
-      <div class="sum-chip-val" style="color:#f87171">${fmtN(totalExpenses + tD)}</div>
+    <div class="sum-chip" style="border-left-color:#f87171;cursor:pointer" onclick="toggleStatsBreakdown()">
+      <div class="sum-chip-lbl">↓ ${t('statsExpenses')} ${_statsExpanded ? '▲' : '▼'}</div>
+      <div class="sum-chip-val" style="color:#f87171">${fmtN(totalExpenses)}</div>
     </div>`;
 
   if (reserve > 0) {
@@ -1991,6 +1999,22 @@ function renderStats() {
     <div class="sum-chip" style="border-left-color:${balColor}">
       <div class="sum-chip-lbl">${bal>=0?'✓':'⚠'} ${t('statsBalance')}</div>
       <div class="sum-chip-val" style="color:${balColor}">${fmtN(bal)}</div>
+    </div>`;
+  }
+
+  if (_statsExpanded) {
+    const rows = expenseBreakdown.map(x =>
+      `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+        <span>${x.label}</span><span style="font-family:'Courier New',monospace;font-weight:600">${fmtN(x.val)}</span>
+      </div>`).join('');
+    const debtRow = tD > 0 ? `
+      <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+        <span>${t('statsCredit')}</span><span style="font-family:'Courier New',monospace;font-weight:600">${fmtN(tD)}</span>
+      </div>` : '';
+    chips += `
+    <div class="sum-chip" style="flex-basis:100%;border-left-color:#f87171;cursor:default" onclick="toggleStatsBreakdown()">
+      <div class="sum-chip-lbl">${t('statsExpenses')}:</div>
+      ${rows}${debtRow}
     </div>`;
   }
 
